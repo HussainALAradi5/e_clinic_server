@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Modules\Identity\Users\Models\User;
 
 return [
 
@@ -42,6 +42,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // API (Bearer tokens). Sanctum merges its driver settings into this entry.
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+        ],
     ],
 
     /*
@@ -63,7 +69,8 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
+            // Login email lives on persons (shared primary key) — see PersonEmailUserProvider.
+            'driver' => 'identity',
             'model' => env('AUTH_MODEL', User::class),
         ],
 

@@ -1,0 +1,16 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # Docs (architecture §2): Larastan level 8 is a CI gate.
+    level: 8
+    paths:
+        - app/
+        - bootstrap/app.php
+        - config/clinic.php
+        - routes/
+        - database/factories/
+        - database/seeders/
+        # The fixture model uses every shared trait, so they are analysed too.
+        - tests/Fixtures/
+    tmpDir: storage/framework/cache/phpstan

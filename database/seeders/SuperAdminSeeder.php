@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use App\Enums\Identity\RoleName;
+use App\Enums\Identity\UserType;
+use App\Modules\Identity\Users\Contracts\UserServiceInterface;
+use App\Modules\Identity\Users\Data\CreateUserData;
+use App\Modules\Identity\Users\Data\PersonData;
+use App\Modules\Identity\Users\Models\User;
+use App\Shared\Enums\Gender;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
+
+/**
+ * First super admin (config clinic.super_admin ← SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD). Without a password a random one is generated and printed once.
+ * 2FA is mandatory for this role: sign in, then set it up under My account › Security.
+ */
+class SuperAdminSeeder extends Seeder
+{
+    public function run(UserServiceInterface $users): void
+    {
+        $email = Config::string('clinic.super_admin.email');
+
+        if (User::query()->whereHas('person', fn ($q) => $q->where('email', Str::lower($email)))->exists()) {
+            $this->command->info("Super admin {$email} already exists.");
+
+            return;
+        }
+
+        $password = (string) Config::get('clinic.super_admin.password') ?: Str::password(16);
+
+        $person = $users->findOrCreatePerson(new PersonData(
+            firstName: 'System',
+            lastName: 'Administrator',
+            gender: Gender::Male,
+            dateOfBirth: CarbonImmutable::parse('1990-01-01'),
+            phone: '+97317000000',
+            email: $email,
+        ));
+
+        $users->create($person, new CreateUserData(UserType::Admin, [RoleName::SuperAdmin->value], $password));
+
+        $this->command->warn("Super admin: {$email} / {$password} — change the password and set up 2FA after the first sign-in.");
+    }
+}

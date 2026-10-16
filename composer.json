@@ -10,15 +10,24 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "bacon/bacon-qr-code": "^3.1",
+        "brick/money": "^0.10",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/sanctum": "^4.3",
+        "laravel/tinker": "^2.10.1",
+        "pragmarx/google2fa": "^9.0",
+        "propaganistas/laravel-phone": "^6.0",
+        "spatie/laravel-permission": "^6.24",
+        "tecnickcom/tc-lib-barcode": "^2.17"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "larastan/larastan": "^3.13",
         "laravel/boost": "^2.2",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
         "laravel/sail": "^1.41",
+        "laravel/telescope": "^5.26",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^3.8",
@@ -29,7 +38,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+            "app/Shared/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -71,11 +83,21 @@
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
+        ],
+        "analyse": [
+            "phpstan analyse --memory-limit=1G"
+        ],
+        "check": [
+            "@php vendor/bin/pint --test",
+            "@analyse",
+            "@test"
         ]
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "laravel/telescope"
+            ]
         }
     },
     "config": {
