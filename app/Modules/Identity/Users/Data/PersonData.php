@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Users\Data;
 
+use App\Modules\Reference\Addresses\Data\AddressData;
 use App\Shared\Enums\Gender;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
@@ -31,7 +32,14 @@ final readonly class PersonData
         public ?string $language = null,
         public ?array $notificationOptOut = null,
         public array $provided = [],
+        public ?AddressData $address = null,
     ) {}
+
+    /** `address` was sent (null = remove the address). */
+    public function addressProvided(): bool
+    {
+        return in_array('address', $this->provided, true);
+    }
 
     /**
      * @param  array<string, mixed>  $input  validated snake_case input
@@ -54,6 +62,7 @@ final readonly class PersonData
             language: $string('language'),
             notificationOptOut: isset($input['notification_opt_out']) ? array_values(Arr::wrap($input['notification_opt_out'])) : null,
             provided: array_keys($input),
+            address: is_array($input['address'] ?? null) ? AddressData::fromArray($input['address']) : null,
         );
     }
 
@@ -79,6 +88,6 @@ final readonly class PersonData
             'notification_opt_out' => $this->notificationOptOut ?? [],
         ];
 
-        return $this->provided === [] ? array_filter($all, fn (mixed $v): bool => $v !== null) : Arr::only($all, $this->provided);
+        return $this->provided === [] ? array_filter($all, fn (mixed $v): bool => $v !== null) : Arr::only($all, array_diff($this->provided, ['address']));
     }
 }

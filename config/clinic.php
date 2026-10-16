@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Identity;
+use App\Enums\Reference;
 use App\Shared\Enums;
 
 return [
@@ -117,6 +118,7 @@ return [
         Identity\DevicePlatform::class,
         Identity\MobileApp::class,
         Identity\NotificationStatus::class,
+        Reference\CompanyType::class,
     ],
 
 ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Users\Http\Resources;
 
 use App\Modules\Identity\Users\Models\Person;
+use App\Modules\Reference\Addresses\Http\Resources\AddressResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +32,12 @@ final class PersonResource extends JsonResource
             // Restricted data: only the last digits leave the server.
             'national_id' => $this->national_id !== null ? mask($this->national_id) : null,
             'nationality_code' => $this->nationality_code,
+            'nationality' => $this->whenLoaded('nationality', fn (): ?array => $this->nationality === null ? null : [
+                'code' => $this->nationality->code,
+                'nationality' => $this->nationality->nationality,
+                'nationality_ar' => $this->nationality->nationality_ar,
+            ]),
+            'address' => $this->whenLoaded('address', fn (): ?AddressResource => $this->address === null ? null : new AddressResource($this->address)),
             'phone' => $this->phone,
             'email' => $this->email,
             'language' => $this->language,

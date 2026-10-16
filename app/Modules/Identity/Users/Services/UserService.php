@@ -19,6 +19,7 @@ use App\Modules\Identity\Users\Exceptions\EmailAlreadyTakenException;
 use App\Modules\Identity\Users\Exceptions\LastSuperAdminException;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
+use App\Modules\Reference\Addresses\Contracts\AddressServiceInterface;
 use App\Shared\Access\OwnershipScope;
 use App\Shared\Query\ApplyListQuery;
 use App\Shared\Query\ListQuery;
@@ -42,11 +43,12 @@ final class UserService implements UserServiceInterface
         private readonly AuthServiceInterface $auth,
         private readonly PrivilegeGuard $privileges,
         private readonly ClinicClock $clock,
+        private readonly AddressServiceInterface $addresses,
     ) {}
 
     public function searchPeople(ListQuery $query, ?string $nationalId = null): LengthAwarePaginator|CursorPaginator
     {
-        $builder = OwnershipScope::apply(Person::query()->with('user'), 'people', Auth::user());
+        $builder = OwnershipScope::apply(Person::query()->with(['user', 'nationality']), 'people', Auth::user());
 
         if (filled($nationalId)) {
             $builder->where('national_id_hash', BlindIndex::make((string) $nationalId, Person::BLIND_INDEX_CONTEXT));
@@ -127,9 +129,13 @@ final class UserService implements UserServiceInterface
                 $person->user?->forceFill(['email_verified_at' => null])->save();
             }
 
+            if ($data->addressProvided()) {
+                $this->saveAddress($person, $data);
+            }
+
             $person->save();
 
-            return $person->refresh()->load('user');
+            return $person->refresh()->load(['user', 'nationality', 'address.country']);
         });
     }
 
@@ -142,7 +148,7 @@ final class UserService implements UserServiceInterface
 
     public function find(string $id): User
     {
-        return $this->users()->findOrFail($id);
+        return $this->users()->with(['person.nationality', 'person.address.country'])->findOrFail($id);
     }
 
     public function create(Person $person, CreateUserData $data): User
@@ -269,5 +275,20 @@ final class UserService implements UserServiceInterface
         $user = Auth::user();
 
         return $user instanceof User ? $user : null;
+    }
+
+    /** Creates, replaces or removes the person's own address (never shared with another record). */
+    private function saveAddress(Person $person, PersonData $data): void
+    {
+        if ($data->address === null) {
+            $old = $person->address;
+            $person->address_id = null;
+            $person->save();
+            $this->addresses->remove($old);
+
+            return;
+        }
+
+        $person->address_id = $this->addresses->save($person->address, $data->address)->id;
     }
 }

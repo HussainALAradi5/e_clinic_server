@@ -28,6 +28,9 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    // Allow `db:seed` to load the demo accounts and fake data even in production (normally never).
+    'seed_demo' => (bool) env('SEED_DEMO', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode

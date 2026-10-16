@@ -27,13 +27,14 @@ return new class extends Migration
             $table->date('date_of_birth');
             $table->text('national_id')->nullable()->comment('encrypted');
             $table->string('national_id_hash', 64)->nullable()->unique()->comment('HMAC blind index');
-            $table->char('nationality_code', 2)->nullable()->index()->comment('FK countries.code (Reference Data)');
+            $table->char('nationality_code', 2)->nullable()->index();
             $table->string('phone', 20);
             $table->string('email')->nullable();
-            $table->uuid('address_id')->nullable()->index()->comment('FK addresses.id (Reference Data)');
+            $table->foreignUuid('address_id')->nullable()->index()->constrained('addresses')->nullOnDelete();
             $table->char('language', 2)->default('en');
             $table->jsonb('notification_opt_out')->default(new Expression("'[]'"));
 
+            $table->foreign('nationality_code')->references('code')->on('countries')->restrictOnDelete();
             $table->index(['phone', 'date_of_birth'], 'persons_phone_dob_index');
             $table->index(['last_name', 'first_name'], 'persons_name_index');
             $table->index('created_by');

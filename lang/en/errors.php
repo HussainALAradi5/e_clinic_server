@@ -53,4 +53,8 @@ return [
     'NOTIFICATION_NOT_RESENDABLE' => 'Only failed or cancelled notifications can be resent.',
     'NOTIFICATION_NOT_CANCELLABLE' => 'Only scheduled notifications can be cancelled.',
     'SAVED_VIEW_NAME_TAKEN' => 'You already have a view with this name.',
+
+    // Reference Data
+    'ADDRESS_INVALID' => 'The address is incomplete for this country (Bahrain needs building, road and block).',
+    'COMPANY_IN_USE' => 'This company is still used by other records. Archive it instead.',
 ];

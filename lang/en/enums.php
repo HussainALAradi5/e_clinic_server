@@ -39,4 +39,5 @@ return [
     'DevicePlatform' => ['android' => 'Android', 'ios' => 'iOS'],
     'MobileApp' => ['patient' => 'Patient app', 'staff' => 'Staff app'],
     'NotificationStatus' => ['queued' => 'Queued', 'sent' => 'Sent', 'delivered' => 'Delivered', 'failed' => 'Failed', 'cancelled' => 'Cancelled'],
+    'CompanyType' => ['manufacturer' => 'Manufacturer', 'supplier' => 'Supplier', 'insurer' => 'Insurer', 'laboratory' => 'Laboratory', 'hospital' => 'Hospital', 'other' => 'Other'],
 ];

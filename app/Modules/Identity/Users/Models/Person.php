@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Users\Models;
 
+use App\Modules\Reference\Addresses\Models\Address;
+use App\Modules\Reference\Countries\Models\Country;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Enums\Gender;
 use App\Shared\Models\BaseModel;
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
@@ -49,6 +52,8 @@ use Illuminate\Support\Str;
  * @property ?CarbonImmutable $updated_at
  * @property-read string $full_name
  * @property-read ?User $user
+ * @property-read ?Address $address
+ * @property-read ?Country $nationality
  */
 #[UseFactory(PersonFactory::class)]
 class Person extends BaseModel implements OwnedByUser
@@ -116,6 +121,22 @@ class Person extends BaseModel implements OwnedByUser
     public function user(): HasOne
     {
         return $this->hasOne(User::class, 'id', 'id');
+    }
+
+    /**
+     * @return BelongsTo<Address, $this>
+     */
+    public function address(): BelongsTo
+    {
+        return $this->belongsTo(Address::class);
+    }
+
+    /**
+     * @return BelongsTo<Country, $this>
+     */
+    public function nationality(): BelongsTo
+    {
+        return $this->belongsTo(Country::class, 'nationality_code', 'code');
     }
 
     public function isOwnedBy(Authenticatable $user): bool

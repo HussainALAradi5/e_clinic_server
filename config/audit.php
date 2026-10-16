@@ -6,6 +6,9 @@ use App\Modules\Identity\Roles\Models\Role;
 use App\Modules\Identity\Tasks\Models\BackgroundTask;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
+use App\Modules\Reference\Addresses\Models\Address;
+use App\Modules\Reference\Companies\Models\Company;
+use App\Modules\Reference\Countries\Models\Country;
 
 return [
 
@@ -35,6 +38,9 @@ return [
         'background_task' => BackgroundTask::class,
         'attachment' => Attachment::class,
         'notification' => Notification::class,
+        'country' => Country::class,
+        'address' => Address::class,
+        'company' => Company::class,
     ],
 
 ];
