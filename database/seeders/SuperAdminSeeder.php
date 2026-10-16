@@ -17,11 +17,15 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 
 /**
- * First super admin (config clinic.super_admin ← SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD). Without a password a random one is generated and printed once.
+ * First super admin (config clinic.super_admin ← SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD). Without SUPER_ADMIN_PASSWORD the default
+ * password below is used outside production; production gets a random one, printed once.
  * 2FA is mandatory for this role: sign in, then set it up under My account › Security.
  */
 class SuperAdminSeeder extends Seeder
 {
+    /** Local / test default — change it in `.env` (SUPER_ADMIN_PASSWORD) or after signing in. */
+    public const DEFAULT_PASSWORD = 'Admin-Pass-2026!';
+
     public function run(UserServiceInterface $users): void
     {
         $email = Config::string('clinic.super_admin.email');
@@ -32,7 +36,8 @@ class SuperAdminSeeder extends Seeder
             return;
         }
 
-        $password = (string) Config::get('clinic.super_admin.password') ?: Str::password(16);
+        $password = (string) Config::get('clinic.super_admin.password')
+            ?: (app()->isProduction() ? Str::password(16) : self::DEFAULT_PASSWORD);
 
         $person = $users->findOrCreatePerson(new PersonData(
             firstName: 'System',

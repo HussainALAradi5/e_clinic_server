@@ -28,7 +28,8 @@ return [
     'blind_index_key' => env('BLIND_INDEX_KEY', ''),
 
     /*
-    | First super admin created by `php artisan db:seed` (password generated and printed when empty).
+    | First super admin created by `php artisan db:seed`. Empty password = SuperAdminSeeder::DEFAULT_PASSWORD
+    | locally, a random printed one in production.
     */
     'super_admin' => [
         'email' => env('SUPER_ADMIN_EMAIL', 'admin@eclinic.local'),
