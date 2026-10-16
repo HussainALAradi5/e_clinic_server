@@ -28,6 +28,9 @@ final class DemoSeeder extends Seeder
 {
     public const DEMO_PASSWORD = 'Demo-Pass-2026!';
 
+    /** Every demo account's email ends with this (AuthService accepts the demo two-factor code for them). */
+    public const EMAIL_DOMAIN = '@demo.eclinic.bh';
+
     /** TOTP secret shared by the demo accounts whose role requires 2FA (add it to any authenticator app). */
     public const TWO_FACTOR_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 

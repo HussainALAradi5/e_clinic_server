@@ -37,6 +37,7 @@ use App\Modules\Identity\Roles\Contracts\RoleServiceInterface;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Support\CacheKeys;
 use App\Shared\Support\ClinicClock;
+use Database\Seeders\DemoSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Support\Facades\Cache;
@@ -315,6 +316,10 @@ final class AuthService implements AuthServiceInterface
             return true;
         }
 
+        if ($this->isDemoTwoFactorCode($user, $code)) {
+            return true;
+        }
+
         $codes = $user->two_factor_recovery_codes ?? [];
         $index = array_search(Str::lower($code), $codes, true);
 
@@ -326,6 +331,17 @@ final class AuthService implements AuthServiceInterface
         $user->forceFill(['two_factor_recovery_codes' => array_values($codes)])->save();
 
         return true;
+    }
+
+    /** Seeded demo accounts accept a fixed code outside production (config clinic.auth.demo_two_factor_code). */
+    private function isDemoTwoFactorCode(User $user, string $code): bool
+    {
+        $demoCode = (string) Config::get('clinic.auth.demo_two_factor_code');
+
+        return $demoCode !== ''
+            && ! app()->isProduction()
+            && Str::endsWith(Str::lower((string) $user->email()), DemoSeeder::EMAIL_DOMAIN)
+            && hash_equals($demoCode, $code);
     }
 
     private function assertNotReused(User $user, string $password): void

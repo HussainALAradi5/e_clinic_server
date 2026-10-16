@@ -8,7 +8,9 @@ use App\Modules\Identity\Auth\Models\LoginAttempt;
 use App\Modules\Identity\Auth\Notifications\PasswordChangedNotification;
 use App\Modules\Identity\Auth\Notifications\ResetPasswordNotification;
 use App\Modules\Identity\Auth\Support\TwoFactorAuthenticator;
+use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
+use Database\Seeders\DemoSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Notification;
@@ -97,6 +99,18 @@ it('asks for a TOTP code when 2FA is enabled and accepts a valid code or a recov
     $second = login($user)->json('meta.challenge_token');
     $this->postJson('/api/v1/auth/two-factor/challenge', ['challenge_token' => $second, 'recovery_code' => 'aaaaa-11111', 'device_name' => 'tests'])->assertOk();
     expect($user->refresh()->two_factor_recovery_codes)->toBe(['bbbbb-22222']);
+});
+
+it('accepts the fixed demo two-factor code for demo accounts only, never in production', function () {
+    $demo = User::factory()->withTwoFactor()->create(['id' => Person::factory()->state(['email' => 'admin'.DemoSeeder::EMAIL_DOMAIN])]);
+    $real = User::factory()->withTwoFactor()->create();
+    $challenge = fn (User $user) => ['challenge_token' => login($user)->json('meta.challenge_token'), 'code' => '111111', 'device_name' => 'tests'];
+
+    $this->postJson('/api/v1/auth/two-factor/challenge', $challenge($real))->assertStatus(422);
+    $this->postJson('/api/v1/auth/two-factor/challenge', $challenge($demo))->assertOk();
+
+    app()->detectEnvironment(fn () => 'production');
+    $this->postJson('/api/v1/auth/two-factor/challenge', $challenge($demo))->assertStatus(422);
 });
 
 it('logs out the current token or every device', function () {

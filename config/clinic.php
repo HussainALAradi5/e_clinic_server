@@ -45,6 +45,9 @@ return [
         'lockout_minutes' => 15,
         'two_factor_challenge_minutes' => 5,
         'two_factor_max_attempts' => 5,
+        // Fixed two-factor code for the seeded demo accounts (DemoSeeder::EMAIL_DOMAIN), outside production only.
+        // Empty disables it. Real accounts always need their authenticator app or a recovery code.
+        'demo_two_factor_code' => env('DEMO_TWO_FACTOR_CODE', '111111'),
         'recovery_codes' => 8,
         'password_history' => 5,
         'access_cache_minutes' => 10,
