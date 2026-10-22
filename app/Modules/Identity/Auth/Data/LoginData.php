@@ -14,6 +14,8 @@ final readonly class LoginData
         public string $deviceName,
         public string $ip,
         public ?string $userAgent = null,
+        /** Token of a device trusted after an earlier 2FA code (skips the code). */
+        public ?string $trustedDevice = null,
     ) {}
 
     /** Trimmed, lower-cased email. */

@@ -1,7 +1,13 @@
 <?php
 
+use App\Enums\Accounting;
+use App\Enums\Appointments;
+use App\Enums\HR;
 use App\Enums\Identity;
+use App\Enums\Payments;
+use App\Enums\Pharmacy;
 use App\Enums\Reference;
+use App\Enums\Transactions;
 use App\Shared\Enums;
 
 return [
@@ -45,6 +51,11 @@ return [
         'lockout_minutes' => 15,
         'two_factor_challenge_minutes' => 5,
         'two_factor_max_attempts' => 5,
+        // "Don't ask again on this device" after a 2FA code (password, 2FA or sign-out-everywhere changes reset it).
+        'trusted_device_days' => 30,
+        // "Forgot password": a 6-digit code by email, valid this long, with this many tries.
+        'password_code_minutes' => 10,
+        'password_code_max_attempts' => 5,
         // Fixed two-factor code for the seeded demo accounts (DemoSeeder::EMAIL_DOMAIN), outside production only.
         // Empty disables it. Real accounts always need their authenticator app or a recovery code.
         'demo_two_factor_code' => env('DEMO_TWO_FACTOR_CODE', '111111'),
@@ -64,6 +75,16 @@ return [
     /*
     | Bulk actions (API conventions §11): explicit ids limit, synchronous limit, "select all matching" ceiling.
     */
+    /*
+    | List export (Excel / PDF / CSV) and Excel import. Bigger exports run as a background task.
+    */
+    'transfer' => [
+        'export_sync_limit' => 1000,
+        'pdf_max_rows' => 2000,
+        'import_max_rows' => 2000,
+        'import_max_kb' => 5120,
+    ],
+
     'bulk' => [
         'max_ids' => 500,
         'sync_limit' => 100,
@@ -123,6 +144,43 @@ return [
         Identity\MobileApp::class,
         Identity\NotificationStatus::class,
         Reference\CompanyType::class,
+        Accounting\AccountType::class,
+        Accounting\BalanceSide::class,
+        Accounting\AccountMappingKey::class,
+        Accounting\FiscalStatus::class,
+        Accounting\JournalEntryStatus::class,
+        Accounting\JournalEntryType::class,
+        Accounting\ReportType::class,
+        HR\EmploymentType::class,
+        HR\EmployeeStatus::class,
+        HR\TerminationReason::class,
+        HR\SalaryComponentType::class,
+        HR\AttendanceStatus::class,
+        HR\AttendanceSource::class,
+        HR\PayrollStatus::class,
+        HR\PayslipItemType::class,
+        Payments\ServiceCategory::class,
+        Payments\InvoiceStatus::class,
+        Payments\PaymentStatus::class,
+        Payments\DiscountType::class,
+        Transactions\CashSessionStatus::class,
+        Transactions\ExpenseCategory::class,
+        Appointments\ConsentType::class,
+        Appointments\BloodGroup::class,
+        Appointments\RoomType::class,
+        Appointments\ScheduleExceptionType::class,
+        Appointments\AppointmentType::class,
+        Appointments\AppointmentStatus::class,
+        Appointments\AppointmentSource::class,
+        Appointments\CancelledBy::class,
+        Appointments\TreatmentType::class,
+        Appointments\TreatmentPriority::class,
+        Appointments\ClinicalOrderType::class,
+        Pharmacy\MedicationForm::class,
+        Pharmacy\DispenseUnit::class,
+        Pharmacy\MedicationRoute::class,
+        Pharmacy\DispensationKind::class,
+        Pharmacy\StockMovementType::class,
     ],
 
 ];

@@ -15,7 +15,7 @@ final readonly class ResourceSchema
      * @param  list<string>  $dateFields
      * @param  list<array{field: string, label: string}>  $columns
      * @param  list<array{name: string, needs_reason: bool, inverse: ?string}>  $bulkActions
-     * @param  list<string>  $exportFormats
+     * @param  list<string>  $exportFormats  formats the caller may export (empty = no export)
      */
     public function __construct(
         public string $resource,
@@ -28,6 +28,7 @@ final readonly class ResourceSchema
         public array $exportFormats,
         public string $defaultSort,
         public bool $archivable = false,
+        public bool $importable = false,
     ) {}
 
     /**
@@ -47,6 +48,8 @@ final readonly class ResourceSchema
             'default_sort' => $this->defaultSort,
             // GenericEntity resources: the list offers "show archived".
             'archivable' => $this->archivable,
+            // The caller may import this list from Excel (template at GET /<resource>/import/template).
+            'importable' => $this->importable,
         ];
     }
 }

@@ -41,7 +41,7 @@ return new class extends Migration
         Constraints::enum('background_tasks', 'status', GenericStatus::class);
         Constraints::enum('background_tasks', 'cancel_reason', TaskCancelReason::class, nullable: true);
         Constraints::check('background_tasks', 'chk_background_tasks_progress', 'progress BETWEEN 0 AND 100');
-        Constraints::check('background_tasks', 'chk_background_tasks_cancel_reason', "(status = 'cancelled') = (cancel_reason IS NOT NULL)");
+        Constraints::check('background_tasks', 'chk_background_tasks_cancel_state', "(status = 'cancelled') = (cancel_reason IS NOT NULL)");
         Constraints::statement("CREATE UNIQUE INDEX background_tasks_active_subject_unique ON background_tasks (type, subject_type, subject_id) WHERE status IN ('pending', 'in_progress') AND subject_id IS NOT NULL");
     }
 

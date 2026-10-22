@@ -24,6 +24,7 @@ use App\Modules\Identity\Tasks\Models\BackgroundTask;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Access\OwnershipScope;
 use App\Shared\Access\PermissionExpression;
+use App\Shared\Contracts\ReleasedToPatient;
 use App\Shared\Enums\GenericStatus;
 use App\Shared\Exceptions\DomainException;
 use App\Shared\Files\FileStorage;
@@ -260,7 +261,7 @@ final class AttachmentService extends BaseEntityService implements AttachmentSer
         if (! $attachment->isDownloadable()) {
             throw new AttachmentNotReadyException(context: ['scan_status' => $attachment->scan_status->value]);
         }
-        if ($attachment->is_sensitive && ! $this->user()->can('patients.view_medical')) {
+        if ($attachment->is_sensitive && ! $this->user()->can('patients.view_medical') && ! $this->releasedToUser($attachment)) {
             throw new AuthorizationException;
         }
     }
@@ -291,6 +292,16 @@ final class AttachmentService extends BaseEntityService implements AttachmentSer
     protected function query(): Builder
     {
         return OwnershipScope::apply(Attachment::query(), 'attachments', Auth::user());
+    }
+
+    /** Sensitive file of a record released to the signed-in patient it is about (e.g. their completed result). */
+    private function releasedToUser(Attachment $attachment): bool
+    {
+        /** @var class-string<Model>|null $model */
+        $model = Config::get("attachments.owners.{$attachment->attachable_type}.model");
+        $owner = $model !== null ? $model::query()->find($attachment->attachable_id) : null;
+
+        return $owner instanceof ReleasedToPatient && $owner->isReleasedTo($this->user());
     }
 
     /**

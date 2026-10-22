@@ -18,6 +18,7 @@ final class LoginRequest extends FormRequest
             'email' => ['required', 'email:rfc', 'max:255'],
             'password' => ['required', 'string', 'max:255'],
             'device_name' => ['required', 'string', 'max:100'],
+            'trusted_device_token' => ['nullable', 'string', 'max:128'],
         ];
     }
 
@@ -29,6 +30,7 @@ final class LoginRequest extends FormRequest
             deviceName: $this->string('device_name')->toString(),
             ip: (string) $this->ip(),
             userAgent: $this->userAgent(),
+            trustedDevice: $this->filled('trusted_device_token') ? $this->string('trusted_device_token')->toString() : null,
         );
     }
 }

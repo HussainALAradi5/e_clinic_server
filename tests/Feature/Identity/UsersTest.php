@@ -3,6 +3,7 @@
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserStatus;
 use App\Enums\Identity\UserType;
+use App\Modules\Identity\Auth\Notifications\PasswordResetCodeNotification;
 use App\Modules\Identity\Auth\Notifications\ResetPasswordNotification;
 use App\Modules\Identity\Users\Contracts\UserServiceInterface;
 use App\Modules\Identity\Users\Data\CreateUserData;
@@ -140,11 +141,11 @@ it('publishes list schemas for users, people and audit without bulk actions', fu
     $this->getJson('/api/v1/meta/resources/audit')->assertNotFound();
 });
 
-it('sends an admin-initiated reset link', function () {
+it('sends an admin-initiated reset code', function () {
     Notification::fake();
     superAdmin();
     $user = User::factory()->create();
 
     $this->postJson("/api/v1/users/{$user->id}/send-reset-link")->assertAccepted();
-    Notification::assertSentTo($user, ResetPasswordNotification::class);
+    Notification::assertSentTo($user, PasswordResetCodeNotification::class);
 });

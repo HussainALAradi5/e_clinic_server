@@ -26,6 +26,9 @@ final class ListQueryConfig
     /** @var list<string> */
     private array $searchColumns = [];
 
+    /** @var array<string, list<string>> relation path => its columns, searched through whereHas */
+    private array $searchRelations = [];
+
     /** @var list<string> */
     private array $includes = [];
 
@@ -94,6 +97,17 @@ final class ListQueryConfig
     public function searchIn(string ...$columns): self
     {
         $this->searchColumns = array_values($columns);
+
+        return $this;
+    }
+
+    /**
+     * Also search columns of a related record, e.g. `searchInRelation('patient.person', 'first_name', 'phone')`
+     * (an invoice found by its patient's name) — no join, so the list's own columns stay unambiguous.
+     */
+    public function searchInRelation(string $relation, string ...$columns): self
+    {
+        $this->searchRelations[$relation] = array_values($columns);
 
         return $this;
     }
@@ -190,6 +204,12 @@ final class ListQueryConfig
     public function searchColumns(): array
     {
         return $this->searchColumns;
+    }
+
+    /** @return array<string, list<string>> */
+    public function searchRelations(): array
+    {
+        return $this->searchRelations;
     }
 
     /** @return list<string> */

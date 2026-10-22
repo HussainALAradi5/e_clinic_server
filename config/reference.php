@@ -21,6 +21,8 @@ return [
     | Tables that reference a company: a referenced company cannot be deleted (archive it instead).
     | Modules add theirs: medications.manufacturer_id, stock_batches.supplier_id, patients.insurer_id, expenses.payee_company_id …
     */
-    'company_usages' => [],
+    'company_usages' => [
+        'insured_patients' => ['table' => 'patients', 'column' => 'insurance_company_id'],
+    ],
 
 ];

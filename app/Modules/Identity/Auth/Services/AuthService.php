@@ -21,6 +21,7 @@ use App\Modules\Identity\Auth\Exceptions\AccountInactiveException;
 use App\Modules\Identity\Auth\Exceptions\AccountLockedException;
 use App\Modules\Identity\Auth\Exceptions\CurrentPasswordMismatchException;
 use App\Modules\Identity\Auth\Exceptions\InvalidCredentialsException;
+use App\Modules\Identity\Auth\Exceptions\InvalidPasswordResetCodeException;
 use App\Modules\Identity\Auth\Exceptions\InvalidPasswordResetTokenException;
 use App\Modules\Identity\Auth\Exceptions\InvalidTwoFactorCodeException;
 use App\Modules\Identity\Auth\Exceptions\PasswordReuseException;
@@ -29,7 +30,9 @@ use App\Modules\Identity\Auth\Exceptions\TwoFactorRequiredException;
 use App\Modules\Identity\Auth\Models\LoginAttempt;
 use App\Modules\Identity\Auth\Models\PasswordHistory;
 use App\Modules\Identity\Auth\Models\PersonalAccessToken;
+use App\Modules\Identity\Auth\Models\TrustedDevice;
 use App\Modules\Identity\Auth\Notifications\PasswordChangedNotification;
+use App\Modules\Identity\Auth\Notifications\PasswordResetCodeNotification;
 use App\Modules\Identity\Auth\Notifications\ResetPasswordNotification;
 use App\Modules\Identity\Auth\Support\PersonEmailUserProvider;
 use App\Modules\Identity\Auth\Support\TwoFactorAuthenticator;
@@ -94,7 +97,8 @@ final class AuthService implements AuthServiceInterface
             $user->forceFill(['password' => $data->password])->save();
         }
 
-        if ($user->hasTwoFactorEnabled()) {
+        // A device trusted after an earlier code skips the challenge (password still required).
+        if ($user->hasTwoFactorEnabled() && ! TrustedDevice::recognises($user, $data->trustedDevice)) {
             $challenge = Str::random(64);
             Cache::put(
                 CacheKeys::twoFactorChallenge($challenge),
@@ -110,7 +114,7 @@ final class AuthService implements AuthServiceInterface
         return $this->issueToken($user, $data->deviceName, $data->ip, $data->userAgent);
     }
 
-    public function verifyTwoFactorChallenge(string $challengeToken, string $code, string $deviceName): AuthTokenData
+    public function verifyTwoFactorChallenge(string $challengeToken, string $code, string $deviceName, bool $rememberDevice = false): AuthTokenData
     {
         $key = CacheKeys::twoFactorChallenge($challengeToken);
 
@@ -137,7 +141,11 @@ final class AuthService implements AuthServiceInterface
         Cache::forget($key);
         RateLimiter::clear(CacheKeys::loginAttempts(Str::lower((string) $user->email()), $challenge['ip']));
 
-        return $this->issueToken($user, $deviceName, $challenge['ip'], $challenge['user_agent']);
+        $session = $this->issueToken($user, $deviceName, $challenge['ip'], $challenge['user_agent']);
+
+        return $rememberDevice
+            ? new AuthTokenData($session->token, $session->expiresAt, $session->user, $session->access, TrustedDevice::issue($user, $deviceName, $challenge['ip'], $challenge['user_agent']))
+            : $session;
     }
 
     public function logout(User $user): void
@@ -154,6 +162,7 @@ final class AuthService implements AuthServiceInterface
     public function logoutAllDevices(User $user): int
     {
         $revoked = (int) $user->tokens()->delete();
+        TrustedDevice::forget($user);
 
         UserLoggedOut::dispatch($user, $revoked, true);
 
@@ -180,12 +189,17 @@ final class AuthService implements AuthServiceInterface
             $user->forceFill(['password' => $data->password])->save();
             PasswordHistory::remember($user);
             $user->tokens()->when($keep !== null, fn ($q) => $q->whereKeyNot($keep))->delete();
+            TrustedDevice::forget($user);
         });
 
         $user->notify(new PasswordChangedNotification);
         PasswordChanged::dispatch($user);
     }
 
+    /**
+     * Emails a 6-digit code (10 minutes, 5 tries). Unknown or locked emails get the same answer and no mail,
+     * so the endpoint never reveals who has an account.
+     */
     public function forgotPassword(string $email): void
     {
         $user = PersonEmailUserProvider::findByEmail($email);
@@ -194,7 +208,46 @@ final class AuthService implements AuthServiceInterface
             return;
         }
 
-        $user->notify(new ResetPasswordNotification($this->broker()->createToken($user), (string) $user->email()));
+        $code = str_pad((string) random_int(0, 999_999), 6, '0', STR_PAD_LEFT);
+        Cache::put(CacheKeys::passwordResetCode($email), [
+            'user_id' => $user->id,
+            'hash' => hash_hmac('sha256', $code, Config::string('app.key')),
+            'attempts' => 0,
+        ], now()->addMinutes(Config::integer('clinic.auth.password_code_minutes')));
+
+        $user->notify(new PasswordResetCodeNotification($code));
+    }
+
+    /**
+     * Checks the emailed code; returns a one-time reset token for POST /auth/reset-password.
+     * The code works once; too many wrong tries cancel it.
+     */
+    public function verifyPasswordResetCode(string $email, string $code): string
+    {
+        $key = CacheKeys::passwordResetCode($email);
+        $user = PersonEmailUserProvider::findByEmail($email);
+
+        /** @var array{user_id: string, hash: string, attempts: int}|null $pending */
+        $pending = Cache::get($key);
+        $valid = $user !== null && (
+            ($pending !== null && $pending['user_id'] === $user->id && hash_equals($pending['hash'], hash_hmac('sha256', trim($code), Config::string('app.key'))))
+            || $this->isDemoTwoFactorCode($user, trim($code))
+        );
+
+        if (! $valid) {
+            if ($pending !== null) {
+                $attempts = $pending['attempts'] + 1;
+                $attempts >= Config::integer('clinic.auth.password_code_max_attempts')
+                    ? Cache::forget($key)
+                    : Cache::put($key, [...$pending, 'attempts' => $attempts], now()->addMinutes(Config::integer('clinic.auth.password_code_minutes')));
+            }
+
+            throw new InvalidPasswordResetCodeException;
+        }
+
+        Cache::forget($key);
+
+        return $this->broker()->createToken($user);
     }
 
     public function sendInvitation(User $user): void
@@ -220,6 +273,7 @@ final class AuthService implements AuthServiceInterface
                     ])->save();
                     PasswordHistory::remember($user);
                     $user->tokens()->delete();
+                    TrustedDevice::forget($user);
                 });
 
                 $resetUser = $user;
@@ -275,6 +329,7 @@ final class AuthService implements AuthServiceInterface
         }
 
         $user->forceFill(['two_factor_secret' => null, 'two_factor_recovery_codes' => null, 'two_factor_confirmed_at' => null])->save();
+        TrustedDevice::forget($user);
     }
 
     public function clearLoginThrottle(User $user): void

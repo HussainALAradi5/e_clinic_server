@@ -6,7 +6,7 @@ use App\Enums\Identity\UserStatus;
 use App\Modules\Identity\Audit\Models\AuditLog;
 use App\Modules\Identity\Auth\Models\LoginAttempt;
 use App\Modules\Identity\Auth\Notifications\PasswordChangedNotification;
-use App\Modules\Identity\Auth\Notifications\ResetPasswordNotification;
+use App\Modules\Identity\Auth\Notifications\PasswordResetCodeNotification;
 use App\Modules\Identity\Auth\Support\TwoFactorAuthenticator;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
@@ -113,6 +113,30 @@ it('accepts the fixed demo two-factor code for demo accounts only, never in prod
     $this->postJson('/api/v1/auth/two-factor/challenge', $challenge($demo))->assertStatus(422);
 });
 
+it('skips the 2FA code on a trusted device until the password, 2FA or sign-out-everywhere changes it', function () {
+    $user = User::factory()->withTwoFactor()->create();
+    $totp = app(TwoFactorAuthenticator::class);
+    $trustedLogin = fn (?string $device) => $this->postJson('/api/v1/auth/login', ['email' => $user->email(), 'password' => 'password', 'device_name' => 'tests', 'trusted_device_token' => $device]);
+    $verify = fn (bool $remember) => $this->postJson('/api/v1/auth/two-factor/challenge', [
+        'challenge_token' => login($user)->json('meta.challenge_token'), 'code' => $totp->currentCode($user->two_factor_secret), 'device_name' => 'tests', 'remember_device' => $remember,
+    ]);
+
+    expect($verify(false)->assertOk()->json('data.trusted_device_token'))->toBeNull();
+    $device = $verify(true)->assertOk()->json('data.trusted_device_token');
+    expect($device)->toBeString();
+
+    $trustedLogin($device)->assertOk()->assertJsonStructure(['data' => ['token']]);
+    $trustedLogin('forged')->assertStatus(401)->assertJsonPath('error_code', 'AUTH_2FA_REQUIRED');
+    $this->travel(31)->days();
+    $trustedLogin($device)->assertStatus(401);
+    $this->travelBack();
+
+    $device = $verify(true)->json('data.trusted_device_token');
+    Sanctum::actingAs($user);
+    $this->postJson('/api/v1/auth/logout-all')->assertOk();
+    $trustedLogin($device)->assertStatus(401)->assertJsonPath('error_code', 'AUTH_2FA_REQUIRED');
+});
+
 it('logs out the current token or every device', function () {
     $user = User::factory()->create();
     $first = login($user)->json('data.token');
@@ -149,21 +173,32 @@ it('changes the password, keeps the current session and blocks reuse', function 
         ->assertStatus(422)->assertJsonPath('error_code', 'AUTH_PASSWORD_REUSED');
 });
 
-it('emails a reset link without revealing whether the email exists and resets with the token', function () {
+it('emails a 6-digit code without revealing whether the email exists, then resets the password with it', function () {
     Notification::fake();
+    $this->withoutMiddleware(ThrottleRequests::class);
     $user = User::factory()->status(UserStatus::PendingVerification)->create();
     login($user);
 
-    $this->postJson('/api/v1/auth/forgot-password', ['email' => 'unknown@example.com'])->assertAccepted();
+    $this->postJson('/api/v1/auth/forgot-password', ['email' => 'unknown@example.com'])->assertAccepted()
+        ->assertJsonPath('message', 'If an account uses this email, we have sent it a 6-digit code.');
     $this->postJson('/api/v1/auth/forgot-password', ['email' => strtoupper((string) $user->email())])->assertAccepted();
 
-    $token = null;
-    Notification::assertSentTo($user, ResetPasswordNotification::class, function (ResetPasswordNotification $n) use (&$token) {
-        parse_str((string) parse_url($n->url(), PHP_URL_QUERY), $query);
-        $token = $query['token'];
+    $code = null;
+    Notification::assertSentTo($user, PasswordResetCodeNotification::class, function (PasswordResetCodeNotification $n) use (&$code, $user) {
+        preg_match('/\b(\d{6})\b/', (string) $n->toMail($user)->subject, $m);
+        $code = $m[1] ?? null;
 
-        return str_starts_with($n->url(), 'http://localhost:4200/reset-password?');
+        return $code !== null;
     });
+    Notification::assertNothingSentTo(User::factory()->make(), PasswordResetCodeNotification::class);
+
+    $wrong = $code === '000000' ? '111112' : '000000';
+    $this->postJson('/api/v1/auth/verify-reset-code', ['email' => $user->email(), 'code' => $wrong])
+        ->assertStatus(422)->assertJsonPath('error_code', 'AUTH_RESET_CODE_INVALID');
+    $token = $this->postJson('/api/v1/auth/verify-reset-code', ['email' => $user->email(), 'code' => $code])->assertOk()->json('data.token');
+
+    // The code works once.
+    $this->postJson('/api/v1/auth/verify-reset-code', ['email' => $user->email(), 'code' => $code])->assertStatus(422);
 
     $this->postJson('/api/v1/auth/reset-password', ['token' => 'bad', 'email' => $user->email(), 'password' => STRONG_PASSWORD, 'password_confirmation' => STRONG_PASSWORD])
         ->assertStatus(422)->assertJsonPath('error_code', 'AUTH_RESET_TOKEN_INVALID');
@@ -174,6 +209,25 @@ it('emails a reset link without revealing whether the email exists and resets wi
         ->and($user->email_verified_at)->not->toBeNull()
         ->and(Password::broker()->tokenExists($user, $token))->toBeFalse();
     login($user, 'password1A!x')->assertOk();
+});
+
+it('cancels a reset code after too many wrong tries', function () {
+    Notification::fake();
+    $this->withoutMiddleware(ThrottleRequests::class);
+    $user = User::factory()->create();
+    $this->postJson('/api/v1/auth/forgot-password', ['email' => $user->email()])->assertAccepted();
+    $code = null;
+    Notification::assertSentTo($user, PasswordResetCodeNotification::class, function (PasswordResetCodeNotification $n) use (&$code, $user) {
+        preg_match('/\b(\d{6})\b/', (string) $n->toMail($user)->subject, $m);
+
+        return ($code = $m[1] ?? null) !== null;
+    });
+
+    $wrong = $code === '000000' ? '111112' : '000000';
+    foreach (range(1, 5) as $_) {
+        $this->postJson('/api/v1/auth/verify-reset-code', ['email' => $user->email(), 'code' => $wrong])->assertStatus(422);
+    }
+    $this->postJson('/api/v1/auth/verify-reset-code', ['email' => $user->email(), 'code' => $code])->assertStatus(422);
 });
 
 it('enrols, confirms and disables TOTP 2FA', function () {

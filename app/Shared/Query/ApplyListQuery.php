@@ -90,8 +90,18 @@ final class ApplyListQuery
         }
 
         $query->where(function (Builder $nested) use ($q): void {
+            $pattern = '%'.self::escapeLike($q->search).'%';
             foreach ($q->config->searchColumns() as $column) {
-                $this->whereLike($nested, $column, '%'.self::escapeLike($q->search).'%', 'or');
+                $this->whereLike($nested, $column, $pattern, 'or');
+            }
+            foreach ($q->config->searchRelations() as $relation => $columns) {
+                $nested->orWhereHas($relation, function (Builder $related) use ($columns, $pattern): void {
+                    $related->where(function (Builder $any) use ($columns, $pattern): void {
+                        foreach ($columns as $column) {
+                            $this->whereLike($any, $any->qualifyColumn($column), $pattern, 'or');
+                        }
+                    });
+                });
             }
         });
     }

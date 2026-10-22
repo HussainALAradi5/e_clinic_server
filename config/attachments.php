@@ -1,6 +1,14 @@
 <?php
 
+use App\Modules\Appointments\Appointments\Models\Appointment;
+use App\Modules\Appointments\Orders\Models\ClinicalOrder;
+use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Records\Models\PatientConsent;
+use App\Modules\HR\Leaves\Models\LeaveRequest;
 use App\Modules\Identity\Users\Models\Person;
+use App\Modules\Pharmacy\Inventory\Models\MedicationBatch;
+use App\Modules\Pharmacy\Medications\Models\Medication;
+use App\Modules\Transactions\Expenses\Models\Expense;
 
 return [
 
@@ -16,6 +24,14 @@ return [
     */
     'owners' => [
         'person' => ['model' => Person::class, 'resource' => 'people'],
+        'patient' => ['model' => Patient::class, 'resource' => 'patients'],
+        'appointment' => ['model' => Appointment::class, 'resource' => 'appointments'],
+        'clinical_order' => ['model' => ClinicalOrder::class, 'resource' => 'orders'],
+        'patient_consent' => ['model' => PatientConsent::class, 'resource' => 'consents'],
+        'expense' => ['model' => Expense::class, 'resource' => 'expenses'],
+        'medication' => ['model' => Medication::class, 'resource' => 'medications'],
+        'medication_batch' => ['model' => MedicationBatch::class, 'resource' => 'inventory'],
+        'leave_request' => ['model' => LeaveRequest::class, 'resource' => 'leaves'],
     ],
 
     /* Category => allowed MIME types (detected from content), max size and PHI flag. */

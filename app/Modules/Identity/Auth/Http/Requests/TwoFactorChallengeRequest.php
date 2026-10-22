@@ -18,6 +18,7 @@ final class TwoFactorChallengeRequest extends FormRequest
             'code' => ['required_without:recovery_code', 'nullable', 'digits:6'],
             'recovery_code' => ['required_without:code', 'nullable', 'string', 'max:32'],
             'device_name' => ['required', 'string', 'max:100'],
+            'remember_device' => ['sometimes', 'boolean'],
         ];
     }
 

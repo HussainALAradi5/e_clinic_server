@@ -6,6 +6,8 @@ namespace App\Modules\Identity\Attachments\Models;
 
 use App\Enums\Identity\AttachmentCategory;
 use App\Enums\Identity\FileScanStatus;
+use App\Shared\Access\OwnershipScope;
+use App\Shared\Access\PermissionExpression;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Models\BaseModel;
 use App\Shared\Query\ListQueryConfig;
@@ -14,6 +16,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 
 /**
  * A file attached to any record (polymorphic). Stored privately, virus-scanned, downloadable via signed links only.
@@ -75,9 +78,16 @@ class Attachment extends BaseModel implements OwnedByUser
             ->defaultSort('-created_at');
     }
 
+    /** Uploaded by the user, or a file of a record the user may read (follows the owner record). */
     public function isOwnedBy(Authenticatable $user): bool
     {
-        return $this->created_by === $user->getAuthIdentifier();
+        if ($this->created_by === $user->getAuthIdentifier()) {
+            return true;
+        }
+        $owner = self::owners()[$this->attachable_type] ?? null;
+        $record = $owner !== null ? $owner['model']::query()->find($this->attachable_id) : null;
+
+        return $record !== null && PermissionExpression::parse("{$owner['resource']}.read_all|{$owner['resource']}.read_own")->evaluate($user, $record);
     }
 
     /**
@@ -88,7 +98,22 @@ class Attachment extends BaseModel implements OwnedByUser
      */
     public function scopeOwnedBy(Builder $query, Authenticatable $user): Builder
     {
-        return $query->where('created_by', $user->getAuthIdentifier());
+        return $query->where(function (Builder $q) use ($user): void {
+            $q->where('created_by', $user->getAuthIdentifier());
+            foreach (self::owners() as $type => ['model' => $model, 'resource' => $resource]) {
+                if (PermissionExpression::parse("{$resource}.read_all|{$resource}.read_own")->evaluate($user)) {
+                    $readable = OwnershipScope::apply($model::query(), $resource, $user)->select((new $model)->getQualifiedKeyName());
+                    $q->orWhere(fn (Builder $o) => $o->where('attachable_type', $type)->whereIn('attachable_id', $readable));
+                }
+            }
+        });
+    }
+
+    /** @return array<string, array{model: class-string<Model>, resource: string}> */
+    private static function owners(): array
+    {
+        /** @var array<string, array{model: class-string<Model>, resource: string}> */
+        return Config::array('attachments.owners');
     }
 
     public function isDownloadable(): bool

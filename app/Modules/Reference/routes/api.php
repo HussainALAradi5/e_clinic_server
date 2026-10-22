@@ -48,4 +48,6 @@ Route::middleware('auth:sanctum')->prefix('reference')->name('reference.')->grou
         Route::patch('{company}/restore', 'restore')->whereUuid('company')->middleware(['access:companies.delete', 'throttle:sensitive'])->name('restore');
     });
     Route::bulkActions('companies', 'companies')->middleware('access:companies.write|companies.delete');
+    Route::dataTransfer('companies', 'companies');
+    Route::dataTransfer('countries', 'countries');
 });

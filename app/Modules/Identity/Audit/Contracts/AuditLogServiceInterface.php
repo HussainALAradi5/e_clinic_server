@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Audit\Contracts;
 
 use App\Modules\Identity\Audit\Models\AuditLog;
-use App\Modules\Identity\Tasks\Models\BackgroundTask;
 use App\Shared\Contracts\AuditRecorder;
 use App\Shared\Query\ListQuery;
 use BackedEnum;
@@ -37,11 +36,4 @@ interface AuditLogServiceInterface extends AuditRecorder
      * @return Collection<int, AuditLog>
      */
     public function forModel(string $type, string $id): Collection;
-
-    /**
-     * Queues a CSV export of the filtered trail (background task `audit_export`).
-     *
-     * @param  array<string, mixed>  $params  the list query parameters (validated here)
-     */
-    public function export(array $params): BackgroundTask;
 }

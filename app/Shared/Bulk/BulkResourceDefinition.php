@@ -6,11 +6,15 @@ namespace App\Shared\Bulk;
 
 use App\Shared\Enums\ExportFormat;
 use App\Shared\Query\ListQueryConfig;
+use App\Shared\Transfer\Contracts\ImportDefinition;
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * A listable resource: its model, list whitelist, read permission, bulk actions and export formats.
+ * A listable resource: its model, list whitelist, read permission, bulk actions, and whether it can be
+ * exported (Excel / PDF / CSV) or imported (Excel) — each guarded by `<resource>.export` / `<resource>.import`.
  */
 final class BulkResourceDefinition
 {
@@ -19,6 +23,23 @@ final class BulkResourceDefinition
 
     /** @var list<ExportFormat> */
     private array $exportFormats = [];
+
+    /** @var class-string<JsonResource>|null */
+    private ?string $exportResource = null;
+
+    /** @var (Closure(Builder<Model>): Builder<Model>)|null */
+    private ?Closure $exportQuery = null;
+
+    /** @var array<string, string> */
+    private array $exportOnlyColumns = [];
+
+    /** @var array<string, Closure(Model): string> */
+    private array $exportValues = [];
+
+    private ?string $permissionResource = null;
+
+    /** @var class-string<ImportDefinition>|null */
+    private ?string $importDefinition = null;
 
     private ?string $readExpression = null;
 
@@ -58,11 +79,96 @@ final class BulkResourceDefinition
         return $this;
     }
 
-    public function exports(ExportFormat|string ...$formats): self
-    {
-        $this->exportFormats = array_map(fn (ExportFormat|string $f): ExportFormat => $f instanceof ExportFormat ? $f : ExportFormat::from($f), array_values($formats));
+    /**
+     * Offer export. Rows are rendered with the list's own API resource, so the file shows what the table shows.
+     *
+     * @param  class-string<JsonResource>  $resource
+     * @param  (Closure(Builder<Model>): Builder<Model>)|null  $query  eager loads / counts / extra conditions of the list
+     * @param  list<ExportFormat>  $formats
+     * @param  array<string, string>  $extraColumns  field => label, always added to exports (never shown in the table)
+     * @param  array<string, Closure(Model): string>  $values  text of computed columns (e.g. audit "Record")
+     */
+    public function exportable(
+        string $resource,
+        ?Closure $query = null,
+        array $formats = [ExportFormat::Xlsx, ExportFormat::Pdf, ExportFormat::Csv],
+        array $extraColumns = [],
+        array $values = [],
+    ): self {
+        $this->exportValues = $values;
+        $this->exportResource = $resource;
+        $this->exportQuery = $query;
+        $this->exportFormats = $formats;
+        $this->exportOnlyColumns = $extraColumns;
 
         return $this;
+    }
+
+    /**
+     * Offer import from Excel.
+     *
+     * @param  class-string<ImportDefinition>  $definition
+     */
+    public function importable(string $definition): self
+    {
+        $this->importDefinition = $definition;
+
+        return $this;
+    }
+
+    /** Permission prefix when it differs from the resource name (countries → `reference.export`). */
+    public function permissionsOf(string $resource): self
+    {
+        $this->permissionResource = $resource;
+
+        return $this;
+    }
+
+    /** @return array<string, Closure(Model): string> */
+    public function exportValues(): array
+    {
+        return $this->exportValues;
+    }
+
+    /** @return array<string, string> */
+    public function exportOnlyColumns(): array
+    {
+        return $this->exportOnlyColumns;
+    }
+
+    /** @return class-string<JsonResource>|null */
+    public function exportResource(): ?string
+    {
+        return $this->exportResource;
+    }
+
+    /**
+     * @param  Builder<Model>  $query
+     * @return Builder<Model>
+     */
+    public function applyExportQuery(Builder $query): Builder
+    {
+        return $this->exportQuery !== null ? ($this->exportQuery)($query) : $query;
+    }
+
+    public function importDefinition(): ?ImportDefinition
+    {
+        return $this->importDefinition !== null ? app($this->importDefinition) : null;
+    }
+
+    public function permissionResource(): string
+    {
+        return $this->permissionResource ?? $this->resource;
+    }
+
+    public function exportPermission(): string
+    {
+        return $this->permissionResource().'.export';
+    }
+
+    public function importPermission(): string
+    {
+        return $this->permissionResource().'.import';
     }
 
     public function find(string $name): ?BulkAction

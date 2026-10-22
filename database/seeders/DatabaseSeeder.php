@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             RolesAndPermissionsSeeder::class,
             SuperAdminSeeder::class,
+            ChartOfAccountsSeeder::class,
+            FiscalYearSeeder::class,
+            LeaveTypeSeeder::class,
+            Icd10Seeder::class,
         ]);
 
         // Demo accounts and fake data for testing (see e_clinic_documentation/DEMO_USERS.md); never in production.

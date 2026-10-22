@@ -16,8 +16,8 @@ interface AuthServiceInterface
     /** Authenticates email + password and issues a Sanctum token, or throws a 2FA challenge. */
     public function login(LoginData $data): AuthTokenData;
 
-    /** Completes a login that required 2FA (TOTP code or one-time recovery code). */
-    public function verifyTwoFactorChallenge(string $challengeToken, string $code, string $deviceName): AuthTokenData;
+    /** Completes a login that required 2FA (TOTP code or one-time recovery code); optionally trusts this device. */
+    public function verifyTwoFactorChallenge(string $challengeToken, string $code, string $deviceName, bool $rememberDevice = false): AuthTokenData;
 
     /** Revokes the token used for the current request. */
     public function logout(User $user): void;
@@ -33,6 +33,9 @@ interface AuthServiceInterface
 
     /** Starts the password reset flow; silent for unknown emails (no user enumeration). */
     public function forgotPassword(string $email): void;
+
+    /** Emailed 6-digit code → one-time reset token for resetPassword(). */
+    public function verifyPasswordResetCode(string $email, string $code): string;
 
     /** Emails a "set your password" link to a new account. */
     public function sendInvitation(User $user): void;

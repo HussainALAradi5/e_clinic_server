@@ -36,10 +36,34 @@ return [
     /* Minutes before the 2nd and 3rd attempt. */
     'backoff_minutes' => [1, 5, 15],
 
-    /* Template => default channels. Texts live in lang/{en,ar}/notifications.php. */
+    /* Template => default channels. Texts live in lang/{en,ar}/notifications.php. Patient messages also go to the
+       in-app inbox, which the portal shows. */
     'templates' => [
         'task.completed' => ['channels' => ['in_app']],
         'task.failed' => ['channels' => ['in_app']],
+        'appointment.booked' => ['channels' => ['in_app', 'sms', 'email']],
+        'appointment.rescheduled' => ['channels' => ['in_app', 'sms', 'email']],
+        'appointment.reminder' => ['channels' => ['in_app', 'sms', 'whatsapp']],
+        'appointment.cancelled' => ['channels' => ['in_app', 'sms', 'email']],
+        'treatment.urgent' => ['channels' => ['in_app']],
+        'treatment.attendance_alert' => ['channels' => ['in_app']],
+        'treatment.completed' => ['channels' => ['in_app', 'sms', 'email']],
+        'order.result_ready' => ['channels' => ['in_app']],
+        'order.abnormal' => ['channels' => ['in_app', 'push']],
+        'order.patient_result_ready' => ['channels' => ['in_app', 'sms', 'email']],
+        'refund.requested' => ['channels' => ['in_app']],
+        'refund.approved' => ['channels' => ['in_app']],
+        'refund.rejected' => ['channels' => ['in_app']],
+        'expense.submitted' => ['channels' => ['in_app']],
+        'expense.approved' => ['channels' => ['in_app']],
+        'expense.rejected' => ['channels' => ['in_app']],
+        'prescription.created' => ['channels' => ['in_app', 'sms']],
+        'pharmacy.stock_alert' => ['channels' => ['in_app']],
+        'leave.requested' => ['channels' => ['in_app']],
+        'leave.approved' => ['channels' => ['in_app', 'email']],
+        'leave.rejected' => ['channels' => ['in_app', 'email']],
+        'payroll.calculated' => ['channels' => ['in_app']],
+        'payroll.payslip_ready' => ['channels' => ['in_app', 'email']],
     ],
 
     /* Security messages (OTP, password reset) ignore the person's opt-outs. */

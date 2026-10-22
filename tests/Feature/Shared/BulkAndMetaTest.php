@@ -3,6 +3,7 @@
 use App\Shared\Bulk\BulkActionRegistry;
 use App\Shared\Enums\ExportFormat;
 use App\Shared\Exceptions\ConflictException;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Route;
 use Tests\Fixtures\Widget;
 
@@ -20,7 +21,7 @@ beforeEach(function () {
         ->action('cancel', 'widgets.write', fn (Widget $w, ?string $reason) => $w->priority > 4
             ? throw new WidgetInUseException('Widget is in use.')
             : $w->cancel($reason), needsReason: true)
-        ->exports(ExportFormat::Csv, ExportFormat::Xlsx);
+        ->exportable(JsonResource::class, formats: [ExportFormat::Csv, ExportFormat::Xlsx]);
 
     Route::middleware(['api', 'auth:sanctum'])->prefix('api/v1')->group(fn () => Route::bulkActions('widgets', 'widgets'));
 });
@@ -92,7 +93,7 @@ it('only lets owners act on their own records', function () {
 });
 
 it('publishes the resource schema filtered by permissions', function () {
-    actingWith('widgets.read_all', 'widgets.write');
+    actingWith('widgets.read_all', 'widgets.write', 'widgets.export');
 
     $this->getJson('/api/v1/meta/resources/widgets')
         ->assertOk()

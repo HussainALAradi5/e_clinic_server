@@ -7,6 +7,7 @@ namespace App\Modules\Identity\Users\Services;
 use App\Enums\Identity\UserStatus;
 use App\Modules\Identity\Auth\Contracts\AuthServiceInterface;
 use App\Modules\Identity\Auth\Models\PasswordHistory;
+use App\Modules\Identity\Auth\Models\TrustedDevice;
 use App\Modules\Identity\Roles\Services\PrivilegeGuard;
 use App\Modules\Identity\Users\Contracts\UserServiceInterface;
 use App\Modules\Identity\Users\Data\CreateUserData;
@@ -101,7 +102,15 @@ final class UserService implements UserServiceInterface
 
         $this->assertEmailAvailable($data->email);
 
-        return DB::transaction(fn (): Person => Person::query()->create($data->attributes()));
+        return DB::transaction(function () use ($data): Person {
+            $person = Person::query()->create($data->attributes());
+            if ($data->address !== null) {
+                $this->saveAddress($person, $data);
+                $person->save();
+            }
+
+            return $person;
+        });
     }
 
     public function updatePerson(Person $person, PersonData $data, int $version): Person
@@ -153,7 +162,8 @@ final class UserService implements UserServiceInterface
 
     public function create(Person $person, CreateUserData $data): User
     {
-        if (blank($person->email)) {
+        // An active account signs in with its email; staff who never log in get an inactive account without one.
+        if (blank($person->email) && $data->status === UserStatus::Active) {
             throw ValidationException::withMessages(['email' => __('validation.required', ['attribute' => 'email'])]);
         }
         if (User::query()->whereKey($person->id)->exists()) {
@@ -179,7 +189,7 @@ final class UserService implements UserServiceInterface
             return $user->setRelation('person', $person);
         });
 
-        UserCreated::dispatch($user, $data->password === null);
+        UserCreated::dispatch($user, $data->password === null && $data->status === UserStatus::Active);
 
         return $user;
     }
@@ -207,6 +217,7 @@ final class UserService implements UserServiceInterface
 
             if (in_array($status, [UserStatus::Inactive, UserStatus::Locked], true)) {
                 $user->tokens()->delete();
+                TrustedDevice::forget($user);
             }
         });
 

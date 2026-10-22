@@ -5,13 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Identity\Audit\Services;
 
 use App\Enums\Identity\AuditAction;
-use App\Enums\Identity\TaskType;
 use App\Modules\Identity\Audit\Contracts\AuditLogServiceInterface;
 use App\Modules\Identity\Audit\Jobs\WriteAuditLog;
 use App\Modules\Identity\Audit\Models\AuditLog;
-use App\Modules\Identity\Tasks\Contracts\BackgroundTaskServiceInterface;
-use App\Modules\Identity\Tasks\Models\BackgroundTask;
-use App\Modules\Identity\Users\Models\User;
 use App\Shared\Access\OwnershipScope;
 use App\Shared\Contracts\Auditable;
 use App\Shared\Http\Middleware\AssignRequestId;
@@ -19,7 +15,6 @@ use App\Shared\Query\ApplyListQuery;
 use App\Shared\Query\ListQuery;
 use App\Shared\Support\ClinicClock;
 use BackedEnum;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
@@ -93,18 +88,6 @@ final class AuditLogService implements AuditLogServiceInterface
             ->orderByDesc('id')
             ->get()
             ->toBase();
-    }
-
-    public function export(array $params): BackgroundTask
-    {
-        ListQuery::fromArray($params, AuditLog::listQueryConfig());
-        $user = Auth::user();
-        if (! $user instanceof User) {
-            throw new AuthenticationException;
-        }
-
-        // Resolved lazily: the task service itself records audit entries.
-        return app(BackgroundTaskServiceInterface::class)->dispatch(TaskType::AuditExport, ['query' => $params], $user);
     }
 
     /**

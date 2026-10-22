@@ -13,6 +13,7 @@ use App\Modules\Identity\Auth\Http\Requests\ForgotPasswordRequest;
 use App\Modules\Identity\Auth\Http\Requests\LoginRequest;
 use App\Modules\Identity\Auth\Http\Requests\ResetPasswordRequest;
 use App\Modules\Identity\Auth\Http\Requests\TwoFactorChallengeRequest;
+use App\Modules\Identity\Auth\Http\Requests\VerifyResetCodeRequest;
 use App\Modules\Identity\Auth\Http\Resources\SessionResource;
 use App\Modules\Identity\Roles\Contracts\RoleServiceInterface;
 use App\Modules\Identity\Users\Models\User;
@@ -41,6 +42,7 @@ final class AuthController
             $request->string('challenge_token')->toString(),
             $request->code(),
             $request->string('device_name')->toString(),
+            $request->boolean('remember_device'),
         ));
     }
 
@@ -74,7 +76,15 @@ final class AuthController
     {
         $this->auth->forgotPassword($request->string('email')->toString());
 
-        return $this->accepted(__('passwords.sent'));
+        return $this->accepted(__('passwords.code_sent'));
+    }
+
+    /** The emailed code → a one-time token for POST /auth/reset-password. */
+    public function verifyResetCode(VerifyResetCodeRequest $request): JsonResponse
+    {
+        $token = $this->auth->verifyPasswordResetCode($request->string('email')->toString(), $request->string('code')->toString());
+
+        return $this->ok(['token' => $token]);
     }
 
     public function resetPassword(ResetPasswordRequest $request): Response
@@ -103,7 +113,7 @@ final class AuthController
 
     private function session(AuthTokenData $data): JsonResponse
     {
-        return $this->ok(SessionResource::make($data->user, $data->access, $data->token, $data->expiresAt));
+        return $this->ok(SessionResource::make($data->user, $data->access, $data->token, $data->expiresAt, $data->trustedDevice));
     }
 
     private function user(Request $request): User

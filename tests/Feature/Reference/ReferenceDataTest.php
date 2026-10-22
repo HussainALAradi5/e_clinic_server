@@ -56,7 +56,7 @@ it('creates a company with a Bahrain address and prints it in English and Arabic
     $this->getJson("/api/v1/reference/addresses/{$addressId}/formatted?locale=ar")
         ->assertOk()->assertJsonPath('data.text', 'شقة 12، مبنى 2504، طريق 2832، مجمع 428، Seef، البحرين');
 
-    $this->getJson("/api/v1/reference/companies/{$id}")->assertOk()->assertJsonPath('data.usage', []);
+    $this->getJson("/api/v1/reference/companies/{$id}")->assertOk()->assertJsonPath('data.usage', ['insured_patients' => 0]);
 });
 
 it('rejects an incomplete Bahrain address and an unknown country', function () {

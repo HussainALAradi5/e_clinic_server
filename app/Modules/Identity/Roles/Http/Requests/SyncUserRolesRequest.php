@@ -16,7 +16,7 @@ final class SyncUserRolesRequest extends FormRequest
     {
         return [
             'roles' => ['required', 'array', 'min:1'],
-            'roles.*' => ['string', 'distinct', Rule::exists('roles', 'name')->where(fn ($query) => $query->where('is_deleted', false))],
+            'roles.*' => ['string', 'distinct', Rule::exists('roles', 'name')->where(fn ($query) => $query->where('is_deleted', 0))],
         ];
     }
 

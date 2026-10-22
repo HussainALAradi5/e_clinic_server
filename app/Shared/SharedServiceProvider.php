@@ -6,6 +6,7 @@ namespace App\Shared;
 
 use App\Shared\Bulk\BulkActionRegistry;
 use App\Shared\Http\Controllers\BulkActionController;
+use App\Shared\Http\Controllers\TransferController;
 use App\Shared\Support\ClinicClock;
 use App\Shared\Support\DocumentNumberGenerator;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -39,6 +40,17 @@ final class SharedServiceProvider extends ServiceProvider
             ->defaults('resource', $resource)
             ->middleware('throttle:sensitive')
             ->name($resource.'.bulk'));
+
+        /**
+         * `Route::dataTransfer('reference/companies', 'companies')` → POST …/export, GET …/import/template,
+         * POST …/import. Permission checks (`<resource>.export|import`, never patients) live in TransferGuard.
+         */
+        Route::macro('dataTransfer', function (string $uri, string $resource): void {
+            $uri = trim($uri, '/');
+            Route::post($uri.'/export', [TransferController::class, 'export'])->defaults('resource', $resource)->middleware('throttle:report')->name($resource.'.export');
+            Route::get($uri.'/import/template', [TransferController::class, 'template'])->defaults('resource', $resource)->middleware('throttle:report')->name($resource.'.import-template');
+            Route::post($uri.'/import', [TransferController::class, 'import'])->defaults('resource', $resource)->middleware('throttle:sensitive')->name($resource.'.import');
+        });
     }
 
     private function registerRateLimiters(): void
@@ -62,7 +74,10 @@ final class SharedServiceProvider extends ServiceProvider
         /** GenericEntity columns: uuid id, code, timestamps, is_archived, is_deleted, deleted_at, deleted_by. */
         Blueprint::macro('genericEntity', function (int $codeLength = 30): void {
             /** @var Blueprint $this */
-            $this->uuid('id')->primary();
+            // Explicit primary-key command (not the fluent ->primary()) so it is created before any foreign key of
+            // the same table — self-references (accounts.parent_id) need it on PostgreSQL.
+            $this->uuid('id');
+            $this->primary('id');
             $this->string('code', $codeLength)->unique();
             $this->timestampsTz();
             $this->boolean('is_archived')->default(false);

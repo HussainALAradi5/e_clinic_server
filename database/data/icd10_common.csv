@@ -1,0 +1,103 @@
+code,title,title_ar,chapter,is_billable
+A09,"Infectious gastroenteritis and colitis, unspecified","التهاب المعدة والأمعاء والقولون المعدي، غير محدد",A00-B99,1
+B34.9,"Viral infection, unspecified","عدوى فيروسية، غير محددة",A00-B99,1
+B35.3,Tinea pedis,"سعفة القدم",A00-B99,1
+B37.0,Candidal stomatitis,"التهاب الفم المبيضي (السلاق)",A00-B99,1
+D50.9,"Iron deficiency anaemia, unspecified","فقر الدم بعوز الحديد، غير محدد",D50-D89,1
+D57.1,Sickle-cell disease without crisis,"داء الخلايا المنجلية دون نوبة",D50-D89,1
+D56.9,"Thalassaemia, unspecified","الثلاسيميا، غير محددة",D50-D89,1
+E03.9,"Hypothyroidism, unspecified","قصور الغدة الدرقية، غير محدد",E00-E89,1
+E05.9,"Thyrotoxicosis, unspecified","فرط نشاط الغدة الدرقية، غير محدد",E00-E89,1
+E11.9,Type 2 diabetes mellitus without complications,"داء السكري من النوع الثاني دون مضاعفات",E00-E89,1
+E11.65,Type 2 diabetes mellitus with hyperglycaemia,"داء السكري من النوع الثاني مع ارتفاع سكر الدم",E00-E89,1
+E10.9,Type 1 diabetes mellitus without complications,"داء السكري من النوع الأول دون مضاعفات",E00-E89,1
+E55.9,"Vitamin D deficiency, unspecified","نقص فيتامين د، غير محدد",E00-E89,1
+E66.9,"Obesity, unspecified","السمنة، غير محددة",E00-E89,1
+E78.5,"Hyperlipidaemia, unspecified","فرط شحميات الدم، غير محدد",E00-E89,1
+E86.0,Dehydration,"الجفاف",E00-E89,1
+F32.9,"Depressive episode, unspecified","نوبة اكتئاب، غير محددة",F01-F99,1
+F41.1,Generalized anxiety disorder,"اضطراب القلق العام",F01-F99,1
+F41.9,"Anxiety disorder, unspecified","اضطراب القلق، غير محدد",F01-F99,1
+F51.0,Insomnia not due to a substance or known physiological condition,"الأرق غير الناجم عن مادة أو حالة فسيولوجية معروفة",F01-F99,1
+G43.9,"Migraine, unspecified","الصداع النصفي، غير محدد",G00-G99,1
+G44.2,Tension-type headache,"صداع التوتر",G00-G99,1
+G47.3,Sleep apnoea,"انقطاع النفس أثناء النوم",G00-G99,1
+G56.0,Carpal tunnel syndrome,"متلازمة النفق الرسغي",G00-G99,1
+H10.9,"Conjunctivitis, unspecified","التهاب الملتحمة، غير محدد",H00-H59,1
+H66.9,"Otitis media, unspecified","التهاب الأذن الوسطى، غير محدد",H60-H95,1
+H61.2,Impacted cerumen,"انحشار الصملاخ (شمع الأذن)",H60-H95,1
+I10,Essential (primary) hypertension,"ارتفاع ضغط الدم الأساسي",I00-I99,1
+I20.9,"Angina pectoris, unspecified","الذبحة الصدرية، غير محددة",I00-I99,1
+I25.10,Atherosclerotic heart disease of native coronary artery without angina,"مرض القلب التصلبي للشريان التاجي دون ذبحة",I00-I99,1
+I48.91,Unspecified atrial fibrillation,"الرجفان الأذيني، غير محدد",I00-I99,1
+I50.9,"Heart failure, unspecified","قصور القلب، غير محدد",I00-I99,1
+I83.90,Asymptomatic varicose veins of unspecified lower extremity,"دوالي الأطراف السفلية دون أعراض",I00-I99,1
+J00,Acute nasopharyngitis (common cold),"التهاب البلعوم الأنفي الحاد (نزلة البرد)",J00-J99,1
+J01.90,"Acute sinusitis, unspecified","التهاب الجيوب الأنفية الحاد، غير محدد",J00-J99,1
+J02.9,"Acute pharyngitis, unspecified","التهاب البلعوم الحاد، غير محدد",J00-J99,1
+J03.90,"Acute tonsillitis, unspecified","التهاب اللوزتين الحاد، غير محدد",J00-J99,1
+J06.9,"Acute upper respiratory infection, unspecified","عدوى الجهاز التنفسي العلوي الحادة، غير محددة",J00-J99,1
+J11.1,Influenza with other respiratory manifestations,"الإنفلونزا مع مظاهر تنفسية أخرى",J00-J99,1
+J18.9,"Pneumonia, unspecified organism","الالتهاب الرئوي، كائن غير محدد",J00-J99,1
+J20.9,"Acute bronchitis, unspecified","التهاب القصبات الحاد، غير محدد",J00-J99,1
+J30.9,"Allergic rhinitis, unspecified","التهاب الأنف التحسسي، غير محدد",J00-J99,1
+J45.909,"Unspecified asthma, uncomplicated","الربو، غير محدد، دون مضاعفات",J00-J99,1
+J44.9,"Chronic obstructive pulmonary disease, unspecified","مرض الانسداد الرئوي المزمن، غير محدد",J00-J99,1
+K02.9,"Dental caries, unspecified","تسوس الأسنان، غير محدد",K00-K95,1
+K21.9,Gastro-oesophageal reflux disease without oesophagitis,"الارتجاع المعدي المريئي دون التهاب المريء",K00-K95,1
+K29.70,"Gastritis, unspecified, without bleeding","التهاب المعدة، غير محدد، دون نزف",K00-K95,1
+K30,Functional dyspepsia,"عسر الهضم الوظيفي",K00-K95,1
+K35.80,Unspecified acute appendicitis,"التهاب الزائدة الدودية الحاد، غير محدد",K00-K95,1
+K58.9,Irritable bowel syndrome without diarrhoea,"متلازمة القولون المتهيج دون إسهال",K00-K95,1
+K59.00,"Constipation, unspecified","الإمساك، غير محدد",K00-K95,1
+K76.0,"Fatty (change of) liver, not elsewhere classified","الكبد الدهني",K00-K95,1
+K80.20,Calculus of gallbladder without cholecystitis,"حصاة المرارة دون التهاب المرارة",K00-K95,1
+L20.9,"Atopic dermatitis, unspecified","التهاب الجلد التأتبي (الإكزيما)، غير محدد",L00-L99,1
+L23.9,"Allergic contact dermatitis, unspecified cause","التهاب الجلد التماسي التحسسي، سبب غير محدد",L00-L99,1
+L50.9,"Urticaria, unspecified","الشرى، غير محدد",L00-L99,1
+L70.0,Acne vulgaris,"حب الشباب الشائع",L00-L99,1
+L03.90,"Cellulitis, unspecified","التهاب النسيج الخلوي، غير محدد",L00-L99,1
+L89.90,"Pressure ulcer of unspecified site, unspecified stage","قرحة الضغط، موضع ومرحلة غير محددين",L00-L99,1
+M17.11,"Unilateral primary osteoarthritis, right knee","الفصال العظمي الأولي في الركبة اليمنى",M00-M99,1
+M17.12,"Unilateral primary osteoarthritis, left knee","الفصال العظمي الأولي في الركبة اليسرى",M00-M99,1
+M25.561,Pain in right knee,"ألم في الركبة اليمنى",M00-M99,1
+M25.562,Pain in left knee,"ألم في الركبة اليسرى",M00-M99,1
+M25.511,Pain in right shoulder,"ألم في الكتف الأيمن",M00-M99,1
+M54.2,Cervicalgia,"ألم الرقبة",M00-M99,1
+M54.5,Low back pain,"ألم أسفل الظهر",M00-M99,1
+M54.16,"Radiculopathy, lumbar region","اعتلال جذور الأعصاب، المنطقة القطنية",M00-M99,1
+M62.830,Muscle spasm of back,"تشنج عضلات الظهر",M00-M99,1
+M75.100,Unspecified rotator cuff tear or rupture of unspecified shoulder,"تمزق الكفة المدورة",M00-M99,1
+M79.1,Myalgia,"ألم العضلات",M00-M99,1
+M81.0,Age-related osteoporosis without current pathological fracture,"هشاشة العظام المرتبطة بالعمر دون كسر حالي",M00-M99,1
+N18.9,"Chronic kidney disease, unspecified","مرض الكلى المزمن، غير محدد",N00-N99,1
+N20.0,Calculus of kidney,"حصوة الكلى",N00-N99,1
+N39.0,"Urinary tract infection, site not specified","عدوى المسالك البولية، موضع غير محدد",N00-N99,1
+N40.0,Benign prostatic hyperplasia without lower urinary tract symptoms,"تضخم البروستاتا الحميد",N00-N99,1
+N94.6,"Dysmenorrhoea, unspecified","عسر الطمث، غير محدد",N00-N99,1
+O80,Encounter for full-term uncomplicated delivery,"ولادة طبيعية في موعدها دون مضاعفات",O00-O9A,1
+R05.9,"Cough, unspecified","السعال، غير محدد",R00-R99,1
+R07.9,"Chest pain, unspecified","ألم في الصدر، غير محدد",R00-R99,1
+R10.9,Unspecified abdominal pain,"ألم في البطن، غير محدد",R00-R99,1
+R11.2,Nausea with vomiting,"الغثيان مع القيء",R00-R99,1
+R42,Dizziness and giddiness,"الدوار والدوخة",R00-R99,1
+R50.9,"Fever, unspecified","الحمى، غير محددة",R00-R99,1
+R51.9,"Headache, unspecified","الصداع، غير محدد",R00-R99,1
+R53.83,Other fatigue,"التعب",R00-R99,1
+S13.4XXA,"Sprain of ligaments of cervical spine, initial encounter","التواء أربطة العمود الفقري العنقي، زيارة أولى",S00-T88,1
+S43.401A,"Unspecified sprain of right shoulder joint, initial encounter","التواء مفصل الكتف الأيمن، زيارة أولى",S00-T88,1
+S83.511A,"Sprain of anterior cruciate ligament of right knee, initial encounter","التواء الرباط الصليبي الأمامي للركبة اليمنى، زيارة أولى",S00-T88,1
+S93.401A,"Sprain of unspecified ligament of right ankle, initial encounter","التواء رباط الكاحل الأيمن، زيارة أولى",S00-T88,1
+S52.501A,"Unspecified fracture of the lower end of right radius, initial encounter","كسر الطرف السفلي لعظم الكعبرة الأيمن، زيارة أولى",S00-T88,1
+S61.411A,"Laceration without foreign body of right hand, initial encounter","جرح تمزقي في اليد اليمنى دون جسم غريب، زيارة أولى",S00-T88,1
+T14.90XA,"Injury, unspecified, initial encounter","إصابة، غير محددة، زيارة أولى",S00-T88,1
+T78.40XA,"Allergy, unspecified, initial encounter","حساسية، غير محددة، زيارة أولى",S00-T88,1
+Z00.00,Encounter for general adult medical examination without abnormal findings,"فحص طبي عام للبالغين دون نتائج غير طبيعية",Z00-Z99,1
+Z00.129,Encounter for routine child health examination without abnormal findings,"فحص صحي روتيني للطفل دون نتائج غير طبيعية",Z00-Z99,1
+Z01.419,Encounter for gynaecological examination without abnormal findings,"فحص نسائي دون نتائج غير طبيعية",Z00-Z99,1
+Z23,Encounter for immunization,"زيارة للتطعيم",Z00-Z99,1
+Z34.90,"Encounter for supervision of normal pregnancy, unspecified trimester","متابعة حمل طبيعي",Z00-Z99,1
+Z48.00,Encounter for change or removal of nonsurgical wound dressing,"زيارة لتغيير أو إزالة ضماد جرح غير جراحي",Z00-Z99,1
+Z51.89,Encounter for other specified aftercare,"زيارة لرعاية لاحقة محددة أخرى",Z00-Z99,1
+Z76.0,Encounter for issue of repeat prescription,"زيارة لتجديد وصفة طبية",Z00-Z99,1
+Z09,Encounter for follow-up examination after completed treatment,"فحص متابعة بعد انتهاء العلاج",Z00-Z99,1

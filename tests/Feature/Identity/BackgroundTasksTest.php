@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\Identity\AuditAction;
 use App\Enums\Identity\TaskCancelReason;
 use App\Enums\Identity\TaskType;
+use App\Modules\Identity\Audit\Models\AuditLog;
 use App\Modules\Identity\Notifications\Models\Notification;
 use App\Modules\Identity\Tasks\Contracts\BackgroundTaskServiceInterface;
 use App\Modules\Identity\Tasks\Models\BackgroundTask;
@@ -11,14 +13,18 @@ use App\Shared\Exceptions\ConcurrencyConflictException;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
-beforeEach(fn () => Storage::fake('local'));
+beforeEach(function () {
+    Storage::fake('local');
+    // Every export runs as a background task here.
+    config(['clinic.transfer.export_sync_limit' => 0]);
+    AuditLog::query()->create(['action' => AuditAction::Login, 'module' => 'identity']);
+});
 
 function exportAuditLogs(): string
 {
-    return test()->postJson('/api/v1/audit-logs/export?date_range=last_7_days')
+    return test()->postJson('/api/v1/audit-logs/export', ['format' => 'csv', 'filter' => ['date_range' => 'last_7_days']])
         ->assertStatus(202)
-        ->assertJsonPath('data.type', 'audit_export')
-        ->json('meta.task_id');
+        ->json('data.task_id');
 }
 
 it('exports the audit trail as a background task and serves the CSV through a signed link', function () {
@@ -37,8 +43,8 @@ it('exports the audit trail as a background task and serves the CSV through a si
     expect($link)->toHaveKeys(['url', 'expires_at']);
 
     $file = $this->get($link['url'])->assertOk();
-    expect($file->headers->get('content-disposition'))->toContain('audit-log-')
-        ->and($file->streamedContent())->toContain('time,user,action,module');
+    expect($file->headers->get('content-disposition'))->toContain('audit-')
+        ->and($file->streamedContent())->toContain('Time,User,Action,Module,Record,"Old values","New values","IP address","Request id"');
 
     // The owner gets an in-app notification.
     expect(Notification::query()->where('user_id', $user->id)->where('template', 'task.completed')->exists())->toBeTrue();
@@ -57,7 +63,7 @@ it('rejects tampered or expired file links', function () {
 it('requires the export permission', function () {
     actingWith('audit.read_all');
 
-    $this->postJson('/api/v1/audit-logs/export?date_range=last_7_days')->assertForbidden();
+    $this->postJson('/api/v1/audit-logs/export', ['format' => 'csv'])->assertForbidden()->assertJsonPath('error_code', 'TRANSFER_NOT_ALLOWED');
 });
 
 it('shows users only their own tasks', function () {
@@ -69,7 +75,7 @@ it('shows users only their own tasks', function () {
     $this->getJson('/api/v1/tasks')->assertOk()->assertJsonCount(0, 'data');
 
     Sanctum::actingAs($owner);
-    $this->getJson('/api/v1/tasks?filter[type][eq]=audit_export')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/api/v1/tasks?filter[type][eq]=list_export')->assertOk()->assertJsonCount(1, 'data');
 });
 
 it('cancels pending tasks and refuses finished ones', function () {

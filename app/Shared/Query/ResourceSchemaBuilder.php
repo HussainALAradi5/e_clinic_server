@@ -11,6 +11,7 @@ use App\Shared\Contracts\GenericEntity;
 use App\Shared\Enums\ExportFormat;
 use App\Shared\Enums\FilterOperator;
 use App\Shared\Exceptions\UnknownResourceException;
+use App\Shared\Transfer\TransferGuard;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 /**
@@ -19,7 +20,10 @@ use Illuminate\Contracts\Auth\Authenticatable;
  */
 final class ResourceSchemaBuilder
 {
-    public function __construct(private readonly BulkActionRegistry $registry) {}
+    public function __construct(
+        private readonly BulkActionRegistry $registry,
+        private readonly TransferGuard $transfer,
+    ) {}
 
     public function build(string $resource, Authenticatable $user): ResourceSchema
     {
@@ -51,9 +55,12 @@ final class ResourceSchemaBuilder
                 fn (BulkAction $a): array => ['name' => $a->name, 'needs_reason' => $a->needsReason, 'inverse' => $a->inverse],
                 array_filter($definition->actions(), fn (BulkAction $a): bool => PermissionExpression::parse($a->permission)->evaluate($user)),
             )),
-            exportFormats: array_map(fn (ExportFormat $format): string => $format->value, $definition->exportFormats()),
+            exportFormats: $this->transfer->canExport($definition, $user)
+                ? array_map(fn (ExportFormat $format): string => $format->value, $definition->exportFormats())
+                : [],
             defaultSort: $config->defaultSortValue(),
             archivable: is_subclass_of($definition->model, GenericEntity::class),
+            importable: $this->transfer->canImport($definition, $user),
         );
     }
 }

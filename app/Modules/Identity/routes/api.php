@@ -23,6 +23,7 @@ Route::prefix('auth')->name('auth.')->middleware('throttle:auth')->controller(Au
     Route::post('login', 'login')->name('login');
     Route::post('two-factor/challenge', 'twoFactorChallenge')->name('two-factor.challenge');
     Route::post('forgot-password', 'forgotPassword')->name('forgot-password');
+    Route::post('verify-reset-code', 'verifyResetCode')->name('verify-reset-code');
     Route::post('reset-password', 'resetPassword')->name('reset-password');
 });
 
@@ -86,14 +87,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
         });
     });
     Route::bulkActions('roles', 'roles')->middleware(['ensure.2fa', 'access:roles.write|roles.delete']);
+    Route::middleware('ensure.2fa')->group(fn () => Route::dataTransfer('roles', 'roles'));
 
     // Audit logs
     Route::prefix('audit-logs')->name('audit-logs.')->middleware(['access:audit.read_all|audit.read_own', 'throttle:read'])->controller(AuditLogController::class)->group(function (): void {
         Route::get('/', 'index')->name('index');
         Route::get('{type}/{id}', 'forModel')->where('type', '[a-z_]+')->whereUuid('id')->name('for-model');
     });
-
-    Route::post('audit-logs/export', [AuditLogController::class, 'export'])->middleware(['access:(audit.read_all|audit.read_own)&audit.export', 'throttle:report'])->name('audit-logs.export');
 
     // Background tasks (own tasks; administrators see all)
     Route::prefix('tasks')->name('tasks.')->controller(BackgroundTaskController::class)->group(function (): void {
@@ -129,6 +129,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         });
     });
     Route::bulkActions('attachments', 'attachments')->middleware('access:attachments.write|attachments.delete');
+    Route::dataTransfer('attachments', 'attachments');
 
     // QR codes & barcodes
     Route::prefix('codes')->name('codes.')->controller(CodeController::class)->group(function (): void {
@@ -152,6 +153,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::patch('{notification}/cancel', 'cancel')->whereUuid('notification')->middleware(['access:notifications.write', 'throttle:write'])->name('cancel');
     });
     Route::bulkActions('notifications', 'notifications')->middleware('access:notifications.write|notifications.delete');
+    Route::dataTransfer('notifications', 'notifications');
+
+    // Export (Excel / PDF / CSV) and Excel import of the identity lists — `<resource>.export|import`, never patients.
+    Route::middleware('ensure.2fa')->group(fn () => Route::dataTransfer('users', 'users'));
+    Route::dataTransfer('people', 'people');
+    Route::dataTransfer('audit-logs', 'audit');
 
     // Saved list views (personal; shared views need <resource>.read_all)
     Route::prefix('views')->name('views.')->controller(ListViewController::class)->group(function (): void {

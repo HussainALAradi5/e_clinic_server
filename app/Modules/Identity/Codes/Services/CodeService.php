@@ -11,7 +11,9 @@ use App\Modules\Identity\Codes\Data\CodeImage;
 use App\Modules\Identity\Codes\Data\ScanResultData;
 use App\Modules\Identity\Codes\Exceptions\InvalidScanCodeException;
 use App\Shared\Access\PermissionExpression;
+use App\Shared\Support\MoneyHelper;
 use BackedEnum;
+use Brick\Money\Money;
 use Com\Tecnick\Barcode\Barcode;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -129,6 +131,7 @@ final class CodeService implements CodeServiceInterface
             $value = $record->getAttribute($field);
             $summary[$field] = match (true) {
                 $value instanceof BackedEnum => $value->value,
+                $value instanceof Money => MoneyHelper::format($value),
                 $value instanceof DateTimeInterface => $value->format($record->hasCast($field, ['date', 'immutable_date']) ? 'Y-m-d' : DateTimeInterface::ATOM),
                 default => $value,
             };

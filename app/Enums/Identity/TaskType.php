@@ -23,4 +23,5 @@ enum TaskType: string implements HasLabel
     case BulkNotification = 'bulk_notification';
     case BulkAction = 'bulk_action';
     case AttachmentsZip = 'attachments_zip';
+    case ListExport = 'list_export';
 }

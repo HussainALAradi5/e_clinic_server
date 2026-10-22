@@ -135,10 +135,17 @@ final class DemoSeeder extends Seeder
         }
         Auth::forgetUser();
 
-        // A few unread in-app notifications so the bell has something to show.
-        foreach ($users as $user) {
+        // A few unread in-app notifications so the staff bell has something to show (patients get real ones).
+        foreach (array_filter($users, fn (User $u): bool => $u->user_type !== UserType::Patient) as $user) {
             $notifications->send('task.completed', $user->person, null, ['task' => 'Welcome to the demo'], null, [NotificationChannel::InApp]);
         }
+
+        // Front desk (Phase 2): departments, employees, price list, rooms, doctors, patients and appointments.
+        $this->call(FrontDeskDemoSeeder::class);
+        $this->call(ClinicalDemoSeeder::class);
+        $this->call(BillingDemoSeeder::class);
+        $this->call(PharmacyDemoSeeder::class);
+        $this->call(HrDemoSeeder::class);
 
         $this->command->info('Demo data ready — accounts in e_clinic_documentation/DEMO_USERS.md (password '.self::DEMO_PASSWORD.').');
     }

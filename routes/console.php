@@ -1,10 +1,18 @@
 <?php
 
+use App\Enums\HR\EmployeeStatus;
+use App\Modules\Appointments\Appointments\Contracts\AppointmentServiceInterface;
+use App\Modules\HR\Attendance\Contracts\AttendanceServiceInterface;
+use App\Modules\HR\Employees\Models\Employee;
+use App\Modules\HR\Leaves\Contracts\LeaveServiceInterface;
 use App\Modules\Identity\Attachments\Models\UploadSession;
 use App\Modules\Identity\Notifications\Contracts\NotificationServiceInterface;
 use App\Modules\Identity\Notifications\Models\DeviceToken;
 use App\Modules\Identity\Notifications\Models\Notification;
 use App\Modules\Identity\Tasks\Models\BackgroundTask;
+use App\Modules\Pharmacy\Inventory\Contracts\InventoryServiceInterface;
+use App\Modules\Pharmacy\Inventory\Services\StockAlertNotifier;
+use App\Shared\Support\ClinicClock;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -23,3 +31,23 @@ Schedule::command('tasks:purge-results')->dailyAt('02:10');
 // Retention: finished tasks (90 d), notifications (in-app 6 m / 2 y), stale device tokens (60 d), upload sessions.
 Schedule::command('model:prune', ['--model' => [BackgroundTask::class, Notification::class, DeviceToken::class, UploadSession::class]])
     ->dailyAt('02:30');
+
+// Appointments: confirmed bookings not checked in 15 minutes after the start become no-shows.
+Schedule::call(fn () => app(AppointmentServiceInterface::class)->markDueNoShows())
+    ->name('appointments:mark-no-shows')->everyFiveMinutes()->withoutOverlapping();
+
+// Pharmacy: expired lots are written off just after midnight; stock alerts reach the pharmacists in the morning.
+Schedule::call(fn () => app(InventoryServiceInterface::class)->writeOffExpired(app(ClinicClock::class)->today()))
+    ->name('pharmacy:write-off-expired')->dailyAt('00:20')->timezone(app(ClinicClock::class)->timezone())->withoutOverlapping();
+Schedule::call(fn () => app(StockAlertNotifier::class)())
+    ->name('pharmacy:stock-alerts')->dailyAt('07:00')->timezone(app(ClinicClock::class)->timezone())->withoutOverlapping();
+
+// HR: the day's attendance is closed before midnight (weekends, holidays, leave, absences, missing check-outs);
+// leave balances of the new year open on 1 January (carry-forward from the old year).
+Schedule::call(fn () => app(AttendanceServiceInterface::class)->closeDay(app(ClinicClock::class)->today()))
+    ->name('hr:close-attendance-day')->dailyAt('23:55')->timezone(app(ClinicClock::class)->timezone())->withoutOverlapping();
+Schedule::call(function (): void {
+    $leaves = app(LeaveServiceInterface::class);
+    $year = app(ClinicClock::class)->today()->year;
+    Employee::query()->where('status', EmployeeStatus::Active->value)->each(fn (Employee $e) => $leaves->initializeBalances($e, $year));
+})->name('hr:roll-leave-balances')->yearlyOn(1, 1, '00:30')->timezone(app(ClinicClock::class)->timezone())->withoutOverlapping();
