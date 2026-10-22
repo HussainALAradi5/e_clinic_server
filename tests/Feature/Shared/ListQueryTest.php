@@ -72,6 +72,8 @@ it('rejects anything outside the whitelist with field errors', function (array $
     'per page above max' => [['per_page' => '500'], 'per_page'],
     'bad date' => [['date_from' => '13/10/2026'], 'date_from'],
     'range too large' => [['date_from' => '2024-01-01', 'date_to' => '2026-01-01'], 'date_to'],
+    'bad day in a range' => [['date_range' => '2026-10-01..22/10/2026'], 'date_to'],
+    'range ends first' => [['date_range' => '2026-10-22..2026-10-01'], 'date_to'],
     'unknown date field' => [['date_field' => 'name', 'date_range' => 'today'], 'date_field'],
     'between needs two' => [['filter' => ['priority' => ['between' => '1']]], 'filter.priority'],
     'too deep' => [['filter' => ['or' => [['or' => [['or' => [['priority' => '1']]]]]]]], 'filter'],
@@ -102,6 +104,8 @@ it('filters dates and timestamps by clinic-local days', function () {
     expect(widgetNames(['date_range' => 'today']))->toBe(['Today'])
         ->and(widgetNames(['date_field' => 'scheduled_date', 'date_from' => '2026-10-12', 'date_to' => '2026-10-12']))->toBe(['Yesterday'])
         ->and(widgetNames(['date_field' => 'completed_at', 'date_from' => '2026-10-13', 'date_to' => '2026-10-13']))->toBe(['Late'])
+        ->and(widgetNames(['date_field' => 'scheduled_date', 'date_range' => '2026-10-12..2026-10-12']))->toBe(['Yesterday'])
+        ->and(widgetNames(['date_field' => 'scheduled_date', 'date_range' => '2026-10-13..', 'sort' => 'name']))->toBe(['Today'])
         ->and(widgetNames(['filter' => ['completed_at' => ['null' => 'false']]]))->toBe(['Late']);
 });
 

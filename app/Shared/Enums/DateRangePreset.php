@@ -9,7 +9,8 @@ use App\Shared\Traits\EnumHelpers;
 use Carbon\CarbonImmutable;
 
 /**
- * Quick date ranges accepted by every list endpoint (date_range=); `custom` uses date_from / date_to.
+ * Rolling date ranges accepted by every list endpoint (`date_range=this_month`). Fixed days use the same parameter
+ * (`date_range=2026-10-01..2026-10-22`, either side open) or `date_from` / `date_to`; `custom` is kept for saved views.
  */
 enum DateRangePreset: string implements HasLabel
 {

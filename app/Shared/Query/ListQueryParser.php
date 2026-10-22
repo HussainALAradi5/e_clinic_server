@@ -121,6 +121,11 @@ final class ListQueryParser
         $from = $params['date_from'] ?? $params['from'] ?? null;
         $to = $params['date_to'] ?? $params['to'] ?? null;
         $presetValue = $params['date_range'] ?? null;
+        // One parameter for fixed days too: `date_range=2026-10-01..2026-10-22` (either side may be left open).
+        if (is_string($presetValue) && str_contains($presetValue, '..')) {
+            [$from, $to] = array_map(fn (string $d): ?string => $d === '' ? null : $d, explode('..', $presetValue, 2));
+            $presetValue = null;
+        }
 
         if ($from === null && $to === null && $presetValue === null) {
             return null;
