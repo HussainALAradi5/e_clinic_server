@@ -47,8 +47,8 @@ final class ResourceSchemaBuilder
                 'operators' => array_map(fn (FilterOperator $op): string => $op->value, $f->operators),
                 'enum' => $f->enum !== null ? class_basename($f->enum) : null,
                 'resource' => $f->resource,
-                // Accepted from links (e.g. the orders of one visit) but not offered in the filter panel.
-                'hidden' => $f->hidden ?: null,
+                // Accepted (links, saved views) but not offered in the filter panel: internal ids, and text the search box covers.
+                'hidden' => $config->filterHidden($f) ?: null,
             ], fn (mixed $value): bool => $value !== null), $config->filters())),
             sortable: $config->sortableFields(),
             search: $config->searchColumns() !== [],

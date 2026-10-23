@@ -102,6 +102,8 @@ it('publishes the resource schema filtered by permissions', function () {
         // Labels: given, else the column's ("Name"), else the field in words; internal filters are hidden from the panel.
         ->assertJsonPath('data.filters.*.label', ['Status', 'Priority', 'Name', 'Completed at', 'Responsible'])
         ->assertJsonPath('data.filters.3.hidden', true)
+        // Name is in the search box already: no second text box for it in the panel.
+        ->assertJsonPath('data.filters.2.hidden', true)
         ->assertJsonMissingPath('data.filters.0.hidden')
         ->assertJsonPath('data.search', true)
         ->assertJsonPath('data.columns.0', ['field' => 'code', 'label' => 'Code'])

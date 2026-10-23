@@ -230,6 +230,19 @@ final class ListQueryConfig
     }
 
     /**
+     * Offered in the filter panel? Not internal ids (nobody types an id; links still use them), and not a text filter
+     * on a column the search box already covers (e.g. the code — a second "starts with" box would only repeat Search).
+     */
+    public function filterHidden(FilterField $filter): bool
+    {
+        $text = $filter->type === FilterFieldType::Text;
+
+        return $filter->hidden
+            || ($text && str_ends_with($filter->column, '_id'))
+            || ($text && in_array($filter->column, $this->searchColumns, true));
+    }
+
+    /**
      * What a filter is called on screen: its own label, else the label of its column (`provider_id` → the `provider`
      * column), else the field in words. Users never see field names.
      */
