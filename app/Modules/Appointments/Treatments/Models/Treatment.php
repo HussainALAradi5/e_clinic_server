@@ -79,7 +79,6 @@ class Treatment extends BaseModel implements OwnedByUser
             ->filterable('code', ['eq', 'starts'])
             ->searchIn('code', 'title')
             ->includes('patient.person', 'doctor.person')
-            ->column('code', 'Code')
             ->column('patient', 'Patient')
             ->column('title', 'Treatment')
             ->column('type', 'Type')

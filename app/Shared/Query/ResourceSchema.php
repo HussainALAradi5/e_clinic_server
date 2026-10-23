@@ -13,7 +13,7 @@ final readonly class ResourceSchema
      * @param  list<array{field: string, label: string, type: string, operators: list<string>, enum?: string, resource?: string}>  $filters
      * @param  list<string>  $sortable
      * @param  list<string>  $dateFields
-     * @param  list<array{field: string, label: string}>  $columns
+     * @param  list<array{field: string, label: string, enum?: string}>  $columns
      * @param  list<array{name: string, needs_reason: bool, inverse: ?string}>  $bulkActions
      * @param  list<string>  $exportFormats  formats the caller may export (empty = no export)
      */

@@ -13,6 +13,7 @@ use App\Shared\Enums\FilterOperator;
 use App\Shared\Exceptions\UnknownResourceException;
 use App\Shared\Transfer\TransferGuard;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Builds the client resource schema from the same ListQueryConfig that validates the list endpoint,
@@ -53,7 +54,7 @@ final class ResourceSchemaBuilder
             sortable: $config->sortableFields(),
             search: $config->searchColumns() !== [],
             dateFields: $config->dateFieldNames(),
-            columns: array_map(fn (string $field, string $label): array => ['field' => $field, 'label' => $label], array_keys($config->columns()), $config->columns()),
+            columns: $this->columns($config, $definition->model),
             bulkActions: array_values(array_map(
                 fn (BulkAction $a): array => ['name' => $a->name, 'needs_reason' => $a->needsReason, 'inverse' => $a->inverse],
                 array_filter($definition->actions(), fn (BulkAction $a): bool => PermissionExpression::parse($a->permission)->evaluate($user)),
@@ -65,5 +66,35 @@ final class ResourceSchemaBuilder
             archivable: is_subclass_of($definition->model, GenericEntity::class),
             importable: $this->transfer->canImport($definition, $user),
         );
+    }
+
+    /**
+     * Columns with the enum behind them (from the model's casts, else its filter), so every list shows enum values
+     * as coloured badges without a per-page cell template.
+     *
+     * @param  class-string<Model>  $model
+     * @return list<array{field: string, label: string, enum?: string}>
+     */
+    private function columns(ListQueryConfig $config, string $model): array
+    {
+        $casts = (new $model)->getCasts();
+        $filterEnums = [];
+        foreach ($config->filters() as $filter) {
+            if ($filter->enum !== null) {
+                $filterEnums[$filter->field] = $filter->enum;
+            }
+        }
+
+        $columns = [];
+        foreach ($config->columns() as $field => $label) {
+            $cast = $casts[$field] ?? null;
+            $enum = is_string($cast) && enum_exists($cast) ? $cast : ($filterEnums[$field] ?? null);
+            $columns[] = array_filter(
+                ['field' => $field, 'label' => $label, 'enum' => $enum !== null ? class_basename($enum) : null],
+                fn (?string $value): bool => $value !== null,
+            );
+        }
+
+        return $columns;
     }
 }

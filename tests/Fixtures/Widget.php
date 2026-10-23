@@ -78,6 +78,7 @@ class Widget extends BaseModel implements HasStateMachine, OwnedByUser
             ->searchIn('name', 'code')
             ->column('code', 'Code')
             ->column('name', 'Name')
+            ->column('status', 'Status')
             ->defaultSort('-created_at')
             ->maxDateRangeDays(366);
     }

@@ -107,6 +107,8 @@ it('publishes the resource schema filtered by permissions', function () {
         ->assertJsonMissingPath('data.filters.0.hidden')
         ->assertJsonPath('data.search', true)
         ->assertJsonPath('data.columns.0', ['field' => 'code', 'label' => 'Code'])
+        // Enum columns name their enum, so lists show the values as coloured badges.
+        ->assertJsonPath('data.columns.2', ['field' => 'status', 'label' => 'Status', 'enum' => 'GenericStatus'])
         ->assertJsonPath('data.bulk_actions.*.name', ['archive', 'unarchive', 'cancel'])
         ->assertJsonPath('data.export_formats', ['csv', 'xlsx']);
 
