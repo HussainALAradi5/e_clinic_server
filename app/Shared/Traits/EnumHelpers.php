@@ -22,7 +22,8 @@ trait EnumHelpers
         $key = 'enums.'.class_basename(static::class).'.'.$this->value;
         $label = __($key);
 
-        return $label === $key ? Str::headline((string) $this->value) : $label;
+        // Sentence case like the rest of the interface: `checked_in` → `Checked in`.
+        return $label === $key ? Str::ucfirst(str_replace('_', ' ', (string) $this->value)) : $label;
     }
 
     /**

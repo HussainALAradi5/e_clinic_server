@@ -42,10 +42,13 @@ final class ResourceSchemaBuilder
             resource: $resource,
             filters: array_values(array_map(fn (FilterField $f): array => array_filter([
                 'field' => $f->field,
+                'label' => $config->filterLabel($f),
                 'type' => $f->type->value,
                 'operators' => array_map(fn (FilterOperator $op): string => $op->value, $f->operators),
                 'enum' => $f->enum !== null ? class_basename($f->enum) : null,
                 'resource' => $f->resource,
+                // Accepted from links (e.g. the orders of one visit) but not offered in the filter panel.
+                'hidden' => $f->hidden ?: null,
             ], fn (mixed $value): bool => $value !== null), $config->filters())),
             sortable: $config->sortableFields(),
             search: $config->searchColumns() !== [],

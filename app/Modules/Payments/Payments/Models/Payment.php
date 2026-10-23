@@ -73,7 +73,7 @@ class Payment extends BaseModel implements OwnedByUser
             ->filterable('invoice_id', ['eq'])
             ->filterable('patient_id', ['eq'], resource: 'patients')
             ->filterable('received_by', ['eq', 'in'], resource: 'users')
-            ->filterable('cash_session_id', ['eq'])
+            ->filterable('cash_session_id', ['eq'], label: 'Cash drawer')
             ->filterable('amount', ['gte', 'lte', 'between'], type: 'money')
             ->filterable('code', ['eq', 'starts'])
             ->searchIn('code', 'reference_number')

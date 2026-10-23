@@ -38,7 +38,7 @@ final class BillableServiceImport implements ImportDefinition
             new ImportColumn('tax_rate', 'VAT %', required: true, example: '0', help: 'Bahrain VAT is 10; many medical services are zero-rated.'),
             new ImportColumn('revenue_account', 'Revenue account code', required: true, example: '4100', help: 'A revenue account from the chart of accounts.'),
             new ImportColumn('specialty', 'Specialty code', example: 'GP'),
-            new ImportColumn('is_insurable', 'Insurable', example: 'Yes', type: ImportColumnType::Choice, options: ['yes' => 'Yes', 'no' => 'No']),
+            new ImportColumn('is_insurable', 'Covered by insurance', example: 'Yes', type: ImportColumnType::Choice, options: ['yes' => 'Yes', 'no' => 'No']),
             new ImportColumn('consent_type', 'Consent required', example: '', type: ImportColumnType::Choice, options: self::options(ConsentType::cases())),
         ];
     }

@@ -98,7 +98,11 @@ it('publishes the resource schema filtered by permissions', function () {
     $this->getJson('/api/v1/meta/resources/widgets')
         ->assertOk()
         ->assertJsonPath('data.resource', 'widgets')
-        ->assertJsonPath('data.filters.0', ['field' => 'status', 'type' => 'enum', 'operators' => ['eq', 'ne', 'in', 'nin'], 'enum' => 'GenericStatus'])
+        ->assertJsonPath('data.filters.0', ['field' => 'status', 'label' => 'Status', 'type' => 'enum', 'operators' => ['eq', 'ne', 'in', 'nin'], 'enum' => 'GenericStatus'])
+        // Labels: given, else the column's ("Name"), else the field in words; internal filters are hidden from the panel.
+        ->assertJsonPath('data.filters.*.label', ['Status', 'Priority', 'Name', 'Completed at', 'Responsible'])
+        ->assertJsonPath('data.filters.3.hidden', true)
+        ->assertJsonMissingPath('data.filters.0.hidden')
         ->assertJsonPath('data.search', true)
         ->assertJsonPath('data.columns.0', ['field' => 'code', 'label' => 'Code'])
         ->assertJsonPath('data.bulk_actions.*.name', ['archive', 'unarchive', 'cancel'])
@@ -120,5 +124,9 @@ it('publishes enums with labels and transitions', function () {
         ->assertOk()
         ->assertJsonPath('data.GenericStatus.options.0', ['value' => 'pending', 'label' => 'Pending'])
         ->assertJsonPath('data.GenericStatus.transitions.pending', ['in_progress', 'cancelled'])
-        ->assertJsonPath('data.DayOfWeek.options.0', ['value' => 0, 'label' => 'Sunday']);
+        ->assertJsonPath('data.DayOfWeek.options.0', ['value' => 0, 'label' => 'Sunday'])
+        // Plain words in sentence case; abbreviations and hyphens written out where it matters.
+        ->assertJsonPath('data.TreatmentType.options.6', ['value' => 'respiratory_therapy', 'label' => 'Respiratory therapy'])
+        ->assertJsonPath('data.AppointmentType.options.1', ['value' => 'follow_up', 'label' => 'Follow-up'])
+        ->assertJsonPath('data.ClinicalOrderType.options.0', ['value' => 'xray', 'label' => 'X-ray']);
 });

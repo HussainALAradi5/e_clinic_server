@@ -69,8 +69,8 @@ class Prescription extends BaseModel implements OwnedByUser
             ->filterable('status', ['eq', 'in', 'nin'], enum: GenericStatus::class)
             ->filterable('patient_id', ['eq'], resource: 'patients')
             ->filterable('doctor_id', ['eq', 'in'], resource: 'doctors')
-            ->filterable('appointment_id', ['eq'])
-            ->filterable('treatment_id', ['eq'])
+            ->filterable('appointment_id', ['eq'], hidden: true)
+            ->filterable('treatment_id', ['eq'], hidden: true)
             ->filterable('valid_until', ['lt', 'gte', 'between'], type: 'date')
             ->filterable('code', ['eq', 'starts'])
             ->searchIn('code')
@@ -82,7 +82,7 @@ class Prescription extends BaseModel implements OwnedByUser
             ->column('items', 'Medicines')
             ->column('status', 'Status')
             ->column('valid_until', 'Valid until')
-            ->column('created_at', 'Written')
+            ->column('created_at', 'Prescribed')
             ->dateFields('created_at', 'valid_until')
             ->defaultSort('-created_at');
     }

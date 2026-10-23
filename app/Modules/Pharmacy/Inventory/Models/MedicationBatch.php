@@ -65,7 +65,7 @@ class MedicationBatch extends BaseModel implements OwnedByUser
             ->filterable('supplier_id', ['eq', 'in', 'null'], resource: 'companies')
             ->filterable('expiry_date', ['lt', 'lte', 'gte', 'between'], type: 'date')
             ->filterable('qty_on_hand', ['gt', 'gte', 'lte', 'eq'], type: 'number')
-            ->filterable('is_quarantined', ['eq'], type: 'boolean')
+            ->filterable('is_quarantined', ['eq'], type: 'boolean', label: 'Quarantined')
             ->filterable('code', ['eq', 'starts'])
             ->searchIn('code', 'batch_number')
             ->searchInRelation('medication', 'code', 'generic_name', 'brand_name', 'gtin')

@@ -64,7 +64,7 @@ class Payslip extends Model implements OwnedByUser
         return ListQueryConfig::make()
             ->resource('payroll')
             ->sortable('net_salary', 'gross_salary', 'created_at')
-            ->filterable('payroll_run_id', ['eq'])
+            ->filterable('payroll_run_id', ['eq'], label: 'Payroll month')
             ->filterable('employee_id', ['eq', 'in'], resource: 'employees')
             ->filterable('department_id', ['eq', 'in'], resource: 'departments')
             ->searchInRelation('employee.person', 'first_name', 'last_name', 'code')

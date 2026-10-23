@@ -74,7 +74,7 @@ class BillableService extends BaseModel implements OwnedByUser
             ->column('price', 'Price')
             ->column('tax_rate', 'VAT %')
             ->column('specialty', 'Specialty')
-            ->column('is_insurable', 'Insurable')
+            ->column('is_insurable', 'Covered by insurance')
             ->dateFields('created_at')
             ->defaultSort('code');
     }

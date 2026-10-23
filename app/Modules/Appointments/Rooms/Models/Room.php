@@ -75,7 +75,7 @@ class Room extends BaseModel implements OwnedByUser
             ->column('department', 'Department')
             ->column('floor', 'Floor')
             ->column('capacity', 'Capacity')
-            ->column('is_in_service', 'In service')
+            ->column('is_in_service', 'Available')
             ->dateFields('created_at')
             ->defaultSort('code');
     }

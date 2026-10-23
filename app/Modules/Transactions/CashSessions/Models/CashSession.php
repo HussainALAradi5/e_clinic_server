@@ -73,7 +73,7 @@ class CashSession extends BaseModel implements OwnedByUser
             ->filterable('deposited_at', ['null'], type: 'date')
             ->searchIn('code')
             ->includes('cashier.person')
-            ->column('code', 'Session')
+            ->column('code', 'Drawer')
             ->column('cashier', 'Cashier')
             ->column('opened_at', 'Opened')
             ->column('closed_at', 'Closed')

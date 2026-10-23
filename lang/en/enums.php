@@ -1,7 +1,8 @@
 <?php
 
 /*
-| Enum labels: enums.<EnumName>.<value>. Missing keys fall back to a headline of the value.
+| Enum labels: enums.<EnumName>.<value>. Missing keys fall back to the value in sentence case (`checked_in` → `Checked in`);
+| list here only the words that need care (abbreviations, hyphens, clinic wording).
 */
 
 return [
@@ -40,4 +41,19 @@ return [
     'MobileApp' => ['patient' => 'Patient app', 'staff' => 'Staff app'],
     'NotificationStatus' => ['queued' => 'Queued', 'sent' => 'Sent', 'delivered' => 'Delivered', 'failed' => 'Failed', 'cancelled' => 'Cancelled'],
     'CompanyType' => ['manufacturer' => 'Manufacturer', 'supplier' => 'Supplier', 'insurer' => 'Insurer', 'laboratory' => 'Laboratory', 'hospital' => 'Hospital', 'other' => 'Other'],
+
+    // Words that need care — the rest read fine in sentence case.
+    'AppointmentSource' => ['walk_in' => 'Walk-in', 'phone' => 'Phone', 'portal' => 'Online', 'referral' => 'Referral'],
+    'AppointmentStatus' => ['checked_in' => 'Checked in', 'no_show' => 'No-show'],
+    'AppointmentType' => ['follow_up' => 'Follow-up', 'teleconsultation' => 'Video consultation', 'treatment_session' => 'Treatment session'],
+    'CancelledBy' => ['system' => 'Automatically'],
+    'ClinicalOrderType' => ['xray' => 'X-ray', 'ultrasound' => 'Ultrasound', 'ct' => 'CT scan', 'mri' => 'MRI scan', 'lab_test' => 'Lab test', 'ecg' => 'ECG', 'referral' => 'Referral'],
+    'RoomType' => ['physical' => 'Physiotherapy', 'xray' => 'X-ray', 'session_room' => 'Treatment sessions'],
+    'DispensationKind' => ['take_home' => 'Taken home', 'administered' => 'Given at the clinic'],
+    'DispenseUnit' => ['ml' => 'ml'],
+    'StockMovementType' => ['receipt' => 'Delivery received', 'dispense' => 'Dispensed', 'return' => 'Returned', 'expiry_writeoff' => 'Expired — written off'],
+    'AccountMappingKey' => ['input_vat' => 'Input VAT', 'vat_payable' => 'VAT payable', 'cash_over_short' => 'Cash over / short'],
+    'TransactionType' => ['payment_in' => 'Payment received', 'refund_out' => 'Refund paid out', 'salary_out' => 'Salaries paid', 'expense_out' => 'Expense paid', 'bank_deposit' => 'Bank deposit', 'cash_adjustment' => 'Cash adjustment'],
+    'TransactionDirection' => ['in' => 'Money in', 'out' => 'Money out', 'internal' => 'Transfer'],
+    'ReportType' => ['revenue_by_doctor' => 'Revenue by doctor', 'revenue_by_service' => 'Revenue by service', 'receivables_aging' => 'Unpaid invoices by age'],
 ];

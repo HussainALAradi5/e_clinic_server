@@ -90,7 +90,7 @@ class Person extends BaseModel implements OwnedByUser
             ->filterable('gender', enum: Gender::class)
             ->filterable('date_of_birth', ['eq', 'gte', 'lte', 'between'], type: 'date')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->filterable('nationality_code')
+            ->filterable('nationality_code', label: 'Nationality')
             ->filterable('language')
             ->searchIn('first_name', 'last_name', 'first_name_ar', 'last_name_ar', 'code', 'phone', 'email')
             ->column('code', 'Code')

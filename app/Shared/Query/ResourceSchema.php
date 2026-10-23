@@ -10,7 +10,7 @@ namespace App\Shared\Query;
 final readonly class ResourceSchema
 {
     /**
-     * @param  list<array{field: string, type: string, operators: list<string>, enum?: string, resource?: string}>  $filters
+     * @param  list<array{field: string, label: string, type: string, operators: list<string>, enum?: string, resource?: string}>  $filters
      * @param  list<string>  $sortable
      * @param  list<string>  $dateFields
      * @param  list<array{field: string, label: string}>  $columns

@@ -49,7 +49,7 @@ class SavedView extends Model implements OwnedByUser
             ->filterable('is_default', ['eq'], type: 'boolean')
             ->searchIn('name', 'resource')
             ->column('name', 'Name')
-            ->column('resource', 'List')
+            ->column('resource', 'Screen')
             ->column('is_shared', 'Shared')
             ->column('is_default', 'Default')
             ->column('updated_at', 'Updated')

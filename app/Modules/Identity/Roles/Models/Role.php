@@ -62,7 +62,7 @@ class Role extends SpatieRole implements Auditable, GenericEntity
         return ListQueryConfig::make()
             ->resource('roles')
             ->sortable('code', 'name', 'display_name', 'created_at', 'users_count', 'permissions_count')
-            ->filterable('is_system', ['eq'], type: 'boolean')
+            ->filterable('is_system', ['eq'], type: 'boolean', label: 'System role')
             ->searchIn('name', 'display_name', 'display_name_ar', 'code')
             ->column('code', 'Code')
             ->column('display_name', 'Role')

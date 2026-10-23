@@ -83,7 +83,7 @@ class Expense extends BaseModel implements OwnedByUser
             ->filterable('status', ['eq', 'in', 'nin'], enum: ApprovalStatus::class)
             ->filterable('category', ['eq', 'in'], enum: ExpenseCategory::class)
             ->filterable('department_id', ['eq', 'in'], resource: 'departments')
-            ->filterable('payee_company_id', ['eq'], resource: 'companies')
+            ->filterable('payee_company_id', ['eq'], resource: 'companies', label: 'Supplier / company')
             ->filterable('expense_account_id', ['eq'], resource: 'accounts')
             ->filterable('paid_at', ['null'], type: 'datetime')
             ->filterable('amount', ['gte', 'lte', 'between'], type: 'money')

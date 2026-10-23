@@ -23,6 +23,8 @@ final readonly class FilterField
         public FilterFieldType $type = FilterFieldType::Text,
         public ?string $enum = null,
         public ?string $resource = null,
+        public ?string $label = null,
+        public bool $hidden = false,
     ) {}
 
     public function allows(FilterOperator $op): bool

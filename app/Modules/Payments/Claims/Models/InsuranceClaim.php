@@ -87,7 +87,7 @@ class InsuranceClaim extends BaseModel implements OwnedByUser
             ->column('claimed_amount', 'Claimed')
             ->column('approved_amount', 'Approved')
             ->column('status', 'Status')
-            ->column('remitted_at', 'Remitted')
+            ->column('remitted_at', 'Paid by insurer')
             ->dateFields('created_at', 'submitted_at', 'decided_at', 'remitted_at')
             ->defaultSort('-created_at');
     }

@@ -6,6 +6,7 @@ namespace App\Shared\Query;
 
 use App\Shared\Enums\FilterFieldType;
 use App\Shared\Enums\FilterOperator;
+use Illuminate\Support\Str;
 
 /**
  * Per-endpoint whitelist for the generic list query. Also the single source of the client's resource schema.
@@ -66,6 +67,8 @@ final class ListQueryConfig
         FilterFieldType|string|null $type = null,
         ?string $enum = null,
         ?string $resource = null,
+        ?string $label = null,
+        bool $hidden = false,
     ): self {
         $type = match (true) {
             $type instanceof FilterFieldType => $type,
@@ -82,6 +85,8 @@ final class ListQueryConfig
             type: $type,
             enum: $enum,
             resource: $resource,
+            label: $label,
+            hidden: $hidden,
         );
 
         return $this;
@@ -222,6 +227,17 @@ final class ListQueryConfig
     public function columns(): array
     {
         return $this->columns;
+    }
+
+    /**
+     * What a filter is called on screen: its own label, else the label of its column (`provider_id` → the `provider`
+     * column), else the field in words. Users never see field names.
+     */
+    public function filterLabel(FilterField $filter): string
+    {
+        $base = preg_replace('/_id$/', '', $filter->field) ?? $filter->field;
+
+        return $filter->label ?? $this->columns[$filter->field] ?? $this->columns[$base] ?? Str::ucfirst(str_replace('_', ' ', $base));
     }
 
     public function defaultSortValue(): string

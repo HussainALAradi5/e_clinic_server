@@ -69,7 +69,7 @@ class Doctor extends Model implements Auditable, OwnedByUser
             ->column('title', 'Title')
             ->column('license_number', 'Licence')
             ->column('license_expiry_date', 'Licence expires')
-            ->column('is_accepting_patients', 'Accepting')
+            ->column('is_accepting_patients', 'Taking new patients')
             ->dateFields('license_expiry_date')
             ->defaultSort('last_name,first_name');
     }

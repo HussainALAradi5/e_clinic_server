@@ -142,10 +142,13 @@ final class DemoSeeder extends Seeder
 
         // Front desk (Phase 2): departments, employees, price list, rooms, doctors, patients and appointments.
         $this->call(FrontDeskDemoSeeder::class);
+        $this->call(TeamDemoSeeder::class);
         $this->call(ClinicalDemoSeeder::class);
         $this->call(BillingDemoSeeder::class);
         $this->call(PharmacyDemoSeeder::class);
         $this->call(HrDemoSeeder::class);
+        // Ten weeks of visits, results, prescriptions, payments and expenses, plus three weeks of bookings ahead.
+        $this->call(HistoryDemoSeeder::class);
 
         $this->command->info('Demo data ready — accounts in e_clinic_documentation/DEMO_USERS.md (password '.self::DEMO_PASSWORD.').');
     }
