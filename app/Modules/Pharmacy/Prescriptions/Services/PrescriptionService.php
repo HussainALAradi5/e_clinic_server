@@ -53,7 +53,7 @@ final class PrescriptionService implements PrescriptionServiceInterface
         return $this->query()->with([
             'appointment', 'treatment',
             'items' => fn ($q) => $q->withDispensed()->with('medication.billableService'),
-            'dispensations' => fn ($q) => $q->with(['items.batch', 'dispenser.person'])->latest('dispensed_at'),
+            'dispensations' => fn ($q) => $q->with(['items.batch', 'items.medication', 'dispenser.person'])->latest('dispensed_at'),
         ])->findOrFail($id);
     }
 

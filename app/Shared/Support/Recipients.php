@@ -27,8 +27,8 @@ final class Recipients
             ->whereNotIn('id', array_filter($exceptUserIds))
             ->with('person')
             ->get()
-            ->pluck('person')
-            ->filter()
+            // Senders read `$person->user` next: hand back the loaded account instead of one query per person.
+            ->map(fn (User $user): Person => $user->person->setRelation('user', $user))
             ->values();
 
         return $people;

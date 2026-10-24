@@ -31,7 +31,7 @@ final class SendPayrollNotifications implements ShouldHandleEventsAfterCommit
                 ->each(fn (Person $p) => $this->notifications->send('payroll.calculated', $p, $run, $data));
         }
         if ($run->status === PayrollStatus::Paid) {
-            $run->payslips()->with('employee.person')->get()->each(fn (Payslip $slip) => $this->notifications->send(
+            $run->payslips()->with('employee.person.user')->get()->each(fn (Payslip $slip) => $this->notifications->send(
                 'payroll.payslip_ready', $slip->employee->person, $slip, ['month' => $month, 'net' => MoneyHelper::format($slip->net_salary)],
             ));
         }

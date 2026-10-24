@@ -72,8 +72,10 @@ final class DispensingController
     {
         $right = $request->validate(['right' => ['required', Rule::in(['dispense', 'administer', 'adjust'])]])['right'];
         $permission = $right === 'adjust' ? 'inventory.adjust' : "dispensing.{$right}";
-        $people = Recipients::withPermission($permission, [(string) $request->user()?->getAuthIdentifier()])
-            ->filter(fn (Person $p): bool => Employee::query()->whereKey($p->id)->exists())
+        $candidates = Recipients::withPermission($permission, [(string) $request->user()?->getAuthIdentifier()]);
+        $staff = Employee::query()->whereKey($candidates->pluck('id'))->pluck('id')->flip();
+        $people = $candidates
+            ->filter(fn (Person $p): bool => $staff->has($p->id))
             ->sortBy('full_name')
             ->map(fn (Person $p): array => ['id' => $p->id, 'full_name' => $p->full_name])
             ->values();
