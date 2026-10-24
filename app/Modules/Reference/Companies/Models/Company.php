@@ -9,6 +9,7 @@ use App\Modules\Reference\Addresses\Models\Address;
 use App\Modules\Reference\Countries\Models\Country;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Models\BaseModel;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
 use Carbon\CarbonImmutable;
@@ -62,9 +63,9 @@ class Company extends BaseModel implements OwnedByUser
             ->resource('companies')
             ->sortable('code', 'name', 'type', 'country_code', 'created_at')
             ->filterable('type', ['eq', 'in'], enum: CompanyType::class)
-            ->filterable('country_code', ['eq', 'in'])
+            ->filterable('country_code', ['eq', 'in'], label: 'Country', options: FilterOptions::inUse(self::class, 'country_code', Country::labels()))
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->searchIn('code', 'name', 'name_ar', 'contact_person', 'email', 'phone', 'vat_number', 'cr_number')
+            ->searchIn('vat_number', 'cr_number')
             ->includes('country', 'address.country')
             ->column('code', 'Code')
             ->column('name', 'Name')

@@ -73,8 +73,6 @@ class Prescription extends BaseModel implements OwnedByUser
             ->filterable('treatment_id', ['eq'], hidden: true)
             ->filterable('valid_until', ['lt', 'gte', 'between'], type: 'date')
             ->filterable('code', ['eq', 'starts'])
-            ->searchIn('code')
-            ->searchInRelation('patient.person', 'code', 'first_name', 'last_name', 'phone')
             ->includes('patient.person', 'doctor.person', 'items.medication')
             ->column('code', 'Code')
             ->column('patient', 'Patient')

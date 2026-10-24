@@ -67,7 +67,6 @@ class Payslip extends Model implements OwnedByUser
             ->filterable('payroll_run_id', ['eq'], label: 'Payroll month')
             ->filterable('employee_id', ['eq', 'in'], resource: 'employees')
             ->filterable('department_id', ['eq', 'in'], resource: 'departments')
-            ->searchInRelation('employee.person', 'first_name', 'last_name', 'code')
             ->includes('employee.person', 'department', 'run')
             ->column('employee', 'Employee')
             ->column('department', 'Department')

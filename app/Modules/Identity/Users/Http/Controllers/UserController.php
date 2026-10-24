@@ -48,10 +48,11 @@ final class UserController
 
     public function index(Request $request): JsonResponse
     {
-        $request->validate(['role' => ['nullable', 'string', 'max:100']]);
+        $request->validate(['role' => ['nullable', 'string', 'max:100'], 'without_role' => ['nullable', 'string', 'max:100']]);
         $query = ListQuery::fromRequest($request, User::listQueryConfig());
+        $users = $this->users->list($query, $request->string('role')->toString() ?: null, $request->string('without_role')->toString() ?: null);
 
-        return $this->paginated(UserResource::collection($this->users->list($query, $request->string('role')->toString() ?: null)), $query);
+        return $this->paginated(UserResource::collection($users), $query);
     }
 
     public function show(string $user): JsonResponse

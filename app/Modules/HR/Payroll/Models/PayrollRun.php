@@ -72,7 +72,7 @@ class PayrollRun extends BaseModel
             ->sortable('period_year', 'period_month', 'code', 'status', 'total_net', 'created_at')
             ->filterable('status', ['eq', 'in', 'nin'], enum: PayrollStatus::class)
             ->filterable('period_year', ['eq'], type: 'number', label: 'Year')
-            ->searchIn('code', 'payment_reference')
+            ->searchIn('payment_reference')
             ->column('code', 'Payroll no.')
             ->column('period', 'Month')
             ->column('employee_count', 'Employees')

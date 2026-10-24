@@ -10,6 +10,7 @@ use App\Shared\Access\OwnershipScope;
 use App\Shared\Access\PermissionExpression;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Models\BaseModel;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
 use Carbon\CarbonImmutable;
@@ -62,11 +63,11 @@ class Attachment extends BaseModel implements OwnedByUser
             ->sortable('code', 'original_name', 'size_bytes', 'category', 'created_at')
             ->filterable('category', ['eq', 'in'], enum: AttachmentCategory::class)
             ->filterable('scan_status', ['eq', 'in'], enum: FileScanStatus::class, label: 'Virus check')
-            ->filterable('attachable_type', ['eq'], label: 'Attached to')
+            ->filterable('attachable_type', ['eq', 'in'], label: 'Attached to', options: FilterOptions::words(array_keys((array) config('attachments.owners'))))
             ->filterable('attachable_id', ['eq'], hidden: true)
-            ->filterable('mime_type', ['eq', 'starts'], label: 'File type')
+            ->filterable('mime_type', ['eq', 'in'], label: 'File type', options: FilterOptions::fileTypes(array_values(array_unique(array_merge(...array_column((array) config('attachments.categories'), 'mimes'))))))
             ->filterable('is_sensitive', ['eq'], type: 'boolean', label: 'Medical / private')
-            ->searchIn('code', 'original_name', 'description')
+            ->searchIn('description')
             ->column('code', 'Code')
             ->column('original_name', 'File')
             ->column('category', 'Category')

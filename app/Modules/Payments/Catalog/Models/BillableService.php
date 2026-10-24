@@ -66,7 +66,6 @@ class BillableService extends BaseModel implements OwnedByUser
             ->filterable('price', ['gte', 'lte', 'between'], type: 'money')
             ->filterable('is_insurable', ['eq'], type: 'boolean')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->searchIn('code', 'name', 'name_ar')
             ->includes('specialty', 'revenueAccount')
             ->column('code', 'Code')
             ->column('name', 'Name')

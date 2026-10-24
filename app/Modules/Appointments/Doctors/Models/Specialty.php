@@ -48,7 +48,6 @@ class Specialty extends BaseModel implements OwnedByUser
             ->resource('specialties')
             ->sortable('code', 'name', 'created_at')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->searchIn('code', 'name', 'name_ar')
             ->column('code', 'Code')
             ->column('name', 'Name')
             ->column('doctors_count', 'Doctors')

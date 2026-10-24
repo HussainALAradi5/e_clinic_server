@@ -62,7 +62,7 @@ class Doctor extends Model implements Auditable, OwnedByUser
             ->filterable('specialty_id', ['eq', 'in'], column: 'doctors.specialty_id', resource: 'specialties')
             ->filterable('is_accepting_patients', ['eq'], column: 'doctors.is_accepting_patients', type: 'boolean')
             ->filterable('license_expiry_date', ['lte', 'gte', 'between'], column: 'doctors.license_expiry_date', type: 'date')
-            ->searchIn('persons.first_name', 'persons.last_name', 'persons.code', 'doctors.license_number', 'doctors.title')
+            ->searchIn('persons.first_name', 'persons.last_name', 'persons.code')
             ->column('code', 'Code')
             ->column('full_name', 'Name')
             ->column('specialty', 'Specialty')

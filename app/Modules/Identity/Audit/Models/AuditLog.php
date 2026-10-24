@@ -7,6 +7,7 @@ namespace App\Modules\Identity\Audit\Models;
 use App\Enums\Identity\AuditAction;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Contracts\OwnedByUser;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
 use Carbon\CarbonImmutable;
@@ -49,9 +50,9 @@ class AuditLog extends Model implements OwnedByUser
             ->resource('audit')
             ->sortable('created_at')
             ->filterable('user_id', ['eq', 'in'], resource: 'users', label: 'Changed by')
-            ->filterable('module', ['eq', 'in'])
+            ->filterable('module', ['eq', 'in'], options: FilterOptions::inUse(self::class, 'module', FilterOptions::inWords()))
             ->filterable('action', ['eq', 'in', 'nin'], enum: AuditAction::class)
-            ->filterable('auditable_type', ['eq'], label: 'Record type')
+            ->filterable('auditable_type', ['eq', 'in'], label: 'Record type', options: FilterOptions::words(array_keys((array) config('audit.models'))))
             ->filterable('auditable_id', ['eq'], hidden: true)
             ->filterable('request_id', ['eq'], hidden: true)
             ->column('created_at', 'Time')

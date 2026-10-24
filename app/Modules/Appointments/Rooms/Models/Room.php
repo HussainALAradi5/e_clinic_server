@@ -67,7 +67,7 @@ class Room extends BaseModel implements OwnedByUser
             ->filterable('department_id', ['eq', 'in', 'null'], resource: 'departments')
             ->filterable('is_in_service', ['eq'], type: 'boolean')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->searchIn('code', 'name', 'name_ar', 'floor', 'notes')
+            ->searchIn('notes')
             ->includes('department')
             ->column('code', 'Code')
             ->column('name', 'Name')

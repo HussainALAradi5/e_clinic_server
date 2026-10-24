@@ -79,6 +79,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
             Route::patch('{role}/restore', 'restoreRole')->whereUuid('role')->middleware('access:roles.delete')->name('restore');
             Route::put('{role}/access', 'updateAccess')->whereUuid('role')->middleware('access:roles.write')->name('access.update');
             Route::put('users/{user}', 'syncUserRoles')->whereUuid('user')->middleware('access:roles.write&roles.assign')->name('users.sync');
+            Route::post('{role}/members', 'addMembers')->whereUuid('role')->middleware('access:roles.write&roles.assign')->name('members.add');
+            Route::delete('{role}/members/{user}', 'removeMember')->whereUuid(['role', 'user'])->middleware('access:roles.write&roles.assign')->name('members.remove');
         });
 
         Route::middleware(['access:roles.write', 'throttle:write'])->group(function (): void {

@@ -16,6 +16,7 @@ final readonly class ResourceSchema
      * @param  list<array{field: string, label: string, enum?: string}>  $columns
      * @param  list<array{name: string, needs_reason: bool, inverse: ?string}>  $bulkActions
      * @param  list<string>  $exportFormats  formats the caller may export (empty = no export)
+     * @param  list<string>  $searchHint  what the search box finds, as column labels
      */
     public function __construct(
         public string $resource,
@@ -29,6 +30,7 @@ final readonly class ResourceSchema
         public string $defaultSort,
         public bool $archivable = false,
         public bool $importable = false,
+        public array $searchHint = [],
     ) {}
 
     /**
@@ -41,6 +43,8 @@ final readonly class ResourceSchema
             'filters' => $this->filters,
             'sortable' => $this->sortable,
             'search' => $this->search,
+            // Placeholder of the search box: "Search code, patient, treatment, doctor".
+            'search_hint' => $this->searchHint,
             'date_fields' => $this->dateFields,
             'columns' => $this->columns,
             'bulk_actions' => $this->bulkActions,

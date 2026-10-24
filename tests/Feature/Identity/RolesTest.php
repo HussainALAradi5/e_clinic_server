@@ -137,6 +137,42 @@ it('replaces user roles but never the own roles or the last super admin', functi
     $this->putJson("/api/v1/roles/users/{$second->id}", ['roles' => ['admin']])->assertOk();
 });
 
+it('adds people to a role and removes them, keeping their other roles', function () {
+    $admin = signedInSuperAdmin();
+    $nurse = User::factory()->withRole('nurse')->create();
+    $doctor = User::factory()->withRole('doctor')->create();
+    $role = Role::query()->where('name', 'doctor')->firstOrFail();
+
+    // The picker only offers people who do not hold the role yet.
+    $this->getJson('/api/v1/users?without_role=doctor&per_page=100')->assertOk()
+        ->assertJsonMissing(['id' => $doctor->id])->assertJsonFragment(['id' => $nurse->id]);
+
+    $this->postJson("/api/v1/roles/{$role->id}/members", ['user_ids' => [$nurse->id, $doctor->id]])
+        ->assertOk()->assertJsonPath('data.added', 1);
+    expect($nurse->fresh()->getRoleNames()->sort()->values()->all())->toBe(['doctor', 'nurse']);
+
+    $this->deleteJson("/api/v1/roles/{$role->id}/members/{$nurse->id}")->assertOk()->assertJsonCount(1, 'data.roles');
+    expect($nurse->fresh()->getRoleNames()->all())->toBe(['nurse']);
+
+    // Nobody is left without a role, and nobody changes their own roles.
+    $this->deleteJson("/api/v1/roles/{$role->id}/members/{$doctor->id}")->assertUnprocessable()->assertJsonValidationErrors('user');
+    $this->postJson("/api/v1/roles/{$role->id}/members", ['user_ids' => [$admin->id]])->assertStatus(409)->assertJsonPath('error_code', 'USER_CANNOT_MODIFY_SELF');
+
+    // An archived role takes no new members.
+    $role->forceFill(['is_archived' => true])->save();
+    $this->postJson("/api/v1/roles/{$role->id}/members", ['user_ids' => [$nurse->id]])->assertUnprocessable()->assertJsonValidationErrors('user_ids');
+});
+
+it('stops people from handing out a role they do not hold themselves', function () {
+    $hr = User::factory()->withRole('hr_manager')->withTwoFactor()->create();
+    grantPermissions($hr, 'roles.read_all', 'roles.write', 'roles.assign');
+    Sanctum::actingAs($hr);
+    $role = Role::query()->where('name', 'accountant')->firstOrFail();
+
+    $this->postJson("/api/v1/roles/{$role->id}/members", ['user_ids' => [User::factory()->create()->id]])
+        ->assertForbidden()->assertJsonPath('error_code', 'ROLE_PRIVILEGE_ESCALATION');
+});
+
 it('runs bulk actions on roles', function () {
     signedInSuperAdmin();
     $ids = collect(['one', 'two'])->map(fn (string $name) => Role::create(['name' => $name, 'display_name' => ucfirst($name), 'guard_name' => 'sanctum'])->id)->all();

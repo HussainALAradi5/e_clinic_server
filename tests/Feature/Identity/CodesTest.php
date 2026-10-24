@@ -39,7 +39,8 @@ it('resolves scanned codes and rejects forged ones', function () {
         ->assertJsonPath('data.summary.full_name', $person->full_name)
         ->assertJsonPath('data.summary.date_of_birth', $person->date_of_birth->format('Y-m-d'));
 
-    $this->postJson('/api/v1/codes/scan', ['payload' => substr($payload, 0, -1).'0', 'purpose' => 'identify'])
+    $forged = substr($payload, 0, -1).(str_ends_with($payload, '0') ? '1' : '0');
+    $this->postJson('/api/v1/codes/scan', ['payload' => $forged, 'purpose' => 'identify'])
         ->assertUnprocessable()->assertJsonPath('error_code', 'SCAN_CODE_INVALID');
     $this->postJson('/api/v1/codes/scan', ['payload' => 'garbage', 'purpose' => 'identify'])->assertUnprocessable();
 });

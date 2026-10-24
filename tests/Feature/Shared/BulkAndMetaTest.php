@@ -3,6 +3,7 @@
 use App\Shared\Bulk\BulkActionRegistry;
 use App\Shared\Enums\ExportFormat;
 use App\Shared\Exceptions\ConflictException;
+use App\Shared\Query\FilterOptions;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Route;
 use Tests\Fixtures\Widget;
@@ -92,6 +93,32 @@ it('only lets owners act on their own records', function () {
         ->assertOk()->assertJsonPath('data.succeeded', 1)->assertJsonPath('data.failed.0.code', 'FORBIDDEN');
 });
 
+it('offers code columns as named choices built from the values in use', function () {
+    actingWith('widgets.read_all');
+    Widget::create(['name' => 'A', 'status' => 'cancelled', 'cancellation_reason' => 'out_of_stock']);
+    Widget::create(['name' => 'B', 'status' => 'cancelled', 'cancellation_reason' => 'customer_request']);
+    Widget::create(['name' => 'C', 'status' => 'cancelled', 'cancellation_reason' => 'out_of_stock']);
+    Widget::create(['name' => 'D', 'status' => 'pending']);
+
+    $this->getJson('/api/v1/meta/resources/widgets')
+        ->assertOk()
+        ->assertJsonPath('data.filters.5.type', 'choice')
+        ->assertJsonPath('data.filters.5.options', [
+            ['value' => 'customer_request', 'label' => 'Customer request'],
+            ['value' => 'out_of_stock', 'label' => 'Out of stock'],
+        ]);
+});
+
+it('names file types in plain words', function (string $mime, string $label) {
+    expect(FilterOptions::fileType($mime))->toBe($label);
+})->with([
+    ['application/pdf', 'PDF document'],
+    ['image/jpeg', 'JPEG image'],
+    ['image/png', 'PNG image'],
+    ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Excel sheet'],
+    ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Word document'],
+]);
+
 it('publishes the resource schema filtered by permissions', function () {
     actingWith('widgets.read_all', 'widgets.write', 'widgets.export');
 
@@ -100,7 +127,7 @@ it('publishes the resource schema filtered by permissions', function () {
         ->assertJsonPath('data.resource', 'widgets')
         ->assertJsonPath('data.filters.0', ['field' => 'status', 'label' => 'Status', 'type' => 'enum', 'operators' => ['eq', 'ne', 'in', 'nin'], 'enum' => 'GenericStatus'])
         // Labels: given, else the column's ("Name"), else the field in words; internal filters are hidden from the panel.
-        ->assertJsonPath('data.filters.*.label', ['Status', 'Priority', 'Name', 'Completed at', 'Responsible'])
+        ->assertJsonPath('data.filters.*.label', ['Status', 'Priority', 'Name', 'Completed at', 'Responsible', 'Reason', 'Scheduled date'])
         ->assertJsonPath('data.filters.3.hidden', true)
         // Name is in the search box already: no second text box for it in the panel.
         ->assertJsonPath('data.filters.2.hidden', true)

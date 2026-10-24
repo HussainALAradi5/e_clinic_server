@@ -8,6 +8,7 @@ use App\Enums\Pharmacy\StockMovementType;
 use App\Modules\Identity\Users\Models\User;
 use App\Modules\Pharmacy\Medications\Models\Medication;
 use App\Shared\Contracts\OwnedByUser;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
 use Carbon\CarbonImmutable;
@@ -57,10 +58,8 @@ class StockMovement extends Model implements OwnedByUser
             ->filterable('medication_id', ['eq', 'in'], resource: 'medications')
             ->filterable('batch_id', ['eq'])
             ->filterable('type', ['eq', 'in'], enum: StockMovementType::class)
-            ->filterable('source_type', ['eq'], label: 'Caused by')
+            ->filterable('source_type', ['eq', 'in'], label: 'Caused by', options: FilterOptions::inUse(self::class, 'source_type', FilterOptions::inWords()))
             ->filterable('source_id', ['eq'], hidden: true)
-            ->searchIn('reason')
-            ->searchInRelation('medication', 'code', 'generic_name', 'brand_name')
             ->includes('medication', 'batch', 'creator.person')
             ->column('created_at', 'Time')
             ->column('medication', 'Medication')

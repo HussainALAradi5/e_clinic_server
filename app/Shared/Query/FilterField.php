@@ -6,6 +6,7 @@ namespace App\Shared\Query;
 
 use App\Shared\Enums\FilterFieldType;
 use App\Shared\Enums\FilterOperator;
+use Closure;
 
 /**
  * One whitelisted filter: allowed operators, the real column and how the client should edit it.
@@ -15,6 +16,7 @@ final readonly class FilterField
     /**
      * @param  list<FilterOperator>  $operators
      * @param  class-string<\BackedEnum>|null  $enum
+     * @param  (Closure(): array<string, string>)|null  $options  value => label, for Choice filters
      */
     public function __construct(
         public string $field,
@@ -25,6 +27,7 @@ final readonly class FilterField
         public ?string $resource = null,
         public ?string $label = null,
         public bool $hidden = false,
+        public ?Closure $options = null,
     ) {}
 
     public function allows(FilterOperator $op): bool

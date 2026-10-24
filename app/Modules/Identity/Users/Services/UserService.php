@@ -148,9 +148,11 @@ final class UserService implements UserServiceInterface
         });
     }
 
-    public function list(ListQuery $query, ?string $role = null): LengthAwarePaginator|CursorPaginator
+    public function list(ListQuery $query, ?string $role = null, ?string $withoutRole = null): LengthAwarePaginator|CursorPaginator
     {
-        $builder = $this->users()->when(filled($role), fn (Builder $q) => $q->whereHas('roles', fn (Builder $r) => $r->where('name', $role)));
+        $builder = $this->users()
+            ->when(filled($role), fn (Builder $q) => $q->whereHas('roles', fn (Builder $r) => $r->where('name', $role)))
+            ->when(filled($withoutRole), fn (Builder $q) => $q->whereDoesntHave('roles', fn (Builder $r) => $r->where('name', $withoutRole)));
 
         return $this->listQuery->paginate($builder, $query);
     }

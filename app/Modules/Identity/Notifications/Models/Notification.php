@@ -9,6 +9,7 @@ use App\Enums\Identity\NotificationStatus;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Contracts\OwnedByUser;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
 use Carbon\CarbonImmutable;
@@ -64,12 +65,12 @@ class Notification extends Model implements OwnedByUser
         return ListQueryConfig::make()
             ->resource('notifications')
             ->sortable('created_at', 'scheduled_for', 'sent_at', 'status', 'channel', 'template')
-            ->searchIn('template', 'subject')
+            ->searchIn('subject')
             ->filterable('person_id', ['eq'], resource: 'people', label: 'Recipient')
             ->filterable('channel', ['eq', 'in'], enum: NotificationChannel::class, label: 'Sent via')
             ->filterable('status', ['eq', 'in'], enum: NotificationStatus::class)
             ->filterable('template', ['eq', 'like'], label: 'Message')
-            ->filterable('related_type', ['eq'], label: 'About')
+            ->filterable('related_type', ['eq', 'in'], label: 'About', options: FilterOptions::inUse(self::class, 'related_type', FilterOptions::inWords()))
             ->filterable('related_id', ['eq'], hidden: true)
             ->column('scheduled_for', 'Scheduled')
             ->column('channel', 'Sent via')

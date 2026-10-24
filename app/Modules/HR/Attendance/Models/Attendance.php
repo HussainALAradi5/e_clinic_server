@@ -68,7 +68,6 @@ class Attendance extends Model implements Auditable, OwnedByUser
             ->filterable('needs_review', ['eq'], type: 'boolean')
             ->filterable('overtime_minutes', ['gt', 'gte'], type: 'number')
             ->filterable('late_minutes', ['gt', 'gte'], type: 'number')
-            ->searchInRelation('employee.person', 'first_name', 'last_name', 'code')
             ->includes('employee.person', 'employee.department')
             ->column('date', 'Date')
             ->column('employee', 'Employee')

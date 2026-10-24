@@ -71,7 +71,6 @@ class CashSession extends BaseModel implements OwnedByUser
             ->filterable('cashier_id', ['eq', 'in'], resource: 'users')
             ->filterable('code', ['eq', 'starts'])
             ->filterable('deposited_at', ['null'], type: 'date')
-            ->searchIn('code')
             ->includes('cashier.person')
             ->column('code', 'Drawer')
             ->column('cashier', 'Cashier')

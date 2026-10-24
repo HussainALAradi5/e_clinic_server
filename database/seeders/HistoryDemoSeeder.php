@@ -12,6 +12,7 @@ use App\Enums\Appointments\ClinicalOrderType;
 use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Appointments\TreatmentType;
 use App\Enums\Payments\InvoiceStatus;
+use App\Enums\Pharmacy\MedicationForm;
 use App\Enums\Pharmacy\MedicationRoute;
 use App\Enums\Transactions\ExpenseCategory;
 use App\Modules\Appointments\Appointments\Models\Appointment;
@@ -236,10 +237,10 @@ final class HistoryDemoSeeder extends Seeder
         $this->at($start, '08:00', 'pharmacist');
         $suppliers = Company::query()->where('type', 'supplier')->pluck('id')->all();
         foreach (Medication::query()->where('is_controlled', false)->get() as $i => $medication) {
-            $quantity = in_array($medication->form, ['inhaler', 'cream'], true) ? '120' : '1500';
+            $quantity = in_array($medication->form, [MedicationForm::Inhaler, MedicationForm::Cream], true) ? '120' : '1500';
             $inventory->receive(new ReceiveStockData(
                 $medication->id, 'H-'.Str::upper(Str::random(5)), $start->addMonths(18), Qty::of($quantity),
-                in_array($medication->form, ['inhaler', 'cream', 'injection'], true) ? '1.100' : '0.060',
+                in_array($medication->form, [MedicationForm::Inhaler, MedicationForm::Cream, MedicationForm::Injection], true) ? '1.100' : '0.060',
                 $suppliers[$i % max(1, count($suppliers))] ?? null, false, null,
             ));
         }
@@ -378,11 +379,11 @@ final class HistoryDemoSeeder extends Seeder
         $plans = self::RX[$specialty] ?? [];
         if ($plans !== [] && fake()->boolean(35)) {
             $this->at($end, null, null, User::query()->findOrFail($visit->provider_id));
-            $lines = array_map(function (array $line): PrescriptionItemData {
+            $lines = array_values(array_map(function (array $line): PrescriptionItemData {
                 [$code, $quantity, $dose, $frequency, $days, $route] = $line;
 
                 return new PrescriptionItemData((string) Medication::query()->where('code', $code)->value('id'), $dose, $frequency, MedicationRoute::from($route), $days, $quantity, null);
-            }, fake()->randomElements($plans, fake()->numberBetween(1, min(2, count($plans)))));
+            }, fake()->randomElements($plans, fake()->numberBetween(1, min(2, count($plans))))));
             try {
                 $rx = $prescriptions->create(new PrescriptionData($visit->patient_id, $lines, null, $visit->id, overrideDuplicate: true, overrideAllergy: true));
                 if (fake()->boolean(85)) {
@@ -538,7 +539,7 @@ final class HistoryDemoSeeder extends Seeder
     private function bank(CashSessionServiceInterface $drawers, CashSession $drawer, CarbonImmutable $day): void
     {
         try {
-            $drawers->deposit($drawer->refresh(), new DepositData($day, 'NBB-'.Str::upper(Str::random(6)), MoneyHelper::toDb($drawers->report($drawer)->counted ?? $drawers->report($drawer)->expected)));
+            $drawers->deposit($drawer->refresh(), new DepositData($day, 'NBB-'.Str::upper(Str::random(6)), MoneyHelper::toDb($drawer->counted_closing ?? $drawers->report($drawer)->expected)));
         } catch (DomainException|\Error) {
             // Nothing to bank, or waiting for a supervisor.
         }
@@ -549,20 +550,20 @@ final class HistoryDemoSeeder extends Seeder
     {
         $plans = [];
         if ($day->day <= 2 && $day->dayOfWeek !== 5) {
-            $plans[] = [ExpenseCategory::Rent, 'Seef Properties', 'Clinic premises rent, '.$day->format('F'), '1850.000', '0', 'BankTransfer'];
-            $plans[] = [ExpenseCategory::Utilities, 'Electricity & Water Authority', 'Electricity and water, '.$day->subMonth()->format('F'), (string) fake()->numberBetween(260, 380).'.400', '0', 'BankTransfer'];
-            $plans[] = [ExpenseCategory::Utilities, 'Batelco', 'Internet and phone lines', '64.000', '6.400', 'BankTransfer'];
+            $plans[] = [ExpenseCategory::Rent, 'Seef Properties', 'Clinic premises rent, '.$day->format('F'), '1850.000', '0', PaymentMethod::BankTransfer];
+            $plans[] = [ExpenseCategory::Utilities, 'Electricity & Water Authority', 'Electricity and water, '.$day->subMonth()->format('F'), (string) fake()->numberBetween(260, 380).'.400', '0', PaymentMethod::BankTransfer];
+            $plans[] = [ExpenseCategory::Utilities, 'Batelco', 'Internet and phone lines', '64.000', '6.400', PaymentMethod::BankTransfer];
         }
         if ($day->dayOfWeek === 0) {
-            $plans[] = [ExpenseCategory::MedicalSupplies, 'Yiaco Medical Supplies', fake()->randomElement(['Gloves, gauze and syringes', 'Dressing packs and tapes', 'Specimen tubes and swabs']), (string) fake()->numberBetween(70, 260).'.500', '0', 'BankTransfer'];
+            $plans[] = [ExpenseCategory::MedicalSupplies, 'Yiaco Medical Supplies', fake()->randomElement(['Gloves, gauze and syringes', 'Dressing packs and tapes', 'Specimen tubes and swabs']), (string) fake()->numberBetween(70, 260).'.500', '0', PaymentMethod::BankTransfer];
         }
         if ($day->dayOfWeek === 2 && fake()->boolean(45)) {
             $plans[] = fake()->randomElement([
-                [ExpenseCategory::OfficeSupplies, 'Ashrafs', 'Printer paper and toner', '38.750', '3.500', 'Cheque'],
-                [ExpenseCategory::Maintenance, 'CoolAir Services', 'Air-conditioning service', '45.000', '0', 'Cheque'],
-                [ExpenseCategory::Marketing, 'Gulf Daily News', 'Newspaper advert — new cardiology clinic', '120.000', '12.000', 'BankTransfer'],
-                [ExpenseCategory::ProfessionalFees, 'KPMG Bahrain', 'Quarterly bookkeeping review', '350.000', '35.000', 'BankTransfer'],
-                [ExpenseCategory::GovernmentFees, 'NHRA', 'Licence renewal fee', '75.000', '0', 'BankTransfer'],
+                [ExpenseCategory::OfficeSupplies, 'Ashrafs', 'Printer paper and toner', '38.750', '3.500', PaymentMethod::Cheque],
+                [ExpenseCategory::Maintenance, 'CoolAir Services', 'Air-conditioning service', '45.000', '0', PaymentMethod::Cheque],
+                [ExpenseCategory::Marketing, 'Gulf Daily News', 'Newspaper advert — new cardiology clinic', '120.000', '12.000', PaymentMethod::BankTransfer],
+                [ExpenseCategory::ProfessionalFees, 'KPMG Bahrain', 'Quarterly bookkeeping review', '350.000', '35.000', PaymentMethod::BankTransfer],
+                [ExpenseCategory::GovernmentFees, 'NHRA', 'Licence renewal fee', '75.000', '0', PaymentMethod::BankTransfer],
             ]);
         }
         $recent = $day->gt($this->today->subDays(7));
@@ -582,7 +583,7 @@ final class HistoryDemoSeeder extends Seeder
             $this->at($day, '12:00', 'admin');
             $expenses->approve($expense);
             $this->at($day, '14:00', 'accountant');
-            $expenses->pay($expense, new PayExpenseData($day, PaymentMethod::{$method}, 'TRX-'.fake()->numerify('#####')));
+            $expenses->pay($expense, new PayExpenseData($day, $method, 'TRX-'.fake()->numerify('#####')));
         }
     }
 

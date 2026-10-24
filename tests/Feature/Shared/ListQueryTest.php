@@ -92,6 +92,8 @@ it('filters, searches and sorts on the database with a stable tie-breaker', func
         ->and(widgetNames(['search' => '100%']))->toBe(['Bravo 100%'])
         ->and(widgetNames(['search' => 'ALPHA']))->toBe(['Alpha'])
         ->and(widgetNames(['search' => '%']))->toBe(['Bravo 100%'])
+        // The search box covers the table's text columns by itself — not the status, which is a filter.
+        ->and(widgetNames(['search' => 'pending']))->toBe([])
         ->and(widgetNames(['include_archived' => 'true', 'sort' => 'name']))->toBe(['Alpha', 'Bravo 100%', 'Charlie', 'Delta']);
 });
 
@@ -106,7 +108,11 @@ it('filters dates and timestamps by clinic-local days', function () {
         ->and(widgetNames(['date_field' => 'completed_at', 'date_from' => '2026-10-13', 'date_to' => '2026-10-13']))->toBe(['Late'])
         ->and(widgetNames(['date_field' => 'scheduled_date', 'date_range' => '2026-10-12..2026-10-12']))->toBe(['Yesterday'])
         ->and(widgetNames(['date_field' => 'scheduled_date', 'date_range' => '2026-10-13..', 'sort' => 'name']))->toBe(['Today'])
-        ->and(widgetNames(['filter' => ['completed_at' => ['null' => 'false']]]))->toBe(['Late']);
+        ->and(widgetNames(['filter' => ['completed_at' => ['null' => 'false']]]))->toBe(['Late'])
+        // Date filters match the day even where the database stores a time with it (SQLite).
+        ->and(widgetNames(['filter' => ['scheduled_date' => ['eq' => '2026-10-13']]]))->toBe(['Today'])
+        ->and(widgetNames(['filter' => ['scheduled_date' => ['lte' => '2026-10-12']]]))->toBe(['Yesterday'])
+        ->and(widgetNames(['filter' => ['scheduled_date' => ['between' => '2026-10-12,2026-10-13']], 'sort' => 'name']))->toBe(['Today', 'Yesterday']);
 });
 
 it('lists only soft-deleted rows when asked', function () {

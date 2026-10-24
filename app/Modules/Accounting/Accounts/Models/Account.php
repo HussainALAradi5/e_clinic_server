@@ -61,7 +61,6 @@ class Account extends BaseModel implements OwnedByUser
             ->filterable('is_group', ['eq'], type: 'boolean')
             ->filterable('parent_id', ['eq', 'null'], resource: 'accounts')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->searchIn('code', 'name', 'name_ar')
             ->includes('parent')
             ->column('code', 'Code')
             ->column('name', 'Name')

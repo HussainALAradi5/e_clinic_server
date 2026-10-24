@@ -22,4 +22,6 @@ enum FilterFieldType: string implements HasLabel
     case Boolean = 'boolean';
     case Enum = 'enum';
     case Relation = 'relation';
+    /** A fixed list of named values from the server (country, language, file type …). */
+    case Choice = 'choice';
 }

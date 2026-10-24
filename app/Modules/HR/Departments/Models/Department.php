@@ -55,7 +55,6 @@ class Department extends BaseModel implements OwnedByUser
             ->sortable('code', 'name', 'created_at')
             ->filterable('parent_id', ['eq', 'null'], resource: 'departments')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->searchIn('code', 'name', 'name_ar', 'cost_center_code')
             ->includes('parent', 'manager.user.person')
             ->column('code', 'Code')
             ->column('name', 'Name')

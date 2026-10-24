@@ -41,7 +41,7 @@ interface UserServiceInterface
      *
      * @return LengthAwarePaginator<int, User>|CursorPaginator<int, User>
      */
-    public function list(ListQuery $query, ?string $role = null): LengthAwarePaginator|CursorPaginator;
+    public function list(ListQuery $query, ?string $role = null, ?string $withoutRole = null): LengthAwarePaginator|CursorPaginator;
 
     /** Account with person and roles. */
     public function find(string $id): User;

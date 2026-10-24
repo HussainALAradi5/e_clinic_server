@@ -274,6 +274,44 @@ final class RoleService extends BaseEntityService implements RoleServiceInterfac
         return $user->refresh()->load('person', 'roles');
     }
 
+    public function addMembers(Role $role, array $userIds): int
+    {
+        if ($role->isArchived()) {
+            throw ValidationException::withMessages(['user_ids' => 'This role is archived. Unarchive it before adding people.']);
+        }
+        if (in_array($this->actor()?->getKey(), $userIds, true)) {
+            throw new CannotModifySelfException;
+        }
+        $this->privileges->assertCanGrantRoles($this->actor(), [$role->name]);
+
+        return DB::transaction(function () use ($role, $userIds): int {
+            $added = 0;
+            User::query()->whereKey($userIds)->with('roles')->get()->each(function (User $user) use ($role, &$added): void {
+                $current = array_values(array_map('strval', $user->getRoleNames()->all()));
+                if (! in_array($role->name, $current, true)) {
+                    $this->syncUserRoles($user, [...$current, $role->name]);
+                    $added++;
+                }
+            });
+
+            return $added;
+        });
+    }
+
+    public function removeMember(Role $role, User $user): User
+    {
+        $current = array_values(array_map('strval', $user->getRoleNames()->all()));
+        if (! in_array($role->name, $current, true)) {
+            return $user->load('person', 'roles');
+        }
+        $remaining = array_values(array_diff($current, [$role->name]));
+        if ($remaining === []) {
+            throw ValidationException::withMessages(['user' => 'This is their only role. Give them another role first, or deactivate the account.']);
+        }
+
+        return $this->syncUserRoles($user, $remaining);
+    }
+
     public function forgetAccess(User $user): void
     {
         Cache::forget(CacheKeys::permissions($user->id));

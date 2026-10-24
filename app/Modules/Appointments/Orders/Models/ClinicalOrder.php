@@ -106,7 +106,7 @@ class ClinicalOrder extends BaseModel implements Chargeable, OwnedByUser, Releas
             ->filterable('room_id', ['eq', 'null'], resource: 'rooms')
             ->filterable('is_abnormal', ['eq'], type: 'boolean', label: 'Abnormal result')
             ->filterable('code', ['eq', 'starts'])
-            ->searchIn('code', 'body_part')
+            ->searchIn('body_part')
             ->includes('patient.person', 'orderedBy.person', 'billableService')
             ->column('code', 'Code')
             ->column('patient', 'Patient')

@@ -14,6 +14,7 @@ use App\Shared\Exceptions\UnknownResourceException;
 use App\Shared\Transfer\TransferGuard;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * Builds the client resource schema from the same ListQueryConfig that validates the list endpoint,
@@ -48,11 +49,17 @@ final class ResourceSchemaBuilder
                 'operators' => array_map(fn (FilterOperator $op): string => $op->value, $f->operators),
                 'enum' => $f->enum !== null ? class_basename($f->enum) : null,
                 'resource' => $f->resource,
+                'options' => $f->options !== null ? array_map(
+                    fn (string|int $value, string $label): array => ['value' => (string) $value, 'label' => $label],
+                    array_keys($options = ($f->options)()),
+                    $options,
+                ) : null,
                 // Accepted (links, saved views) but not offered in the filter panel: internal ids, and text the search box covers.
                 'hidden' => $config->filterHidden($f) ?: null,
             ], fn (mixed $value): bool => $value !== null), $config->filters())),
             sortable: $config->sortableFields(),
-            search: $config->searchColumns() !== [],
+            search: ! ($scope = SearchScope::for(new ($definition->model), $config))->isEmpty(),
+            searchHint: $this->searchHint($config, $scope),
             dateFields: $config->dateFieldNames(),
             columns: $this->columns($config, $definition->model),
             bulkActions: array_values(array_map(
@@ -66,6 +73,32 @@ final class ResourceSchemaBuilder
             archivable: is_subclass_of($definition->model, GenericEntity::class),
             importable: $this->transfer->canImport($definition, $user),
         );
+    }
+
+    /**
+     * What the search box finds, in the words of the table ("Code, Patient, Treatment, Doctor"), for its placeholder.
+     *
+     * @return list<string>
+     */
+    private function searchHint(ListQueryConfig $config, SearchScope $scope): array
+    {
+        $columns = $config->columns();
+        $labels = [];
+        foreach ([...array_map(fn (string $c): string => Str::afterLast($c, '.'), $config->searchColumns()), ...$scope->fields] as $field) {
+            $label = match (true) {
+                isset($columns[$field]) => $columns[$field],
+                // Arabic spellings are found too, but are not named again.
+                str_ends_with($field, '_ar') => null,
+                $field === 'code' => 'Code',
+                in_array($field, ['first_name', 'last_name'], true) => $columns['full_name'] ?? 'Name',
+                default => null,
+            };
+            if ($label !== null) {
+                $labels[] = $label;
+            }
+        }
+
+        return array_values(array_unique($labels));
     }
 
     /**

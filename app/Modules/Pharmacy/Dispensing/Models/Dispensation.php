@@ -79,8 +79,6 @@ class Dispensation extends BaseModel implements Chargeable, OwnedByUser
             ->filterable('prescription_id', ['eq', 'null'])
             ->filterable('appointment_id', ['eq', 'null'], hidden: true)
             ->filterable('code', ['eq', 'starts'])
-            ->searchIn('code')
-            ->searchInRelation('patient.person', 'code', 'first_name', 'last_name', 'phone')
             ->includes('patient.person', 'dispenser.person', 'prescription', 'items.medication')
             ->column('code', 'Code')
             ->column('dispensed_at', 'Time')

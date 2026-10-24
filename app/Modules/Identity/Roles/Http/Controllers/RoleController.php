@@ -6,6 +6,7 @@ namespace App\Modules\Identity\Roles\Http\Controllers;
 
 use App\Modules\Identity\Roles\Contracts\RoleServiceInterface;
 use App\Modules\Identity\Roles\Data\AccessRowData;
+use App\Modules\Identity\Roles\Http\Requests\AddRoleMembersRequest;
 use App\Modules\Identity\Roles\Http\Requests\StoreRoleRequest;
 use App\Modules\Identity\Roles\Http\Requests\SyncUserRolesRequest;
 use App\Modules\Identity\Roles\Http\Requests\UpdateAccessMatrixRequest;
@@ -106,6 +107,16 @@ final class RoleController
     public function syncUserRoles(SyncUserRolesRequest $request, string $user, UserServiceInterface $users): JsonResponse
     {
         return $this->ok((new UserResource($this->roles->syncUserRoles($users->find($user), $request->roleNames())))->withPerson());
+    }
+
+    public function addMembers(AddRoleMembersRequest $request, string $role): JsonResponse
+    {
+        return $this->ok(['added' => $this->roles->addMembers($this->roles->findRole($role), $request->userIds())]);
+    }
+
+    public function removeMember(string $role, string $user, UserServiceInterface $users): JsonResponse
+    {
+        return $this->ok((new UserResource($this->roles->removeMember($this->roles->findRole($role), $users->find($user))))->withPerson());
     }
 
     /**

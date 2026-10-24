@@ -84,6 +84,17 @@ interface RoleServiceInterface
      */
     public function syncUserRoles(User $user, array $roleNames): User;
 
+    /**
+     * Give the role to these users, keeping their other roles; those who already hold it are skipped.
+     *
+     * @param  list<string>  $userIds
+     * @return int how many users got the role
+     */
+    public function addMembers(Role $role, array $userIds): int;
+
+    /** Take the role away from one user; they keep their other roles (and must have at least one left). */
+    public function removeMember(Role $role, User $user): User;
+
     /** Drops the cached effective access of a user. */
     public function forgetAccess(User $user): void;
 }

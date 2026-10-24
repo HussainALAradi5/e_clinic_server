@@ -79,7 +79,7 @@ class Employee extends Model implements Auditable, OwnedByUser
             ->filterable('status', ['eq', 'in'], column: 'employees.status', enum: EmployeeStatus::class)
             ->filterable('employment_type', ['eq', 'in'], column: 'employees.employment_type', enum: EmploymentType::class)
             ->filterable('hire_date', ['gte', 'lte', 'between'], column: 'employees.hire_date', type: 'date')
-            ->searchIn('persons.first_name', 'persons.last_name', 'persons.code', 'persons.phone', 'employees.job_title')
+            ->searchIn('persons.first_name', 'persons.last_name', 'persons.code', 'persons.phone')
             ->column('code', 'Code')
             ->column('full_name', 'Name')
             ->column('job_title', 'Job title')

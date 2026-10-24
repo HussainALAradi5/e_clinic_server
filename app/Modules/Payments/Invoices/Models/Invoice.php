@@ -87,8 +87,6 @@ class Invoice extends BaseModel implements OwnedByUser
             ->filterable('code', ['eq', 'starts'])
             ->filterable('total', ['gte', 'lte', 'between'], type: 'money')
             ->filterable('balance_due', ['gt', 'gte', 'lte', 'between'], type: 'money')
-            ->searchIn('code', 'invoice_number')
-            ->searchInRelation('patient.person', 'first_name', 'last_name', 'code', 'phone')
             ->includes('patient.person')
             ->column('invoice_number', 'Number')
             ->column('patient', 'Patient')

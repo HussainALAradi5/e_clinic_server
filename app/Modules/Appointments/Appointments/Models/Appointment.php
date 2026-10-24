@@ -95,7 +95,7 @@ class Appointment extends BaseModel implements Chargeable, OwnedByUser
             ->filterable('room_id', ['eq', 'in', 'null'], resource: 'rooms')
             ->filterable('treatment_id', ['eq', 'null'], hidden: true)
             ->filterable('code', ['eq', 'starts'])
-            ->searchIn('code', 'reason')
+            ->searchIn('reason')
             ->includes('patient.person', 'provider.person', 'room')
             ->column('code', 'Code')
             ->column('scheduled_date', 'Date')

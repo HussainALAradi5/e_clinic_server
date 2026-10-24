@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Query;
 
+use App\Shared\Enums\FilterFieldType;
 use App\Shared\Enums\FilterOperator;
 use App\Shared\Enums\LogicalOperator;
 use App\Shared\Support\ClinicClock;
@@ -88,13 +89,17 @@ final class ApplyListQuery
         if ($q->search === null) {
             return;
         }
+        $scope = SearchScope::for($query->getModel(), $q->config);
+        if ($scope->isEmpty()) {
+            return;
+        }
 
-        $query->where(function (Builder $nested) use ($q): void {
+        $query->where(function (Builder $nested) use ($q, $scope): void {
             $pattern = '%'.self::escapeLike($q->search).'%';
-            foreach ($q->config->searchColumns() as $column) {
+            foreach ($scope->columns as $column) {
                 $this->whereLike($nested, $column, $pattern, 'or');
             }
-            foreach ($q->config->searchRelations() as $relation => $columns) {
+            foreach ($scope->relations as $relation => $columns) {
                 $nested->orWhereHas($relation, function (Builder $related) use ($columns, $pattern): void {
                     $related->where(function (Builder $any) use ($columns, $pattern): void {
                         foreach ($columns as $column) {
@@ -192,6 +197,10 @@ final class ApplyListQuery
         $column = $c->field === 'id' ? $query->getModel()->getQualifiedKeyName() : $config->columnFor($c->field);
         $value = $c->value;
 
+        if ($config->filter($c->field)?->type === FilterFieldType::Date && $this->applyDateCondition($query, $column, $c->op, $value)) {
+            return;
+        }
+
         match ($c->op) {
             FilterOperator::Eq => $query->where($column, '=', $value),
             FilterOperator::Ne => $query->where($column, '<>', $value),
@@ -206,6 +215,39 @@ final class ApplyListQuery
             FilterOperator::Starts => $this->whereLike($query, $column, self::escapeLike((string) $value).'%'),
             FilterOperator::Null => $value ? $query->whereNull($column) : $query->whereNotNull($column),
         };
+    }
+
+    /**
+     * Date filters compare the calendar day, so they also match where the database keeps a time with the date
+     * (SQLite stores `2026-10-25 00:00:00`). Returns false for operators that need no special handling.
+     *
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
+     */
+    private function applyDateCondition(Builder $query, string $column, FilterOperator $op, mixed $value): bool
+    {
+        $comparison = match ($op) {
+            FilterOperator::Eq => '=',
+            FilterOperator::Ne => '<>',
+            FilterOperator::Gt => '>',
+            FilterOperator::Gte => '>=',
+            FilterOperator::Lt => '<',
+            FilterOperator::Lte => '<=',
+            default => null,
+        };
+        if ($comparison !== null) {
+            $query->whereDate($column, $comparison, $value);
+
+            return true;
+        }
+        if ($op === FilterOperator::Between && is_array($value)) {
+            $query->whereDate($column, '>=', $value[0])->whereDate($column, '<=', $value[1]);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

@@ -6,6 +6,7 @@ namespace App\Shared\Query;
 
 use App\Shared\Enums\FilterFieldType;
 use App\Shared\Enums\FilterOperator;
+use Closure;
 use Illuminate\Support\Str;
 
 /**
@@ -59,6 +60,7 @@ final class ListQueryConfig
     /**
      * @param  list<string|FilterOperator>  $operators
      * @param  class-string<\BackedEnum>|null  $enum
+     * @param  (Closure(): array<string, string>)|null  $options  named choices (FilterOptions) instead of typing a code
      */
     public function filterable(
         string $field,
@@ -69,11 +71,13 @@ final class ListQueryConfig
         ?string $resource = null,
         ?string $label = null,
         bool $hidden = false,
+        ?Closure $options = null,
     ): self {
         $type = match (true) {
             $type instanceof FilterFieldType => $type,
             is_string($type) => FilterFieldType::from($type),
             $enum !== null => FilterFieldType::Enum,
+            $options !== null => FilterFieldType::Choice,
             $resource !== null => FilterFieldType::Relation,
             default => FilterFieldType::Text,
         };
@@ -87,6 +91,7 @@ final class ListQueryConfig
             resource: $resource,
             label: $label,
             hidden: $hidden,
+            options: $options,
         );
 
         return $this;
@@ -99,6 +104,10 @@ final class ListQueryConfig
         return $this;
     }
 
+    /**
+     * Text the search box should also find that is not a column of the table (a phone number, a reference).
+     * Text columns and related records shown in the table are searched anyway (SearchScope).
+     */
     public function searchIn(string ...$columns): self
     {
         $this->searchColumns = array_values($columns);
@@ -205,7 +214,17 @@ final class ListQueryConfig
         return $this->dateFields[0] ?? null;
     }
 
-    /** @return list<string> */
+    /** A search box makes sense: there are columns to look in (SearchScope works out which). */
+    public function searchable(): bool
+    {
+        return $this->searchColumns !== [] || $this->searchRelations !== [] || $this->columns !== [];
+    }
+
+    /**
+     * Extra text the search box looks in besides the table's columns (see SearchScope).
+     *
+     * @return list<string>
+     */
     public function searchColumns(): array
     {
         return $this->searchColumns;
@@ -239,7 +258,7 @@ final class ListQueryConfig
 
         return $filter->hidden
             || ($text && str_ends_with($filter->column, '_id'))
-            || ($text && in_array($filter->column, $this->searchColumns, true));
+            || ($text && (in_array($filter->column, $this->searchColumns, true) || isset($this->columns[$filter->field])));
     }
 
     /**

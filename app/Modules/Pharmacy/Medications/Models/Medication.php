@@ -13,6 +13,7 @@ use App\Modules\Reference\Companies\Models\Company;
 use App\Modules\Reference\Countries\Models\Country;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Models\BaseModel;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
 use Carbon\CarbonImmutable;
@@ -79,12 +80,12 @@ class Medication extends BaseModel implements OwnedByUser
             ->filterable('form', ['eq', 'in'], enum: MedicationForm::class)
             ->filterable('unit', ['eq', 'in'], enum: DispenseUnit::class)
             ->filterable('manufacturer_id', ['eq', 'in', 'null'], resource: 'companies')
-            ->filterable('origin_country_code', ['eq', 'in'], label: 'Country of origin')
+            ->filterable('origin_country_code', ['eq', 'in'], label: 'Country of origin', options: FilterOptions::inUse(self::class, 'origin_country_code', Country::labels()))
             ->filterable('requires_prescription', ['eq'], type: 'boolean', label: 'Prescription only')
             ->filterable('is_controlled', ['eq'], type: 'boolean', label: 'Controlled drug')
             ->filterable('gtin', ['eq'], label: 'Barcode (GTIN)')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->searchIn('code', 'generic_name', 'brand_name', 'name_ar', 'gtin')
+            ->searchIn('name_ar', 'gtin')
             ->includes('manufacturer', 'originCountry', 'billableService')
             ->column('code', 'Code')
             ->column('generic_name', 'Generic name')

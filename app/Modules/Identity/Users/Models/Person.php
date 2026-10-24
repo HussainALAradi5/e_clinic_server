@@ -9,6 +9,7 @@ use App\Modules\Reference\Countries\Models\Country;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Enums\Gender;
 use App\Shared\Models\BaseModel;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Support\BlindIndex;
 use App\Shared\Support\PhoneNumber;
@@ -90,9 +91,9 @@ class Person extends BaseModel implements OwnedByUser
             ->filterable('gender', enum: Gender::class)
             ->filterable('date_of_birth', ['eq', 'gte', 'lte', 'between'], type: 'date')
             ->filterable('code', ['eq', 'in', 'starts'])
-            ->filterable('nationality_code', label: 'Nationality')
-            ->filterable('language')
-            ->searchIn('first_name', 'last_name', 'first_name_ar', 'last_name_ar', 'code', 'phone', 'email')
+            ->filterable('nationality_code', label: 'Nationality', options: FilterOptions::inUse(self::class, 'nationality_code', Country::labels('nationality')))
+            ->filterable('language', options: FilterOptions::languages(self::class))
+            ->searchIn('first_name', 'last_name')
             ->column('code', 'Code')
             ->column('full_name', 'Name')
             ->column('gender', 'Gender')

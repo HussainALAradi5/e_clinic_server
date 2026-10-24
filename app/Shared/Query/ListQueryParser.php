@@ -329,7 +329,7 @@ final class ListQueryParser
             return null;
         }
 
-        if ($this->config->searchColumns() === []) {
+        if (! $this->config->searchable()) {
             $this->error('search', __('list_query.search_not_supported'));
 
             return null;

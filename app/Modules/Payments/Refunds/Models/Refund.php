@@ -70,7 +70,6 @@ class Refund extends BaseModel implements OwnedByUser
             ->filterable('processed_at', ['null'], type: 'datetime')
             ->filterable('requested_by', ['eq'], resource: 'users')
             ->filterable('code', ['eq', 'starts'])
-            ->searchIn('code', 'reason')
             ->searchInRelation('invoice.patient.person', 'first_name', 'last_name', 'code', 'phone')
             ->includes('invoice.patient.person', 'payment', 'requester.person')
             ->column('code', 'Refund')

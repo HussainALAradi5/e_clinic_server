@@ -10,6 +10,7 @@ use App\Modules\Accounting\Fiscal\Models\FiscalPeriod;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Models\BaseModel;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
 use Brick\Math\BigDecimal;
@@ -71,13 +72,12 @@ class JournalEntry extends BaseModel implements OwnedByUser
             ->sortable('entry_date', 'entry_number', 'code', 'total_debit', 'status', 'type', 'created_at')
             ->filterable('type', ['eq', 'in'], enum: JournalEntryType::class)
             ->filterable('status', ['eq', 'in'], enum: JournalEntryStatus::class)
-            ->filterable('source_type', ['eq', 'in'], label: 'Created from')
+            ->filterable('source_type', ['eq', 'in'], label: 'Created from', options: FilterOptions::inUse(self::class, 'source_type', FilterOptions::inWords()))
             ->filterable('source_id', ['eq'], hidden: true)
             ->filterable('fiscal_period_id', ['eq'], label: 'Month')
             ->filterable('entry_number', ['eq', 'starts'])
             ->filterable('code', ['eq', 'starts'])
             ->filterable('total_debit', ['gte', 'lte', 'between'], type: 'money')
-            ->searchIn('code', 'entry_number', 'description')
             ->column('entry_number', 'Number')
             ->column('entry_date', 'Date')
             ->column('description', 'Description')

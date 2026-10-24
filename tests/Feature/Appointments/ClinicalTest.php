@@ -103,6 +103,29 @@ it('prescribes a treatment, holds urgent plans to 24 hours and books sessions wi
         ->assertUnprocessable();
 });
 
+it('finds treatments by any text shown in the list — the patient, the doctor or the title', function () {
+    $doctor = FrontDesk::doctor();
+    $patient = FrontDesk::patient();
+    $patient->person->forceFill(['first_name' => 'Zaynab', 'last_name' => 'Qasim'])->save();
+    $other = FrontDesk::patient();
+    signedIn($doctor->id);
+    $doctorName = $doctor->person->last_name;
+
+    $mine = postKeyed('/api/v1/treatments', plan($doctor, $patient->id, ['title' => 'Shoulder rehab']))->assertCreated()->json('data.id');
+    postKeyed('/api/v1/treatments', plan($doctor, $other->id, ['title' => 'Wound dressing', 'type' => 'wound_care']))->assertCreated();
+
+    $ids = fn (string $term): array => array_column($this->getJson('/api/v1/treatments?search='.urlencode($term))->assertOk()->json('data'), 'id');
+    expect($ids('zaynab'))->toBe([$mine])
+        ->and($ids('Shoulder'))->toBe([$mine])
+        ->and($ids($doctorName))->toHaveCount(2)
+        // The type is a filter, not text: searching its value finds nothing.
+        ->and($ids('wound_care'))->toBe([]);
+
+    $this->getJson('/api/v1/meta/resources/treatments')->assertOk()
+        ->assertJsonPath('data.search', true)
+        ->assertJsonPath('data.search_hint', ['Code', 'Patient', 'Treatment', 'Doctor']);
+});
+
 it('tracks attendance from the sessions, alerts after two misses and completes the plan on the last session', function () {
     Event::fake([TreatmentAttendanceAlert::class]);
     $doctor = FrontDesk::doctor();

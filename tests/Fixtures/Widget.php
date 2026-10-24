@@ -10,6 +10,7 @@ use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Enums\FilterFieldType;
 use App\Shared\Enums\GenericStatus;
 use App\Shared\Models\BaseModel;
+use App\Shared\Query\FilterOptions;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasGenericStatus;
 use App\Shared\Traits\HasListQuery;
@@ -74,11 +75,13 @@ class Widget extends BaseModel implements HasStateMachine, OwnedByUser
             ->filterable('name', ['eq', 'like', 'starts'])
             ->filterable('completed_at', ['null'], type: FilterFieldType::Datetime, hidden: true)
             ->filterable('owner', ['eq'], column: 'owner_id', resource: 'users', label: 'Responsible')
+            ->filterable('cancellation_reason', ['eq', 'in'], label: 'Reason', options: FilterOptions::inUse(self::class, 'cancellation_reason', FilterOptions::inWords()))
+            ->filterable('scheduled_date', ['eq', 'gte', 'lte', 'between'], type: FilterFieldType::Date)
             ->dateFields('scheduled_date', 'created_at', 'completed_at')
-            ->searchIn('name', 'code')
             ->column('code', 'Code')
             ->column('name', 'Name')
             ->column('status', 'Status')
+            ->column('cancellation_reason', 'Reason')
             ->defaultSort('-created_at')
             ->maxDateRangeDays(366);
     }

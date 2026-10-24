@@ -88,7 +88,7 @@ class Expense extends BaseModel implements OwnedByUser
             ->filterable('paid_at', ['null'], type: 'datetime')
             ->filterable('amount', ['gte', 'lte', 'between'], type: 'money')
             ->filterable('code', ['eq', 'starts'])
-            ->searchIn('code', 'description', 'payee', 'vendor_invoice_number')
+            ->searchIn('vendor_invoice_number')
             ->includes('payeeCompany', 'department', 'expenseAccount')
             ->column('code', 'Code')
             ->column('expense_date', 'Date')
