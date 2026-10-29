@@ -20,8 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Outside production a relation loaded in a loop (N+1 query) fails loudly instead of slowing lists down.
-        Model::preventLazyLoading(! $this->app->isProduction());
+        // On developer machines and in tests a relation loaded in a loop (N+1 query) fails loudly instead of slowing
+        // lists down; deployed sites (staging demo, production) never break a page over it.
+        Model::preventLazyLoading($this->app->environment('local', 'testing'));
     }
 
     /**
