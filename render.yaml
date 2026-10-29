@@ -32,6 +32,10 @@ services:
         generateValue: true
       - key: SEED_DEMO
         value: "true"
+      # The free instance (0.1 CPU) needs about an hour for the demo seed, so the demo database is seeded on a
+      # developer machine with this service's APP_KEY / BLIND_INDEX_KEY and restored. "true" seeds here instead.
+      - key: SEED_ON_EMPTY
+        value: "false"
       - key: DB_CONNECTION
         value: pgsql
       - key: DB_URL
