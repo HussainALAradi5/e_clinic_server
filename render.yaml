@@ -42,11 +42,9 @@ services:
         fromDatabase:
           name: e-clinic-db
           property: connectionString
+      # Public addresses (a `fromService` host is the internal service name, not the public one).
       - key: CLIENT_URL
-        fromService:
-          type: web
-          name: e-clinic-web
-          property: host
+        value: https://e-clinic-web.onrender.com
       - key: QUEUE_CONNECTION
         value: database
       - key: CACHE_STORE
@@ -69,10 +67,7 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: API_URL
-        fromService:
-          type: web
-          name: e-clinic-api
-          property: host
+        value: https://e-clinic-api.onrender.com
     headers:
       - path: /*
         name: X-Frame-Options
