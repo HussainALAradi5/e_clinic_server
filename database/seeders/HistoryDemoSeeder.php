@@ -707,8 +707,11 @@ final class HistoryDemoSeeder extends Seeder
                     'started_at' => $status === AppointmentStatus::Completed ? $from : null,
                     'completed_at' => $status === AppointmentStatus::Completed ? $end : null,
                 ]);
+                // A no-show frees its number for the next booking; held and upcoming sessions each keep their own.
                 if ($status === AppointmentStatus::Completed) {
                     $held++;
+                }
+                if ($status !== AppointmentStatus::NoShow) {
                     $number++;
                 }
                 if (! $past && $number > $planned) {
