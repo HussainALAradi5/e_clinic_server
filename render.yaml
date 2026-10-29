@@ -58,7 +58,7 @@ services:
     name: e-clinic-web
     runtime: static
     repo: https://github.com/HussainALAradi5/e_clinic_client
-    branch: main
+    branch: master
     buildCommand: npm ci && npm run build:deploy
     staticPublishPath: dist/e_clinic_client/browser
     envVars:
