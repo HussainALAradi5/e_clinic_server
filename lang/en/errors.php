@@ -177,7 +177,7 @@ return [
     'ATTENDANCE_ALREADY_CHECKED_IN' => 'You already checked in today at :time.',
     'ATTENDANCE_NOT_CHECKED_IN' => 'There is no open check-in today to check out from.',
     'ATTENDANCE_LOCKED' => 'Attendance of :month is in an approved payroll and can no longer be changed.',
-    'ATTENDANCE_NETWORK_NOT_ALLOWED' => 'Check in and out from the clinic network (your address is not one of the clinic\'s).',
+    'ATTENDANCE_NETWORK_NOT_ALLOWED' => 'Check in and out at the clinic: on the clinic network, or in the app with your location on.',
     'LEAVE_ATTACHMENT_REQUIRED' => ':type needs a supporting document (e.g. a medical certificate) before it can be sent.',
     'LEAVE_OVERLAP' => 'There is already a pending or approved leave (:code) between these dates.',
     'LEAVE_INSUFFICIENT_BALANCE' => 'Only :remaining day(s) of :type are left this year; this request needs :days.',

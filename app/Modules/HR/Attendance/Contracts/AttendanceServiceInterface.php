@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\HR\Attendance\Contracts;
 
 use App\Modules\HR\Attendance\Data\AttendanceSummaryData;
+use App\Modules\HR\Attendance\Data\ClockLocationData;
 use App\Modules\HR\Attendance\Data\ManualAttendanceData;
 use App\Modules\HR\Attendance\Models\Attendance;
 use App\Modules\HR\Employees\Models\Employee;
@@ -25,11 +26,14 @@ interface AttendanceServiceInterface
     /** The employee's row for today, if any (check-in widget). */
     public function today(Employee $employee): ?Attendance;
 
-    /** Self check-in from the clinic network; lateness after the shift start + grace. */
-    public function checkIn(Employee $employee, string $ip): Attendance;
+    /**
+     * Self check-in from the clinic network, or from the phone inside the clinic geofence; lateness after the shift
+     * start + grace.
+     */
+    public function checkIn(Employee $employee, string $ip, ?ClockLocationData $location = null): Attendance;
 
-    /** Self check-out; worked and overtime minutes (overtime waits for approval). */
-    public function checkOut(Employee $employee, string $ip): Attendance;
+    /** Self check-out (same places as check-in); worked and overtime minutes (overtime waits for approval). */
+    public function checkOut(Employee $employee, string $ip, ?ClockLocationData $location = null): Attendance;
 
     /** HR creates or corrects a day (reason required); not in a month with an approved payroll. */
     public function recordManual(ManualAttendanceData $data): Attendance;

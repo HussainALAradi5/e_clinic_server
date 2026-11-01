@@ -10,6 +10,7 @@ use App\Enums\HR\EmployeeStatus;
 use App\Enums\HR\PayrollStatus;
 use App\Modules\HR\Attendance\Contracts\AttendanceServiceInterface;
 use App\Modules\HR\Attendance\Data\AttendanceSummaryData;
+use App\Modules\HR\Attendance\Data\ClockLocationData;
 use App\Modules\HR\Attendance\Data\ManualAttendanceData;
 use App\Modules\HR\Attendance\Exceptions\AlreadyCheckedInException;
 use App\Modules\HR\Attendance\Exceptions\AttendanceLockedException;
@@ -63,11 +64,11 @@ final class AttendanceService implements AttendanceServiceInterface
         return Attendance::query()->where('employee_id', $employee->id)->whereDate('date', $this->clock->today()->toDateString())->first();
     }
 
-    public function checkIn(Employee $employee, string $ip): Attendance
+    public function checkIn(Employee $employee, string $ip, ?ClockLocationData $location = null): Attendance
     {
-        $this->assertCanClock($employee, $ip);
+        $source = $this->assertCanClock($employee, $ip, $location);
 
-        return DB::transaction(function () use ($employee, $ip): Attendance {
+        return DB::transaction(function () use ($employee, $ip, $source): Attendance {
             $today = $this->clock->today();
             $this->assertUnlocked($today);
             $row = $this->row($employee, $today, lock: true);
@@ -80,7 +81,7 @@ final class AttendanceService implements AttendanceServiceInterface
                 'check_in_at' => $now,
                 'late_minutes' => $late,
                 'status' => $late > 0 ? AttendanceStatus::Late : AttendanceStatus::Present,
-                'source' => AttendanceSource::Web,
+                'source' => $source,
                 'check_in_ip' => $ip,
                 'needs_review' => false,
             ])->save();
@@ -89,9 +90,9 @@ final class AttendanceService implements AttendanceServiceInterface
         });
     }
 
-    public function checkOut(Employee $employee, string $ip): Attendance
+    public function checkOut(Employee $employee, string $ip, ?ClockLocationData $location = null): Attendance
     {
-        $this->assertCanClock($employee, $ip);
+        $this->assertCanClock($employee, $ip, $location);
 
         return DB::transaction(function () use ($employee): Attendance {
             $today = $this->clock->today();
@@ -267,16 +268,40 @@ final class AttendanceService implements AttendanceServiceInterface
         return [$paid, $unpaid];
     }
 
-    private function assertCanClock(Employee $employee, string $ip): void
+    /**
+     * Clocking happens at the clinic: from its network (web), or with the phone's position inside the clinic
+     * geofence when one is set (device). Returns how it was proven.
+     */
+    private function assertCanClock(Employee $employee, string $ip, ?ClockLocationData $location): AttendanceSource
     {
         if ($employee->isTerminated()) {
             throw new EmployeeTerminatedException;
         }
         /** @var list<string> $networks */
         $networks = Config::array('hr.attendance.networks');
-        if ($networks !== [] && ! IpUtils::checkIp($ip, $networks)) {
-            throw new CheckInNetworkException;
+        if ($networks === [] || IpUtils::checkIp($ip, $networks)) {
+            return AttendanceSource::Web;
         }
+        if ($location !== null && $this->insideGeofence($location)) {
+            return AttendanceSource::Device;
+        }
+        throw new CheckInNetworkException;
+    }
+
+    private function insideGeofence(ClockLocationData $location): bool
+    {
+        $latitude = Config::get('hr.attendance.geofence.latitude');
+        $longitude = Config::get('hr.attendance.geofence.longitude');
+        $radius = Config::integer('hr.attendance.geofence.radius_meters', 150);
+        if (! is_float($latitude) || ! is_float($longitude) || $radius <= 0) {
+            return false;
+        }
+        // A vague reading (accuracy wider than the circle) could be anywhere around it.
+        if ($location->accuracy !== null && $location->accuracy > $radius) {
+            return false;
+        }
+
+        return $location->distanceTo($latitude, $longitude) <= $radius;
     }
 
     /** Months covered by an approved or paid payroll are read-only. */

@@ -75,6 +75,26 @@ function hrLeaveTypes(): array
     return $ids;
 }
 
+it('lets the phone clock in and out off the clinic network only inside the clinic geofence', function () {
+    hrAs(hrStaff());
+    hrAt('08:00');
+    Config::set('hr.attendance.networks', ['10.20.0.0/16']);
+    Config::set('hr.attendance.geofence', ['latitude' => 26.2235, 'longitude' => 50.5876, 'radius_meters' => 150]);
+
+    // About 1 km away, a reading vaguer than the circle, or half a position: refused.
+    $this->postJson('/api/v1/hr/attendance/check-in', ['latitude' => 26.2325, 'longitude' => 50.5876])
+        ->assertForbidden()->assertJsonPath('error_code', 'ATTENDANCE_NETWORK_NOT_ALLOWED');
+    $this->postJson('/api/v1/hr/attendance/check-in', ['latitude' => 26.2236, 'longitude' => 50.5877, 'accuracy' => 400])
+        ->assertForbidden();
+    $this->postJson('/api/v1/hr/attendance/check-in', ['latitude' => 26.2236])->assertStatus(422);
+
+    // At the door (about 15 m): in, marked as a device check-in; out the same way.
+    $this->postJson('/api/v1/hr/attendance/check-in', ['latitude' => 26.2236, 'longitude' => 50.5877, 'accuracy' => 12])
+        ->assertOk()->assertJsonPath('data.source', 'device');
+    hrAt('16:00');
+    $this->postJson('/api/v1/hr/attendance/check-out', ['latitude' => 26.2236, 'longitude' => 50.5877])->assertOk();
+});
+
 it('checks staff in and out from the clinic network, with lateness, overtime approval by someone else and HR corrections', function () {
     $nurse = hrStaff();
     $hr = hrStaff(RoleName::HrManager, UserType::Hr);
@@ -94,6 +114,8 @@ it('checks staff in and out from the clinic network, with lateness, overtime app
     // Only from the clinic network.
     Config::set('hr.attendance.networks', ['10.20.0.0/16']);
     $this->postJson('/api/v1/hr/attendance/check-in')->assertForbidden()->assertJsonPath('error_code', 'ATTENDANCE_NETWORK_NOT_ALLOWED');
+    // Without a clinic geofence the phone's position does not help.
+    $this->postJson('/api/v1/hr/attendance/check-in', ['latitude' => 26.2235, 'longitude' => 50.5876])->assertForbidden();
     Config::set('hr.attendance.networks', []);
 
     // HR approves the nurse's overtime, never their own.

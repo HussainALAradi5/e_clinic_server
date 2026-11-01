@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\HR\Attendance\Http\Controllers;
 
 use App\Modules\HR\Attendance\Contracts\AttendanceServiceInterface;
+use App\Modules\HR\Attendance\Http\Requests\ClockRequest;
 use App\Modules\HR\Attendance\Http\Requests\ManualAttendanceRequest;
 use App\Modules\HR\Attendance\Http\Resources\AttendanceResource;
 use App\Modules\HR\Attendance\Models\Attendance;
@@ -42,14 +43,14 @@ final class AttendanceController
         ]);
     }
 
-    public function checkIn(Request $request): JsonResponse
+    public function checkIn(ClockRequest $request): JsonResponse
     {
-        return $this->ok(new AttendanceResource($this->attendance->checkIn(StaffMember::current(), (string) $request->ip())));
+        return $this->ok(new AttendanceResource($this->attendance->checkIn(StaffMember::current(), (string) $request->ip(), $request->location())));
     }
 
-    public function checkOut(Request $request): JsonResponse
+    public function checkOut(ClockRequest $request): JsonResponse
     {
-        return $this->ok(new AttendanceResource($this->attendance->checkOut(StaffMember::current(), (string) $request->ip())));
+        return $this->ok(new AttendanceResource($this->attendance->checkOut(StaffMember::current(), (string) $request->ip(), $request->location())));
     }
 
     public function manual(ManualAttendanceRequest $request): JsonResponse

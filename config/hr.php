@@ -18,6 +18,17 @@ return [
             '127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16',
         ))))),
 
+        /*
+        | Phone check-in / check-out by location: inside this circle around the clinic the app may clock in off the
+        | clinic network (source `device`). Off when HR_CLINIC_LATITUDE / HR_CLINIC_LONGITUDE are empty. A reading
+        | less precise than the radius is refused, so a vague position cannot stretch the circle.
+        */
+        'geofence' => [
+            'latitude' => is_numeric(env('HR_CLINIC_LATITUDE')) ? (float) env('HR_CLINIC_LATITUDE') : null,
+            'longitude' => is_numeric(env('HR_CLINIC_LONGITUDE')) ? (float) env('HR_CLINIC_LONGITUDE') : null,
+            'radius_meters' => (int) env('HR_CLINIC_RADIUS_METERS', 150),
+        ],
+
         /* Minutes after the shift start before a check-in counts as late. */
         'late_grace_minutes' => 10,
 
