@@ -44,6 +44,7 @@ use Illuminate\Support\Str;
  * @property ?string $national_id
  * @property ?string $national_id_hash
  * @property ?string $nationality_code
+ * @property ?string $photo_path
  * @property string $phone
  * @property ?string $email
  * @property ?string $address_id

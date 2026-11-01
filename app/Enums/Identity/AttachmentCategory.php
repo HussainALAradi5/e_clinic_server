@@ -24,5 +24,7 @@ enum AttachmentCategory: string implements HasLabel
     case IdDocument = 'id_document';
     case InvoiceScan = 'invoice_scan';
     case Payslip = 'payslip';
+    case ChatMedia = 'chat_media';
+    case VoiceNote = 'voice_note';
     case Other = 'other';
 }

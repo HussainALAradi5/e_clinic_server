@@ -5,6 +5,24 @@
 */
 
 return [
+    'chat' => [
+        'added' => [
+            'subject' => 'Added to :chat',
+            'body' => ':by added you to the group :chat.',
+        ],
+        'removed' => [
+            'subject' => 'Removed from :chat',
+            'body' => ':by removed you from the group :chat.',
+        ],
+        'role' => [
+            'subject' => 'You are now :role in :chat',
+            'body' => ':by made you :role of the group :chat.',
+        ],
+        'mention' => [
+            'subject' => ':by mentioned you',
+            'body' => ':by mentioned you in :chat: :excerpt',
+        ],
+    ],
     'ticket' => [
         'opened' => [
             'subject' => 'New support ticket :code',

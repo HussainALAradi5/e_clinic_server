@@ -7,8 +7,11 @@
 
 return [
     'GenericStatus' => ['pending' => 'Pending', 'in_progress' => 'In progress', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
-    'ConversationType' => ['direct' => 'Direct', 'group' => 'Group'],
-    'ParticipantRole' => ['admin' => 'Admin', 'member' => 'Member'],
+    'ConversationType' => ['direct' => 'One-to-one', 'group' => 'Group'],
+    'ParticipantRole' => ['admin' => 'Leader', 'member' => 'Member'],
+    'MessageKind' => ['text' => 'Text', 'media' => 'Photo / file', 'voice' => 'Voice note'],
+    'BubbleStyle' => ['rounded' => 'Rounded', 'square' => 'Square', 'minimal' => 'Minimal'],
+    'BubbleColor' => ['blue' => 'Blue', 'green' => 'Green', 'teal' => 'Teal', 'purple' => 'Purple', 'rose' => 'Rose', 'slate' => 'Slate'],
     'TicketCategory' => ['technical' => 'Technical problem', 'access' => 'Access & accounts', 'equipment' => 'Equipment', 'data' => 'Wrong data', 'other' => 'Other'],
     'TicketPriority' => ['low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'],
     'TicketStatus' => ['open' => 'Open', 'in_progress' => 'In progress', 'resolved' => 'Resolved', 'closed' => 'Closed'],

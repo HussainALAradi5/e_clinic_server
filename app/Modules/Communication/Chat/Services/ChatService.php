@@ -5,23 +5,36 @@ declare(strict_types=1);
 namespace App\Modules\Communication\Chat\Services;
 
 use App\Enums\Communication\ConversationType;
+use App\Enums\Communication\MessageKind;
 use App\Enums\Communication\ParticipantRole;
+use App\Enums\Identity\AttachmentCategory;
 use App\Enums\Identity\UserStatus;
 use App\Enums\Identity\UserType;
 use App\Modules\Communication\Chat\Contracts\ChatServiceInterface;
+use App\Modules\Communication\Chat\Data\ConversationFilter;
+use App\Modules\Communication\Chat\Data\SendMessageData;
 use App\Modules\Communication\Chat\Events\ConversationChanged;
 use App\Modules\Communication\Chat\Events\ConversationRead;
+use App\Modules\Communication\Chat\Events\MessageReacted;
 use App\Modules\Communication\Chat\Events\MessageSent;
 use App\Modules\Communication\Chat\Exceptions\GroupAdminRequiredException;
 use App\Modules\Communication\Chat\Exceptions\InvalidChatPartnerException;
 use App\Modules\Communication\Chat\Exceptions\NotAParticipantException;
+use App\Modules\Communication\Chat\Models\ChatSetting;
 use App\Modules\Communication\Chat\Models\Conversation;
 use App\Modules\Communication\Chat\Models\ConversationParticipant;
 use App\Modules\Communication\Chat\Models\Message;
+use App\Modules\Communication\Chat\Models\MessageReaction;
+use App\Modules\Identity\Attachments\Contracts\AttachmentServiceInterface;
+use App\Modules\Identity\Attachments\Data\AttachToData;
+use App\Modules\Identity\Notifications\Contracts\NotificationServiceInterface;
+use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Support\ClinicClock;
+use App\Shared\Support\Recipients;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -30,11 +43,22 @@ final class ChatService implements ChatServiceInterface
     /** Loaded with every chat: members (with names) and the last message. */
     private const RELATIONS = ['participants.user.person', 'latestMessage.sender.person'];
 
-    public function __construct(private readonly ClinicClock $clock) {}
+    /** Loaded with every message: who sent it, its files and its reactions. */
+    private const MESSAGE_RELATIONS = ['sender.person', 'attachments', 'reactions.user.person'];
 
-    public function conversations(User $me, ?string $search, int $perPage): LengthAwarePaginator
+    public function __construct(
+        private readonly ClinicClock $clock,
+        private readonly AttachmentServiceInterface $attachments,
+        private readonly NotificationServiceInterface $notifications,
+    ) {}
+
+    public function conversations(User $me, ConversationFilter $filter): LengthAwarePaginator
     {
+        $search = $filter->search;
+        $activity = 'COALESCE(conversations.last_message_at, conversations.created_at)';
+
         return $this->mine($me)
+            ->withCount('messages')
             ->when($search !== null && $search !== '', function (Builder $q) use ($search, $me): void {
                 $like = '%'.$search.'%';
                 $q->where(fn (Builder $w) => $w->where('title', 'like', $like)->orWhereHas(
@@ -42,8 +66,13 @@ final class ChatService implements ChatServiceInterface
                     fn (Builder $p) => $p->where('users.id', '!=', $me->id)->where(fn (Builder $n) => $n->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like)),
                 ));
             })
-            ->orderByRaw('COALESCE(conversations.last_message_at, conversations.created_at) DESC')
-            ->paginate($perPage);
+            ->when($filter->type !== null, fn (Builder $q) => $q->where('conversations.type', $filter->type))
+            ->when($filter->unread === true, fn (Builder $q) => $q->whereExists($this->unreadMessages($me)->toBase()))
+            ->when($filter->unread === false, fn (Builder $q) => $q->whereNotExists($this->unreadMessages($me)->toBase()))
+            ->when($filter->from !== null, fn (Builder $q) => $q->whereRaw("{$activity} >= ?", [$filter->from?->startOfDay()]))
+            ->when($filter->to !== null, fn (Builder $q) => $q->whereRaw("{$activity} <= ?", [$filter->to?->endOfDay()]))
+            ->orderByRaw("{$activity} DESC")
+            ->paginate($filter->perPage);
     }
 
     public function find(User $me, string $id): Conversation
@@ -91,6 +120,7 @@ final class ChatService implements ChatServiceInterface
             return $conversation;
         });
         $this->announce($conversation->id, [$me->id, ...$members]);
+        $this->notify('chat.added', $members, $conversation, $me);
 
         return $this->find($me, $conversation->id);
     }
@@ -121,6 +151,7 @@ final class ChatService implements ChatServiceInterface
             }
         });
         $this->announce($conversation->id, [...$this->memberIds($conversation->refresh()), ...$added]);
+        $this->notify('chat.added', $added, $conversation, $me);
 
         return $this->find($me, $conversation->id);
     }
@@ -145,6 +176,9 @@ final class ChatService implements ChatServiceInterface
             }
         });
         $this->announce($conversation->id, $before);
+        if ($userId !== $me->id) {
+            $this->notify('chat.removed', [$userId], $conversation, $me);
+        }
     }
 
     public function setRole(User $me, Conversation $conversation, string $userId, ParticipantRole $role): Conversation
@@ -158,13 +192,14 @@ final class ChatService implements ChatServiceInterface
         }
         $member->update(['role' => $role]);
         $this->announce($conversation->id, $this->memberIds($conversation));
+        $this->notify('chat.role', [$userId], $conversation, $me, ['role' => $role->label()]);
 
         return $this->find($me, $conversation->id);
     }
 
     public function messages(User $me, Conversation $conversation, ?string $before, int $limit): Collection
     {
-        $query = $conversation->messages()->with('sender.person')->orderByDesc('created_at')->orderByDesc('id');
+        $query = $conversation->messages()->with(self::MESSAGE_RELATIONS)->orderByDesc('created_at')->orderByDesc('id');
         if ($before !== null) {
             $anchor = $conversation->messages()->find($before);
             if ($anchor instanceof Message) {
@@ -173,23 +208,75 @@ final class ChatService implements ChatServiceInterface
             }
         }
 
-        return $query->limit($limit)->get()->toBase();
+        return $this->withSenderRoles($conversation, $query->limit($limit)->get())->toBase();
     }
 
-    public function send(User $me, Conversation $conversation, string $body): Message
+    public function send(User $me, Conversation $conversation, SendMessageData $data): Message
     {
+        $members = $this->memberIds($conversation);
+        // Only current members can be mentioned, and never yourself.
+        $mentions = array_values(array_diff(array_intersect($data->mentions, $members), [$me->id]));
+        $kind = match (true) {
+            $data->voice => MessageKind::Voice,
+            $data->files !== [] => MessageKind::Media,
+            default => MessageKind::Text,
+        };
+        $category = $data->voice ? AttachmentCategory::VoiceNote : AttachmentCategory::ChatMedia;
+
         $now = $this->clock->now();
-        $message = DB::transaction(function () use ($me, $conversation, $body, $now): Message {
-            $message = $conversation->messages()->create(['sender_id' => $me->id, 'body' => $body]);
+        $message = DB::transaction(function () use ($me, $conversation, $data, $mentions, $kind, $category, $now): Message {
+            $message = $conversation->messages()->create([
+                'sender_id' => $me->id,
+                'body' => $data->body,
+                'kind' => $kind,
+                'mentions' => $mentions === [] ? null : $mentions,
+            ]);
+            // Files go through the attachments module (type and size rules, scan), owned by the message.
+            foreach ($data->files as $file) {
+                $this->attachments->uploadOne($file, new AttachToData('chat_message', $message->id, $category));
+            }
             $conversation->update(['last_message_at' => $now]);
             // Writing in a chat means having read it.
             $conversation->participantFor($me->id)?->update(['last_read_at' => $now]);
 
             return $message;
         });
-        rescue(fn () => broadcast(new MessageSent($message, $this->memberIds($conversation))), report: true);
+        $this->withSenderRoles($conversation, $message->newCollection([$message->load(self::MESSAGE_RELATIONS)]));
+        rescue(fn () => broadcast(new MessageSent($message, $members)), report: true);
+        $this->notify('chat.mention', $mentions, $conversation, $me, ['excerpt' => mb_strimwidth((string) $data->body, 0, 80, '…')]);
 
-        return $message->load('sender.person');
+        return $message;
+    }
+
+    public function react(User $me, Conversation $conversation, string $messageId, ?string $emoji): Message
+    {
+        $message = $conversation->messages()->findOrFail($messageId);
+        $current = MessageReaction::query()->where(['message_id' => $message->id, 'user_id' => $me->id])->first();
+
+        // The same emoji again (or none) takes the reaction back; another one replaces it.
+        if ($emoji === null || $current?->emoji === $emoji) {
+            $current?->delete();
+        } else {
+            MessageReaction::query()->updateOrCreate(['message_id' => $message->id, 'user_id' => $me->id], ['emoji' => $emoji]);
+        }
+
+        $this->withSenderRoles($conversation, $message->newCollection([$message->load(self::MESSAGE_RELATIONS)]));
+        rescue(fn () => broadcast(new MessageReacted($message)), report: true);
+
+        return $message;
+    }
+
+    public function settings(User $me): ChatSetting
+    {
+        return ChatSetting::query()->firstOrNew(['user_id' => $me->id]);
+    }
+
+    public function saveSettings(User $me, array $values): ChatSetting
+    {
+        $settings = $this->settings($me);
+        $settings->fill($values)->save();
+
+        return $settings;
     }
 
     public function markRead(User $me, Conversation $conversation): void
@@ -233,17 +320,59 @@ final class ChatService implements ChatServiceInterface
      */
     private function mine(User $me): Builder
     {
-        $unread = Message::query()
-            ->selectRaw('COUNT(*)')
-            ->whereColumn('messages.conversation_id', 'conversations.id')
-            ->where('messages.sender_id', '!=', $me->id)
-            ->where(fn (Builder $q) => $q->whereNull('mine.last_read_at')->orWhereColumn('messages.created_at', '>', 'mine.last_read_at'));
-
         return Conversation::query()
             ->with(self::RELATIONS)
             ->join('conversation_participants as mine', fn ($j) => $j->on('mine.conversation_id', '=', 'conversations.id')->where('mine.user_id', $me->id)->whereNull('mine.left_at'))
             ->select('conversations.*')
-            ->selectSub($unread, 'unread_count');
+            ->selectSub($this->unreadMessages($me)->selectRaw('COUNT(*)'), 'unread_count');
+    }
+
+    /**
+     * Messages from others since I last read the chat (a subquery on `mine`, the joined membership row).
+     *
+     * @return Builder<Message>
+     */
+    private function unreadMessages(User $me): Builder
+    {
+        return Message::query()
+            ->whereColumn('messages.conversation_id', 'conversations.id')
+            ->where('messages.sender_id', '!=', $me->id)
+            ->where(fn (Builder $q) => $q->whereNull('mine.last_read_at')->orWhereColumn('messages.created_at', '>', 'mine.last_read_at'));
+    }
+
+    /**
+     * Marks each message with its sender's role in a group (the leader's bubbles look different).
+     *
+     * @param  EloquentCollection<int, Message>  $messages
+     * @return EloquentCollection<int, Message>
+     */
+    private function withSenderRoles(Conversation $conversation, EloquentCollection $messages): EloquentCollection
+    {
+        $roles = $conversation->participants->mapWithKeys(fn (ConversationParticipant $p): array => [$p->user_id => $p->role->value]);
+        $messages->each(fn (Message $m) => $m->setAttribute('sender_role', $conversation->isGroup() ? $roles->get($m->sender_id) : null));
+
+        return $messages;
+    }
+
+    /**
+     * In-app notice for group events (added, removed, new role) and @mentions — never for plain messages.
+     *
+     * @param  list<string>  $userIds
+     * @param  array<string, string>  $data
+     */
+    private function notify(string $template, array $userIds, Conversation $conversation, User $by, array $data = []): void
+    {
+        if ($userIds === []) {
+            return;
+        }
+        $data = [
+            'chat' => $conversation->isGroup() ? (string) $conversation->title : (string) __('enums.ConversationType.direct'),
+            'by' => $by->person->full_name,
+            ...$data,
+        ];
+        foreach ($userIds as $id) {
+            Recipients::user($id)->each(fn (Person $p) => rescue(fn () => $this->notifications->send($template, $p, $conversation, $data), report: true));
+        }
     }
 
     /** An active staff member other than me. */

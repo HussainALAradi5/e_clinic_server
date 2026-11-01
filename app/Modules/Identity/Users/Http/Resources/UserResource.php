@@ -6,6 +6,7 @@ namespace App\Modules\Identity\Users\Http\Resources;
 
 use App\Modules\Identity\Roles\Models\Role;
 use App\Modules\Identity\Users\Models\User;
+use App\Modules\Identity\Users\Support\Avatar;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -39,6 +40,7 @@ final class UserResource extends JsonResource
             'first_name' => $person->first_name,
             'last_name' => $person->last_name,
             'full_name' => $person->full_name,
+            'avatar_url' => Avatar::url($person),
             'email' => $person->email,
             'phone' => $person->phone,
             'language' => $person->language,

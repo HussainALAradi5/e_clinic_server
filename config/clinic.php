@@ -117,7 +117,10 @@ return [
     | Enums published by GET /meta/enums (modules append theirs).
     */
     'enums' => [
+        Communication\BubbleColor::class,
+        Communication\BubbleStyle::class,
         Communication\ConversationType::class,
+        Communication\MessageKind::class,
         Communication\ParticipantRole::class,
         Communication\TicketCategory::class,
         Communication\TicketPriority::class,

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Chat\Http\Requests;
 
+use App\Modules\Communication\Chat\Data\SendMessageData;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\UploadedFile;
 
+/** Text and/or files (multipart); `voice` marks a single recorded audio file; `mentions` are member ids. */
 final class SendMessageRequest extends FormRequest
 {
     /**
@@ -13,12 +16,27 @@ final class SendMessageRequest extends FormRequest
      */
     public function rules(): array
     {
-        return ['body' => ['required', 'string', 'max:4000']];
+        return [
+            'body' => ['nullable', 'required_without:files', 'string', 'max:4000'],
+            'files' => ['nullable', 'array', 'max:10'],
+            'files.*' => ['file', 'max:20480'],
+            'voice' => ['nullable', 'boolean'],
+            'mentions' => ['nullable', 'array', 'max:50'],
+            'mentions.*' => ['uuid', 'distinct'],
+        ];
     }
 
-    /** The text as written, without surrounding blank lines. */
-    public function body(): string
+    public function toData(): SendMessageData
     {
-        return trim($this->string('body')->toString());
+        $body = trim($this->string('body')->toString());
+        /** @var list<UploadedFile> $files */
+        $files = array_values(array_filter((array) $this->file('files', []), fn (mixed $f): bool => $f instanceof UploadedFile));
+
+        return new SendMessageData(
+            body: $body === '' ? null : $body,
+            files: $files,
+            mentions: array_values(array_map('strval', (array) $this->input('mentions', []))),
+            voice: $this->boolean('voice') && count($files) === 1,
+        );
     }
 }

@@ -21,6 +21,7 @@ Route::middleware(['auth:sanctum', EnsureStaff::ALIAS])->group(function (): void
             Route::get('conversations/{conversation}/messages', 'messages')->whereUuid('conversation')->name('messages');
             Route::get('unread', 'unread')->name('unread');
             Route::get('contacts', 'contacts')->name('contacts');
+            Route::get('settings', 'settings')->name('settings');
         });
         Route::middleware(['access:chat.create', 'throttle:write'])->group(function (): void {
             Route::post('conversations', 'store')->name('store');
@@ -28,6 +29,8 @@ Route::middleware(['auth:sanctum', EnsureStaff::ALIAS])->group(function (): void
         });
         Route::middleware(['access:chat.write', 'throttle:write'])->group(function (): void {
             Route::post('conversations/{conversation}/read', 'read')->whereUuid('conversation')->name('read');
+            Route::post('conversations/{conversation}/messages/{message}/reactions', 'react')->whereUuid(['conversation', 'message'])->name('react');
+            Route::put('settings', 'saveSettings')->name('settings.save');
             Route::patch('conversations/{conversation}', 'rename')->whereUuid('conversation')->name('rename');
             Route::post('conversations/{conversation}/members', 'addMembers')->whereUuid('conversation')->name('members.add');
             Route::patch('conversations/{conversation}/members/{user}', 'setRole')->whereUuid(['conversation', 'user'])->name('members.role');

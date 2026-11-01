@@ -13,6 +13,8 @@ use App\Modules\Appointments\Rooms\Models\Room;
 use App\Modules\Appointments\Schedules\Models\ProviderSchedule;
 use App\Modules\Appointments\Schedules\Models\ScheduleException;
 use App\Modules\Appointments\Treatments\Models\Treatment;
+use App\Modules\Communication\Chat\Models\Message;
+use App\Modules\Communication\Support\Models\SupportTicket;
 use App\Modules\HR\Attendance\Models\Attendance;
 use App\Modules\HR\Departments\Models\Department;
 use App\Modules\HR\Employees\Models\Employee;
@@ -65,6 +67,8 @@ return [
     /* Public morph aliases (Relation::morphMap) and `GET /audit-logs/{type}/{id}` types. Never a raw class name from the client. Modules add theirs. */
     'models' => [
         'person' => Person::class,
+        'chat_message' => Message::class,
+        'support_ticket' => SupportTicket::class,
         'user' => User::class,
         'role' => Role::class,
         'background_task' => BackgroundTask::class,

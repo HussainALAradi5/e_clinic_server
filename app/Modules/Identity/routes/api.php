@@ -7,6 +7,7 @@ use App\Modules\Identity\Codes\Http\Controllers\CodeController;
 use App\Modules\Identity\Notifications\Http\Controllers\NotificationController;
 use App\Modules\Identity\Roles\Http\Controllers\RoleController;
 use App\Modules\Identity\Tasks\Http\Controllers\BackgroundTaskController;
+use App\Modules\Identity\Users\Http\Controllers\ProfilePhotoController;
 use App\Modules\Identity\Users\Http\Controllers\UserController;
 use App\Modules\Identity\Views\Http\Controllers\ListViewController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
             Route::post('two-factor/confirm', 'confirmTwoFactor')->name('two-factor.confirm');
             Route::delete('two-factor', 'disableTwoFactor')->name('two-factor.disable');
         });
+    });
+
+    // My profile photo (chat, top bar)
+    Route::prefix('auth/photo')->name('auth.photo.')->controller(ProfilePhotoController::class)->middleware('throttle:write')->group(function (): void {
+        Route::post('/', 'update')->name('update');
+        Route::delete('/', 'destroy')->name('destroy');
     });
 
     // People & Users

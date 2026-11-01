@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Communication\Chat\Http\Resources;
 
 use App\Modules\Communication\Chat\Models\ConversationParticipant;
+use App\Modules\Identity\Users\Support\Avatar;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,6 +24,7 @@ final class ParticipantResource extends JsonResource
         return [
             'user_id' => $this->user_id,
             'full_name' => $this->user->person->full_name,
+            'avatar_url' => Avatar::url($this->user->person),
             'user_type' => $this->user->user_type->value,
             'role' => $this->role->value,
             'is_me' => $this->user_id === $request->user()?->getAuthIdentifier(),

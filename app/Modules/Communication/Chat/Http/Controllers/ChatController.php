@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Chat\Http\Controllers;
 
+use App\Enums\Communication\BubbleColor;
+use App\Enums\Communication\BubbleStyle;
+use App\Enums\Communication\ConversationType;
 use App\Enums\Communication\ParticipantRole;
 use App\Modules\Communication\Chat\Contracts\ChatServiceInterface;
+use App\Modules\Communication\Chat\Data\ConversationFilter;
 use App\Modules\Communication\Chat\Http\Requests\SendMessageRequest;
 use App\Modules\Communication\Chat\Http\Requests\StartConversationRequest;
+use App\Modules\Communication\Chat\Http\Resources\ChatSettingResource;
 use App\Modules\Communication\Chat\Http\Resources\ContactResource;
 use App\Modules\Communication\Chat\Http\Resources\ConversationResource;
 use App\Modules\Communication\Chat\Http\Resources\MessageResource;
+use App\Modules\Communication\Chat\Models\MessageReaction;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Http\Concerns\ApiResponse;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,10 +35,25 @@ final class ChatController
 
     public function __construct(private readonly ChatServiceInterface $chat) {}
 
+    /** My chats: `search`, `type` (group|direct), `read` (unread|read), `from` / `to` (last activity), `per_page`. */
     public function index(Request $request): JsonResponse
     {
-        $request->validate(['search' => ['nullable', 'string', 'max:100'], 'per_page' => ['nullable', 'integer', 'between:1,100']]);
-        $page = $this->chat->conversations($this->me($request), $request->string('search')->toString() ?: null, $request->integer('per_page', 30));
+        $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'type' => ['nullable', Rule::enum(ConversationType::class)],
+            'read' => ['nullable', Rule::in(['unread', 'read'])],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'per_page' => ['nullable', 'integer', 'between:1,100'],
+        ]);
+        $page = $this->chat->conversations($this->me($request), new ConversationFilter(
+            search: $request->string('search')->toString() ?: null,
+            type: $request->enum('type', ConversationType::class),
+            unread: $request->filled('read') ? $request->input('read') === 'unread' : null,
+            from: $request->filled('from') ? CarbonImmutable::parse($request->string('from')->toString()) : null,
+            to: $request->filled('to') ? CarbonImmutable::parse($request->string('to')->toString()) : null,
+            perPage: $request->integer('per_page', 30),
+        ));
 
         return $this->paginated(ConversationResource::collection($page));
     }
@@ -98,7 +120,35 @@ final class ChatController
     {
         $me = $this->me($request);
 
-        return $this->created(new MessageResource($this->chat->send($me, $this->chat->find($me, $conversation), $request->body())));
+        return $this->created(new MessageResource($this->chat->send($me, $this->chat->find($me, $conversation), $request->toData())));
+    }
+
+    /** `emoji` one of the offered reactions; the same one again (or null) takes it back. */
+    public function react(Request $request, string $conversation, string $message): JsonResponse
+    {
+        $request->validate(['emoji' => ['nullable', 'string', Rule::in(MessageReaction::EMOJIS)]]);
+        $me = $this->me($request);
+        $emoji = $request->string('emoji')->toString();
+
+        return $this->ok(new MessageResource($this->chat->react($me, $this->chat->find($me, $conversation), $message, $emoji === '' ? null : $emoji)));
+    }
+
+    public function settings(Request $request): JsonResponse
+    {
+        return $this->ok(new ChatSettingResource($this->chat->settings($this->me($request))));
+    }
+
+    public function saveSettings(Request $request): JsonResponse
+    {
+        $values = $request->validate([
+            'bubble_style' => ['sometimes', Rule::enum(BubbleStyle::class)],
+            'my_color' => ['sometimes', Rule::enum(BubbleColor::class)],
+            'others_color' => ['sometimes', Rule::enum(BubbleColor::class)],
+            'notify_messages' => ['sometimes', 'boolean'],
+            'count_in_badge' => ['sometimes', 'boolean'],
+        ]);
+
+        return $this->ok(new ChatSettingResource($this->chat->saveSettings($this->me($request), $values)));
     }
 
     public function read(Request $request, string $conversation): Response

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Communication\Chat\Contracts;
 
 use App\Enums\Communication\ParticipantRole;
+use App\Modules\Communication\Chat\Data\ConversationFilter;
+use App\Modules\Communication\Chat\Data\SendMessageData;
+use App\Modules\Communication\Chat\Models\ChatSetting;
 use App\Modules\Communication\Chat\Models\Conversation;
 use App\Modules\Communication\Chat\Models\Message;
 use App\Modules\Identity\Users\Models\User;
@@ -17,11 +20,12 @@ use Illuminate\Support\Collection;
 interface ChatServiceInterface
 {
     /**
-     * My chats, newest activity first, each with my unread count.
+     * My chats, newest activity first, each with my unread count and its message count; filtered by name, type
+     * (group / one-to-one), read state and last-activity dates.
      *
      * @return LengthAwarePaginator<int, Conversation>
      */
-    public function conversations(User $me, ?string $search, int $perPage): LengthAwarePaginator;
+    public function conversations(User $me, ConversationFilter $filter): LengthAwarePaginator;
 
     /** A chat I am in (`CHAT_NOT_A_MEMBER` otherwise). */
     public function find(User $me, string $id): Conversation;
@@ -55,7 +59,19 @@ interface ChatServiceInterface
      */
     public function messages(User $me, Conversation $conversation, ?string $before, int $limit): Collection;
 
-    public function send(User $me, Conversation $conversation, string $body): Message;
+    /** Text, files or a voice note (attachments of the message); @mentioned members get a notice. */
+    public function send(User $me, Conversation $conversation, SendMessageData $data): Message;
+
+    /** Sets my emoji on a message; the same emoji again (or null) removes it. */
+    public function react(User $me, Conversation $conversation, string $messageId, ?string $emoji): Message;
+
+    /** My chat settings (defaults until saved). */
+    public function settings(User $me): ChatSetting;
+
+    /**
+     * @param  array<string, mixed>  $values  validated bubble_style, my_color, others_color, notify_messages, count_in_badge
+     */
+    public function saveSettings(User $me, array $values): ChatSetting;
 
     /** Marks the chat read up to now. */
     public function markRead(User $me, Conversation $conversation): void;
