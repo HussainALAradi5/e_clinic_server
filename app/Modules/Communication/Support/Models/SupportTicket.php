@@ -6,6 +6,8 @@ namespace App\Modules\Communication\Support\Models;
 
 use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Communication\TicketCategory;
+use App\Enums\Communication\TicketConfirmation;
+use App\Modules\Identity\Attachments\Models\Attachment;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Enums\GenericStatus;
@@ -20,6 +22,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * A support request from a staff member (TKT-…). Anyone on staff opens one and follows it; admins (tickets.resolve)
@@ -37,6 +40,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $resolved_by
  * @property ?CarbonImmutable $resolved_at
  * @property ?string $resolution
+ * @property ?list<string> $resolution_steps
+ * @property ?TicketConfirmation $confirmation
+ * @property ?CarbonImmutable $confirmed_at
  * @property int $version
  * @property CarbonImmutable|null $created_at
  * @property CarbonImmutable|null $updated_at
@@ -44,6 +50,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read User|null $assignee
  * @property-read User|null $resolver
  * @property-read Collection<int, TicketComment> $comments
+ * @property-read Collection<int, Attachment> $attachments
  */
 class SupportTicket extends BaseModel implements OwnedByUser
 {
@@ -63,6 +70,7 @@ class SupportTicket extends BaseModel implements OwnedByUser
             ->filterable('status', ['eq', 'in', 'nin'], enum: GenericStatus::class)
             ->filterable('priority', ['eq', 'in'], enum: TreatmentPriority::class)
             ->filterable('category', ['eq', 'in'], enum: TicketCategory::class)
+            ->filterable('confirmation', ['eq', 'in', 'null'], enum: TicketConfirmation::class, label: 'Requester answer')
             ->filterable('requester_id', ['eq'], resource: 'users', label: 'Opened by')
             ->filterable('assigned_to', ['eq', 'null'], resource: 'users', label: 'Assigned to')
             ->filterable('code', ['eq', 'starts'])
@@ -72,6 +80,7 @@ class SupportTicket extends BaseModel implements OwnedByUser
             ->column('category', 'Category')
             ->column('priority', 'Priority')
             ->column('status', 'Status')
+            ->column('confirmation', 'Requester answer')
             ->column('requester', 'Opened by')
             ->column('assignee', 'Assigned to')
             ->column('created_at', 'Opened')
@@ -132,6 +141,30 @@ class SupportTicket extends BaseModel implements OwnedByUser
         return in_array($to, self::nextStatuses($this->status), true);
     }
 
+    /**
+     * Screenshots, photos and PDFs (category `ticket_attachment`), added by the requester or the support team.
+     *
+     * @return MorphMany<Attachment, $this>
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable')->orderBy('created_at');
+    }
+
+    /** The solution as the notice and e-mail show it: the words, then the steps numbered. */
+    public function solutionText(): string
+    {
+        $steps = array_map(fn (int $i, string $step): string => ($i + 1).'. '.$step, array_keys($this->resolution_steps ?? []), $this->resolution_steps ?? []);
+
+        return trim((string) $this->resolution."\n".implode("\n", $steps));
+    }
+
+    /** Solved and waiting for the requester to confirm or decline. */
+    public function awaitsConfirmation(): bool
+    {
+        return $this->status === GenericStatus::Completed && $this->confirmation === TicketConfirmation::Awaiting;
+    }
+
     public function isOwnedBy(Authenticatable $user): bool
     {
         return $this->requester_id === $user->getAuthIdentifier();
@@ -155,6 +188,9 @@ class SupportTicket extends BaseModel implements OwnedByUser
             'priority' => TreatmentPriority::class,
             'status' => GenericStatus::class,
             'resolved_at' => 'immutable_datetime',
+            'resolution_steps' => 'array',
+            'confirmation' => TicketConfirmation::class,
+            'confirmed_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

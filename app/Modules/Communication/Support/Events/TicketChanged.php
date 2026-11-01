@@ -13,7 +13,7 @@ final class TicketChanged
     use Dispatchable;
 
     /**
-     * @param  'opened'|'commented'|'status'  $change
+     * @param  'opened'|'commented'|'status'|'confirmed'|'declined'  $change
      */
     public function __construct(
         public readonly SupportTicket $ticket,

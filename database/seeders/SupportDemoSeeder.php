@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Communication\TicketCategory;
+use App\Enums\Communication\TicketConfirmation;
 use App\Modules\Communication\Support\Models\SupportTicket;
 use App\Modules\Identity\Users\Models\Person;
 use App\Shared\Enums\GenericStatus;
@@ -82,6 +83,10 @@ final class SupportDemoSeeder extends Seeder
                 'resolved_by' => $status === GenericStatus::Completed ? $admin : null,
                 'resolved_at' => $status === GenericStatus::Completed ? $opened->addHours(3) : null,
                 'resolution' => $resolution,
+                // The steps (split from the demo text); recent fixes wait for the requester, older ones are confirmed.
+                'resolution_steps' => $resolution === null ? null : array_values(array_filter(array_map('trim', preg_split('/[;.]\s+/', rtrim($resolution, '.')) ?: []))),
+                'confirmation' => $status === GenericStatus::Completed ? ($daysAgo <= 3 ? TicketConfirmation::Awaiting : TicketConfirmation::Confirmed) : null,
+                'confirmed_at' => $status === GenericStatus::Completed && $daysAgo > 3 ? $opened->addHours(6) : null,
                 'created_at' => $opened,
                 'updated_at' => $opened,
             ])->save();

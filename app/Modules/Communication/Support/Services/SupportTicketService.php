@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Support\Services;
 
+use App\Enums\Communication\TicketConfirmation;
 use App\Modules\Communication\Support\Contracts\SupportTicketServiceInterface;
 use App\Modules\Communication\Support\Data\TicketData;
 use App\Modules\Communication\Support\Events\TicketBroadcast;
@@ -37,7 +38,7 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
 
     public function find(string $id): SupportTicket
     {
-        return $this->query()->with(['comments.author.person'])->withCount('comments')->findOrFail($id);
+        return $this->query()->with(['comments.author.person', 'attachments'])->withCount('comments')->findOrFail($id);
     }
 
     public function open(User $requester, TicketData $data): SupportTicket
@@ -62,12 +63,8 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
         }
         $comment = DB::transaction(function () use ($ticket, $author, $body): TicketComment {
             $comment = $ticket->comments()->create(['author_id' => $author->id, 'body' => $body]);
-            // The requester answering a solved ticket means it is not fixed yet: it opens again.
-            if ($ticket->status === GenericStatus::Completed && $author->id === $ticket->requester_id) {
-                $ticket->forceFill(['status' => GenericStatus::Pending, 'resolved_at' => null, 'resolved_by' => null])->save();
-            } else {
-                $ticket->touch();
-            }
+            // A reply never changes the status: the requester confirms or declines a solved ticket explicitly.
+            $ticket->touch();
 
             return $comment;
         });
@@ -76,13 +73,16 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
         return $comment->load('author.person');
     }
 
-    public function changeStatus(SupportTicket $ticket, User $admin, GenericStatus $to, ?string $resolution, int $version): SupportTicket
+    /**
+     * @param  list<string>  $steps
+     */
+    public function changeStatus(SupportTicket $ticket, User $admin, GenericStatus $to, ?string $resolution, array $steps, int $version): SupportTicket
     {
         if (! $admin->can('tickets.resolve')) {
             throw new AuthorizationException(__('errors.FORBIDDEN'));
         }
 
-        $ticket = DB::transaction(function () use ($ticket, $admin, $to, $resolution, $version): SupportTicket {
+        $ticket = DB::transaction(function () use ($ticket, $admin, $to, $resolution, $steps, $version): SupportTicket {
             $locked = SupportTicket::query()->lockForUpdate()->findOrFail($ticket->id);
             $locked->assertVersion($version);
             if (! $locked->canMoveTo($to)) {
@@ -96,10 +96,18 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
                 $locked->assigned_to = $admin->id;
             }
             if ($to === GenericStatus::Completed) {
-                $locked->fill(['resolution' => $resolution, 'resolved_by' => $admin->id, 'resolved_at' => $this->clock->now()]);
+                // The solution in words, and the steps when the fix was step by step; the requester is asked to confirm.
+                $locked->forceFill([
+                    'resolution' => $resolution,
+                    'resolution_steps' => $steps === [] ? null : $steps,
+                    'resolved_by' => $admin->id,
+                    'resolved_at' => $this->clock->now(),
+                    'confirmation' => TicketConfirmation::Awaiting,
+                    'confirmed_at' => null,
+                ]);
             } elseif ($to === GenericStatus::Pending) {
                 // Reopened: no longer solved.
-                $locked->fill(['resolved_by' => null, 'resolved_at' => null]);
+                $locked->forceFill(['resolved_by' => null, 'resolved_at' => null, 'confirmation' => null, 'confirmed_at' => null]);
             }
             $locked->save();
 
@@ -110,13 +118,53 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
         return $this->find($ticket->id);
     }
 
+    public function confirm(SupportTicket $ticket, User $requester): SupportTicket
+    {
+        $this->assertAwaiting($ticket, $requester);
+        $ticket->forceFill(['confirmation' => TicketConfirmation::Confirmed, 'confirmed_at' => $this->clock->now()])->save();
+        $this->announce($ticket, 'confirmed', $requester);
+
+        return $this->find($ticket->id);
+    }
+
+    public function decline(SupportTicket $ticket, User $requester, string $reason): SupportTicket
+    {
+        $this->assertAwaiting($ticket, $requester);
+        DB::transaction(function () use ($ticket, $requester, $reason): void {
+            // Still broken: back to the person who worked on it, with the reason in the conversation.
+            $ticket->comments()->create(['author_id' => $requester->id, 'body' => __('notifications.ticket.declined_comment', ['reason' => $reason])]);
+            $ticket->forceFill([
+                'status' => GenericStatus::InProgress,
+                'assigned_to' => $ticket->assigned_to ?? $ticket->resolved_by,
+                'confirmation' => TicketConfirmation::Declined,
+                'confirmed_at' => $this->clock->now(),
+                'resolved_by' => null,
+                'resolved_at' => null,
+            ])->save();
+        });
+        $this->announce($ticket, 'declined', $requester);
+
+        return $this->find($ticket->id);
+    }
+
+    /** Only the requester answers, and only while the solved ticket waits for it. */
+    private function assertAwaiting(SupportTicket $ticket, User $user): void
+    {
+        if ($ticket->requester_id !== $user->id) {
+            throw new AuthorizationException(__('errors.TICKET_REQUESTER_ONLY'));
+        }
+        if (! $ticket->awaitsConfirmation()) {
+            throw new InvalidStateTransitionException(context: ['from' => $ticket->status->value, 'to' => 'confirmed']);
+        }
+    }
+
     protected function query(): Builder
     {
         return OwnershipScope::apply(SupportTicket::query()->with(self::RELATIONS)->withCount('comments'), 'tickets', Auth::user());
     }
 
     /**
-     * @param  'opened'|'commented'|'status'  $change
+     * @param  'opened'|'commented'|'status'|'confirmed'|'declined'  $change
      */
     private function announce(SupportTicket $ticket, string $change, User $actor): void
     {

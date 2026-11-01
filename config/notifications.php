@@ -49,6 +49,8 @@ return [
         'ticket.updated' => ['channels' => ['in_app']],
         'ticket.resolved' => ['channels' => ['in_app', 'email']],
         'ticket.replied' => ['channels' => ['in_app']],
+        'ticket.confirmed' => ['channels' => ['in_app']],
+        'ticket.declined' => ['channels' => ['in_app']],
         'task.failed' => ['channels' => ['in_app']],
         'appointment.booked' => ['channels' => ['in_app', 'sms', 'email']],
         'appointment.rescheduled' => ['channels' => ['in_app', 'sms', 'email']],

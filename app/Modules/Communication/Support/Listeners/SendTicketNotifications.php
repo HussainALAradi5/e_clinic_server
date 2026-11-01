@@ -22,12 +22,16 @@ final class SendTicketNotifications implements ShouldHandleEventsAfterCommit
     public function handle(TicketChanged $event): void
     {
         $ticket = $event->ticket;
-        $data = ['code' => $ticket->code, 'subject' => $ticket->subject, 'status' => mb_strtolower($ticket->status->label()), 'resolution' => (string) $ticket->resolution];
+        $data = ['code' => $ticket->code, 'subject' => $ticket->subject, 'status' => mb_strtolower($ticket->status->label()), 'resolution' => $ticket->solutionText()];
         $byRequester = $event->actorId === $ticket->requester_id;
 
         [$template, $people] = match ($event->change) {
             'opened' => ['ticket.opened', Recipients::withPermission('tickets.resolve', [$event->actorId])],
             'status' => [$ticket->status === GenericStatus::Completed ? 'ticket.resolved' : 'ticket.updated', Recipients::user($ticket->requester_id)],
+            // The requester's answer reaches whoever worked on it (or the desk).
+            'confirmed', 'declined' => ["ticket.{$event->change}", $ticket->assigned_to !== null
+                ? Recipients::user($ticket->assigned_to)
+                : Recipients::withPermission('tickets.resolve', [$event->actorId])],
             'commented' => ['ticket.replied', match (true) {
                 ! $byRequester => Recipients::user($ticket->requester_id),
                 $ticket->assigned_to !== null => Recipients::user($ticket->assigned_to),

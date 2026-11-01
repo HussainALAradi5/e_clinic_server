@@ -34,8 +34,17 @@ return [
         ],
         'resolved' => [
             'subject' => 'Ticket :code resolved',
-            'body' => 'Your support ticket :code (:subject) is resolved: :resolution',
+            'body' => "Your support ticket :code (:subject) is solved. What was done:\n:resolution\nPlease confirm it works, or decline if it does not.",
         ],
+        'confirmed' => [
+            'subject' => 'Ticket :code confirmed fixed',
+            'body' => 'The requester confirmed support ticket :code (:subject) is fixed.',
+        ],
+        'declined' => [
+            'subject' => 'Ticket :code is not fixed',
+            'body' => 'The requester declined the fix for support ticket :code (:subject); it is back in progress.',
+        ],
+        'declined_comment' => 'Not fixed yet: :reason',
         'replied' => [
             'subject' => 'New reply on ticket :code',
             'body' => 'There is a new reply on support ticket :code (:subject).',

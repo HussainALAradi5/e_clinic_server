@@ -55,6 +55,8 @@ final class SupportTicketController
         $request->validate([
             'status' => ['required', Rule::enum(GenericStatus::class)],
             'resolution' => ['nullable', 'string', 'max:1000'],
+            'steps' => ['nullable', 'array', 'max:20'],
+            'steps.*' => ['nullable', 'string', 'max:500'],
             'version' => ['required', 'integer', 'min:1'],
         ]);
 
@@ -63,8 +65,23 @@ final class SupportTicketController
             $this->me($request),
             GenericStatus::from($request->string('status')->toString()),
             $request->filled('resolution') ? trim($request->string('resolution')->toString()) : null,
+            array_values(array_filter(array_map(fn (mixed $s): string => trim((string) $s), (array) $request->input('steps', [])), fn (string $s): bool => $s !== '')),
             $request->integer('version'),
         )));
+    }
+
+    /** The requester: it works. */
+    public function confirm(Request $request, string $ticket): JsonResponse
+    {
+        return $this->ok(new TicketResource($this->tickets->confirm($this->tickets->find($ticket), $this->me($request))));
+    }
+
+    /** The requester: still broken, and why. */
+    public function decline(Request $request, string $ticket): JsonResponse
+    {
+        $request->validate(['reason' => ['required', 'string', 'min:5', 'max:1000']]);
+
+        return $this->ok(new TicketResource($this->tickets->decline($this->tickets->find($ticket), $this->me($request), trim($request->string('reason')->toString()))));
     }
 
     private function me(Request $request): User

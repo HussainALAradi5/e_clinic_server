@@ -5,6 +5,7 @@ use App\Modules\Appointments\Orders\Models\ClinicalOrder;
 use App\Modules\Appointments\Patients\Models\Patient;
 use App\Modules\Appointments\Records\Models\PatientConsent;
 use App\Modules\Communication\Chat\Models\Message;
+use App\Modules\Communication\Support\Models\SupportTicket;
 use App\Modules\HR\Leaves\Models\LeaveRequest;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Pharmacy\Inventory\Models\MedicationBatch;
@@ -34,6 +35,7 @@ return [
         'medication_batch' => ['model' => MedicationBatch::class, 'resource' => 'inventory'],
         'leave_request' => ['model' => LeaveRequest::class, 'resource' => 'leaves'],
         'chat_message' => ['model' => Message::class, 'resource' => 'chat'],
+        'support_ticket' => ['model' => SupportTicket::class, 'resource' => 'tickets'],
     ],
 
     /* Category => allowed MIME types (detected from content), max size and PHI flag. */
@@ -55,6 +57,8 @@ return [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ], 'max_mb' => 20, 'sensitive' => false],
         'voice_note' => ['mimes' => ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'audio/x-m4a', 'audio/wav', 'video/webm'], 'max_mb' => 10, 'sensitive' => false],
+        // Screenshots, photos and PDFs on a support ticket (the requester's, and the support team's).
+        'ticket_attachment' => ['mimes' => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], 'max_mb' => 10, 'sensitive' => false],
         'other' => ['mimes' => [
             'application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'text/plain', 'text/csv',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

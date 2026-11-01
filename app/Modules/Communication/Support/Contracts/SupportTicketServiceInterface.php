@@ -30,12 +30,21 @@ interface SupportTicketServiceInterface
     /** Opens a ticket for the user; the admins are told. */
     public function open(User $requester, TicketData $data): SupportTicket;
 
-    /** A reply. When the requester answers a resolved ticket it opens again (the fix did not hold). */
+    /** A reply (never changes the status: a solved ticket is confirmed or declined explicitly). */
     public function comment(SupportTicket $ticket, User $author, string $body): TicketComment;
 
     /**
-     * Admins only: pending ⇄ in progress → completed (solved, with what was done) or cancelled; a solved ticket can be reopened. Taking a ticket in progress assigns
-     * it to the admin; the requester is told of every change.
+     * Admins only: pending ⇄ in progress → completed (solved) or cancelled; a solved ticket can be reopened. Taking a
+     * ticket assigns it to the admin; marking it solved needs the solution in words (and optionally the steps) and asks
+     * the requester to confirm.
+     *
+     * @param  list<string>  $steps  optional, in order
      */
-    public function changeStatus(SupportTicket $ticket, User $admin, GenericStatus $to, ?string $resolution, int $version): SupportTicket;
+    public function changeStatus(SupportTicket $ticket, User $admin, GenericStatus $to, ?string $resolution, array $steps, int $version): SupportTicket;
+
+    /** The requester confirms a solved ticket works; whoever solved it is told. */
+    public function confirm(SupportTicket $ticket, User $requester): SupportTicket;
+
+    /** The requester says it is still broken: back to in progress with the reason; whoever solved it is told. */
+    public function decline(SupportTicket $ticket, User $requester, string $reason): SupportTicket;
 }

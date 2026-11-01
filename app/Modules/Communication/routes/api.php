@@ -47,6 +47,9 @@ Route::middleware(['auth:sanctum', EnsureStaff::ALIAS])->group(function (): void
         Route::middleware('throttle:write')->group(function (): void {
             Route::post('/', 'store')->middleware('access:tickets.create')->name('store');
             Route::post('{ticket}/comments', 'comment')->whereUuid('ticket')->middleware('access:tickets.write')->name('comments.store');
+            // The requester answers a solved ticket (the service checks it is theirs and waiting).
+            Route::post('{ticket}/confirm', 'confirm')->whereUuid('ticket')->middleware('access:tickets.write')->name('confirm');
+            Route::post('{ticket}/decline', 'decline')->whereUuid('ticket')->middleware('access:tickets.write')->name('decline');
             Route::patch('{ticket}/status', 'status')->whereUuid('ticket')->middleware('access:tickets.write&tickets.resolve')->name('status');
         });
     });
