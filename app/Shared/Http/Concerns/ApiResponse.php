@@ -18,9 +18,14 @@ use Illuminate\Http\Response;
  */
 trait ApiResponse
 {
-    protected function ok(mixed $data = null, ?string $message = null, int $status = 200): JsonResponse
+    /**
+     * @param  array<string, mixed>  $meta  endpoint-specific meta for unpaginated lists (e.g. has_more)
+     */
+    protected function ok(mixed $data = null, ?string $message = null, int $status = 200, array $meta = []): JsonResponse
     {
-        return new JsonResponse(['success' => true, 'message' => $message, 'data' => $this->resolve($data)], $status);
+        $body = ['success' => true, 'message' => $message, 'data' => $this->resolve($data)];
+
+        return new JsonResponse($meta === [] ? $body : [...$body, 'meta' => $meta], $status);
     }
 
     protected function created(mixed $data, ?string $message = null): JsonResponse

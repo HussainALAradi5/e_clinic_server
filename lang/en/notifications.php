@@ -5,6 +5,24 @@
 */
 
 return [
+    'ticket' => [
+        'opened' => [
+            'subject' => 'New support ticket :code',
+            'body' => 'New support ticket :code: :subject',
+        ],
+        'updated' => [
+            'subject' => 'Ticket :code is :status',
+            'body' => 'Your support ticket :code (:subject) is now :status.',
+        ],
+        'resolved' => [
+            'subject' => 'Ticket :code resolved',
+            'body' => 'Your support ticket :code (:subject) is resolved: :resolution',
+        ],
+        'replied' => [
+            'subject' => 'New reply on ticket :code',
+            'body' => 'There is a new reply on support ticket :code (:subject).',
+        ],
+    ],
     'patient' => [
         'emergency_access' => [
             'subject' => 'Emergency access to patient :patient',

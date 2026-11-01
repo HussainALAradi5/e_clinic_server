@@ -2,6 +2,7 @@
 
 use App\Modules\Accounting\AccountingServiceProvider;
 use App\Modules\Appointments\AppointmentsServiceProvider;
+use App\Modules\Communication\CommunicationServiceProvider;
 use App\Modules\HR\HumanResourcesServiceProvider;
 use App\Modules\Identity\IdentityServiceProvider;
 use App\Modules\Payments\PaymentsServiceProvider;
@@ -22,4 +23,5 @@ return [
     PaymentsServiceProvider::class,
     PharmacyServiceProvider::class,
     AppointmentsServiceProvider::class,
+    CommunicationServiceProvider::class,
 ];

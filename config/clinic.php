@@ -2,6 +2,7 @@
 
 use App\Enums\Accounting;
 use App\Enums\Appointments;
+use App\Enums\Communication;
 use App\Enums\HR;
 use App\Enums\Identity;
 use App\Enums\Payments;
@@ -116,6 +117,11 @@ return [
     | Enums published by GET /meta/enums (modules append theirs).
     */
     'enums' => [
+        Communication\ConversationType::class,
+        Communication\ParticipantRole::class,
+        Communication\TicketCategory::class,
+        Communication\TicketPriority::class,
+        Communication\TicketStatus::class,
         Enums\GenericStatus::class,
         Enums\ApprovalStatus::class,
         Enums\SortDirection::class,

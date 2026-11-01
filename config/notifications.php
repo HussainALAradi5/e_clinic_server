@@ -41,6 +41,10 @@ return [
     'templates' => [
         'task.completed' => ['channels' => ['in_app']],
         'patient.emergency_access' => ['channels' => ['in_app', 'email']],
+        'ticket.opened' => ['channels' => ['in_app']],
+        'ticket.updated' => ['channels' => ['in_app']],
+        'ticket.resolved' => ['channels' => ['in_app', 'email']],
+        'ticket.replied' => ['channels' => ['in_app']],
         'task.failed' => ['channels' => ['in_app']],
         'appointment.booked' => ['channels' => ['in_app', 'sms', 'email']],
         'appointment.rescheduled' => ['channels' => ['in_app', 'sms', 'email']],

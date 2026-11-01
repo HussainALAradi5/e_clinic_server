@@ -1,0 +1,125 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Communication\Support\Services;
+
+use App\Enums\Communication\TicketStatus;
+use App\Modules\Communication\Support\Contracts\SupportTicketServiceInterface;
+use App\Modules\Communication\Support\Data\TicketData;
+use App\Modules\Communication\Support\Events\TicketBroadcast;
+use App\Modules\Communication\Support\Events\TicketChanged;
+use App\Modules\Communication\Support\Exceptions\TicketResolutionRequiredException;
+use App\Modules\Communication\Support\Models\SupportTicket;
+use App\Modules\Communication\Support\Models\TicketComment;
+use App\Modules\Identity\Users\Models\User;
+use App\Shared\Access\OwnershipScope;
+use App\Shared\Exceptions\InvalidStateTransitionException;
+use App\Shared\Query\ApplyListQuery;
+use App\Shared\Services\BaseEntityService;
+use App\Shared\Support\ClinicClock;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * @extends BaseEntityService<SupportTicket>
+ */
+final class SupportTicketService extends BaseEntityService implements SupportTicketServiceInterface
+{
+    public const RELATIONS = ['requester.person', 'assignee.person', 'resolver.person'];
+
+    public function __construct(ApplyListQuery $listQuery, private readonly ClinicClock $clock)
+    {
+        parent::__construct($listQuery);
+    }
+
+    public function find(string $id): SupportTicket
+    {
+        return $this->query()->with(['comments.author.person'])->withCount('comments')->findOrFail($id);
+    }
+
+    public function open(User $requester, TicketData $data): SupportTicket
+    {
+        $ticket = DB::transaction(fn (): SupportTicket => SupportTicket::query()->create([
+            'requester_id' => $requester->id,
+            'subject' => $data->subject,
+            'description' => $data->description,
+            'category' => $data->category,
+            'priority' => $data->priority,
+            'status' => TicketStatus::Open,
+        ]));
+        $this->announce($ticket, 'opened', $requester);
+
+        return $this->find($ticket->id);
+    }
+
+    public function comment(SupportTicket $ticket, User $author, string $body): TicketComment
+    {
+        if ($ticket->status === TicketStatus::Closed) {
+            throw new InvalidStateTransitionException(context: ['from' => 'closed', 'to' => 'commented']);
+        }
+        $comment = DB::transaction(function () use ($ticket, $author, $body): TicketComment {
+            $comment = $ticket->comments()->create(['author_id' => $author->id, 'body' => $body]);
+            // The requester answering a resolved ticket means it is not fixed yet.
+            if ($ticket->status === TicketStatus::Resolved && $author->id === $ticket->requester_id) {
+                $ticket->forceFill(['status' => TicketStatus::Open, 'resolved_at' => null, 'resolved_by' => null])->save();
+            } else {
+                $ticket->touch();
+            }
+
+            return $comment;
+        });
+        $this->announce($ticket, 'commented', $author);
+
+        return $comment->load('author.person');
+    }
+
+    public function changeStatus(SupportTicket $ticket, User $admin, TicketStatus $to, ?string $resolution, int $version): SupportTicket
+    {
+        if (! $admin->can('tickets.resolve')) {
+            throw new AuthorizationException(__('errors.FORBIDDEN'));
+        }
+
+        $ticket = DB::transaction(function () use ($ticket, $admin, $to, $resolution, $version): SupportTicket {
+            $locked = SupportTicket::query()->lockForUpdate()->findOrFail($ticket->id);
+            $locked->assertVersion($version);
+            if (! $locked->status->canTransitionTo($to)) {
+                throw new InvalidStateTransitionException(context: ['from' => $locked->status->value, 'to' => $to->value]);
+            }
+            if ($to === TicketStatus::Resolved && blank($resolution)) {
+                throw new TicketResolutionRequiredException;
+            }
+            $locked->status = $to;
+            if ($to === TicketStatus::InProgress && $locked->assigned_to === null) {
+                $locked->assigned_to = $admin->id;
+            }
+            if ($to === TicketStatus::Resolved) {
+                $locked->fill(['resolution' => $resolution, 'resolved_by' => $admin->id, 'resolved_at' => $this->clock->now()]);
+            }
+            $locked->save();
+
+            return $locked;
+        });
+        $this->announce($ticket, 'status', $admin);
+
+        return $this->find($ticket->id);
+    }
+
+    protected function query(): Builder
+    {
+        return OwnershipScope::apply(SupportTicket::query()->with(self::RELATIONS), 'tickets', Auth::user());
+    }
+
+    /**
+     * @param  'opened'|'commented'|'status'  $change
+     */
+    private function announce(SupportTicket $ticket, string $change, User $actor): void
+    {
+        $fresh = SupportTicket::query()->with(self::RELATIONS)->findOrFail($ticket->id);
+        TicketChanged::dispatch($fresh, $change, $actor->id);
+        // The live update must never fail the request (the socket server may be down).
+        rescue(fn () => broadcast(new TicketBroadcast($fresh, $change, $actor->id)), report: true);
+    }
+}
