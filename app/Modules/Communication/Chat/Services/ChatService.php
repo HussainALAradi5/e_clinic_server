@@ -17,6 +17,7 @@ use App\Modules\Communication\Chat\Events\ConversationChanged;
 use App\Modules\Communication\Chat\Events\ConversationRead;
 use App\Modules\Communication\Chat\Events\MessageReacted;
 use App\Modules\Communication\Chat\Events\MessageSent;
+use App\Modules\Communication\Chat\Exceptions\ChatDeletedException;
 use App\Modules\Communication\Chat\Exceptions\GroupAdminRequiredException;
 use App\Modules\Communication\Chat\Exceptions\InvalidChatPartnerException;
 use App\Modules\Communication\Chat\Exceptions\NotAParticipantException;
@@ -44,7 +45,7 @@ final class ChatService implements ChatServiceInterface
     private const RELATIONS = ['participants.user.person', 'latestMessage.sender.person'];
 
     /** Loaded with every message: who sent it, its files and its reactions. */
-    private const MESSAGE_RELATIONS = ['sender.person', 'attachments', 'reactions.user.person'];
+    private const MESSAGE_RELATIONS = ['sender.person', 'attachments', 'reactions.user.person', 'replyTo.sender.person', 'replyTo.attachments'];
 
     public function __construct(
         private readonly ClinicClock $clock,
@@ -57,7 +58,11 @@ final class ChatService implements ChatServiceInterface
         $words = preg_split('/\s+/', trim((string) $filter->search), flags: PREG_SPLIT_NO_EMPTY) ?: [];
         $activity = 'COALESCE(conversations.last_message_at, conversations.created_at)';
 
-        return $this->mine($me)
+        if ($filter->deleted) {
+            $this->assertCanSeeAll($me);
+        }
+
+        return ($filter->deleted ? $this->deletedChats() : $this->mine($me))
             ->withCount('messages')
             // Every word must match the group name or another member's first / last name ("sara nasser").
             ->when($words !== [], function (Builder $q) use ($words, $me): void {
@@ -78,11 +83,42 @@ final class ChatService implements ChatServiceInterface
             ->paginate($filter->perPage);
     }
 
-    public function find(User $me, string $id): Conversation
+    public function find(User $me, string $id, bool $orDeleted = false): Conversation
     {
         $conversation = $this->mine($me)->find($id);
+        if ($conversation instanceof Conversation) {
+            return $conversation;
+        }
+        $deleted = $this->deletedChats()->find($id);
+        if (! $deleted instanceof Conversation) {
+            throw new NotAParticipantException;
+        }
+        $admin = $me->can('chat.read_all');
+        if ($orDeleted && $admin) {
+            return $deleted;
+        }
 
-        return $conversation instanceof Conversation ? $conversation : throw new NotAParticipantException;
+        // Its members (and admins) learn why it is gone; anyone else it is simply not theirs.
+        throw $admin || $deleted->participantFor($me->id) !== null ? new ChatDeletedException : new NotAParticipantException;
+    }
+
+    public function delete(User $me, Conversation $conversation): void
+    {
+        if ($conversation->isGroup()) {
+            $this->assertAdmin($me, $conversation);
+        }
+        $conversation->update(['deleted_at' => $this->clock->now(), 'deleted_by' => $me->id]);
+        $this->announce($conversation->id, $this->memberIds($conversation));
+    }
+
+    public function restore(User $me, string $id): Conversation
+    {
+        $this->assertCanSeeAll($me);
+        $conversation = $this->deletedChats()->findOrFail($id);
+        $conversation->update(['deleted_at' => null, 'deleted_by' => null]);
+        $this->announce($conversation->id, $this->memberIds($conversation));
+
+        return $conversation->refresh()->load(self::RELATIONS);
     }
 
     public function startDirect(User $me, string $partnerId): Conversation
@@ -93,6 +129,11 @@ final class ChatService implements ChatServiceInterface
         $id = DB::transaction(function () use ($me, $partner, $key): string {
             $existing = Conversation::query()->where('direct_key', $key)->lockForUpdate()->first();
             if ($existing !== null) {
+                // Talking again to the same person brings a deleted chat back.
+                if ($existing->isDeleted()) {
+                    $existing->update(['deleted_at' => null, 'deleted_by' => null]);
+                }
+
                 return $existing->id;
             }
             $conversation = Conversation::query()->create(['type' => ConversationType::Direct, 'direct_key' => $key, 'created_by' => $me->id]);
@@ -225,11 +266,14 @@ final class ChatService implements ChatServiceInterface
             default => MessageKind::Text,
         };
         $category = $data->voice ? AttachmentCategory::VoiceNote : AttachmentCategory::ChatMedia;
+        // A reply quotes a message of this chat only; another chat's id is simply not found.
+        $replyTo = $data->replyToId === null ? null : $conversation->messages()->findOrFail($data->replyToId)->id;
 
         $now = $this->clock->now();
-        $message = DB::transaction(function () use ($me, $conversation, $data, $mentions, $kind, $category, $now): Message {
+        $message = DB::transaction(function () use ($me, $conversation, $data, $mentions, $kind, $category, $now, $replyTo): Message {
             $message = $conversation->messages()->create([
                 'sender_id' => $me->id,
+                'reply_to_id' => $replyTo,
                 'body' => $data->body,
                 'kind' => $kind,
                 'mentions' => $mentions === [] ? null : $mentions,
@@ -326,6 +370,7 @@ final class ChatService implements ChatServiceInterface
         return Conversation::query()
             ->with(self::RELATIONS)
             ->join('conversation_participants as mine', fn ($j) => $j->on('mine.conversation_id', '=', 'conversations.id')->where('mine.user_id', $me->id)->whereNull('mine.left_at'))
+            ->whereNull('conversations.deleted_at')
             ->select('conversations.*')
             ->selectSub($this->unreadMessages($me)->selectRaw('COUNT(*)'), 'unread_count');
     }
@@ -387,6 +432,27 @@ final class ChatService implements ChatServiceInterface
         }
 
         return $user;
+    }
+
+    /**
+     * Every deleted chat, newest deletion first (admins only; nothing unread in them).
+     *
+     * @return Builder<Conversation>
+     */
+    private function deletedChats(): Builder
+    {
+        return Conversation::query()
+            ->with([...self::RELATIONS, 'deleter.person'])
+            ->whereNotNull('conversations.deleted_at')
+            ->select('conversations.*')
+            ->selectRaw('0 as unread_count');
+    }
+
+    private function assertCanSeeAll(User $me): void
+    {
+        if (! $me->can('chat.read_all')) {
+            throw new NotAParticipantException;
+        }
     }
 
     private function assertAdmin(User $me, Conversation $conversation): void

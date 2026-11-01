@@ -14,7 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * A message as every member sees it (the same payload goes over the socket, so nothing here depends on who asks):
- * the sender with their photo and group role, files with short-lived links, and reactions grouped by emoji.
+ * the sender with their photo and group role, the quoted message it answers, files with short-lived links, and
+ * reactions grouped by emoji.
  *
  * @mixin Message
  */
@@ -41,6 +42,16 @@ final class MessageResource extends JsonResource
                 // The sender's role in a group (admin = leader); null in a one-to-one chat.
                 'role' => $this->getAttribute('sender_role'),
             ],
+            // The quote: who wrote it and a short text (or what kind of file it was); null when it is not a reply
+            // or the quoted message was deleted.
+            'reply_to' => $this->whenLoaded('replyTo', fn (): ?array => $this->replyTo === null ? null : [
+                'id' => $this->replyTo->id,
+                'sender_id' => $this->replyTo->sender_id,
+                'sender_name' => $this->replyTo->sender->person->full_name,
+                'kind' => $this->replyTo->kind->value,
+                'excerpt' => mb_strimwidth((string) $this->replyTo->body, 0, 120, '…'),
+                'file_name' => $this->replyTo->attachments->first()?->original_name,
+            ], null),
             'attachments' => $this->whenLoaded('attachments', fn (): array => $this->attachments->map(fn (Attachment $a): array => [
                 'id' => $a->id,
                 'name' => $a->original_name,

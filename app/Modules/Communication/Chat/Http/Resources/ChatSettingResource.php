@@ -28,6 +28,7 @@ final class ChatSettingResource extends JsonResource
             'notify_messages' => $this->notify_messages,
             'count_in_badge' => $this->count_in_badge,
             'reactions' => MessageReaction::EMOJIS,
+            'all_reactions' => MessageReaction::ALL_EMOJIS,
         ];
     }
 }

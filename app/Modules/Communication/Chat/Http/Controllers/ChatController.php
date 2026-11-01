@@ -35,7 +35,10 @@ final class ChatController
 
     public function __construct(private readonly ChatServiceInterface $chat) {}
 
-    /** My chats: `search`, `type` (group|direct), `read` (unread|read), `from` / `to` (last activity), `per_page`. */
+    /**
+     * My chats: `search`, `type` (group|direct), `read` (unread|read), `from` / `to` (last activity), `per_page`;
+     * `deleted=1` (admins) lists every deleted chat instead.
+     */
     public function index(Request $request): JsonResponse
     {
         $request->validate([
@@ -45,6 +48,7 @@ final class ChatController
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'per_page' => ['nullable', 'integer', 'between:1,100'],
+            'deleted' => ['nullable', 'boolean'],
         ]);
         $page = $this->chat->conversations($this->me($request), new ConversationFilter(
             search: $request->string('search')->toString() ?: null,
@@ -53,6 +57,7 @@ final class ChatController
             from: $request->filled('from') ? CarbonImmutable::parse($request->string('from')->toString()) : null,
             to: $request->filled('to') ? CarbonImmutable::parse($request->string('to')->toString()) : null,
             perPage: $request->integer('per_page', 30),
+            deleted: $request->boolean('deleted'),
         ));
 
         return $this->paginated(ConversationResource::collection($page));
@@ -70,7 +75,21 @@ final class ChatController
 
     public function show(Request $request, string $conversation): JsonResponse
     {
-        return $this->ok(new ConversationResource($this->chat->find($this->me($request), $conversation)));
+        return $this->ok(new ConversationResource($this->chat->find($this->me($request), $conversation, orDeleted: true)));
+    }
+
+    /** Soft delete: the chat leaves its members' lists; admins can still read and restore it. */
+    public function destroy(Request $request, string $conversation): Response
+    {
+        $me = $this->me($request);
+        $this->chat->delete($me, $this->chat->find($me, $conversation));
+
+        return $this->noContent();
+    }
+
+    public function restore(Request $request, string $conversation): JsonResponse
+    {
+        return $this->ok(new ConversationResource($this->chat->restore($this->me($request), $conversation)));
     }
 
     public function rename(Request $request, string $conversation): JsonResponse
@@ -111,7 +130,7 @@ final class ChatController
     {
         $request->validate(['before' => ['nullable', 'uuid']]);
         $me = $this->me($request);
-        $messages = $this->chat->messages($me, $this->chat->find($me, $conversation), $request->string('before')->toString() ?: null, self::MESSAGES_PER_PAGE);
+        $messages = $this->chat->messages($me, $this->chat->find($me, $conversation, orDeleted: true), $request->string('before')->toString() ?: null, self::MESSAGES_PER_PAGE);
 
         return $this->ok(MessageResource::collection($messages), meta: ['has_more' => $messages->count() === self::MESSAGES_PER_PAGE]);
     }
@@ -126,7 +145,7 @@ final class ChatController
     /** `emoji` one of the offered reactions; the same one again (or null) takes it back. */
     public function react(Request $request, string $conversation, string $message): JsonResponse
     {
-        $request->validate(['emoji' => ['nullable', 'string', Rule::in(MessageReaction::EMOJIS)]]);
+        $request->validate(['emoji' => ['nullable', 'string', Rule::in(MessageReaction::ALL_EMOJIS)]]);
         $me = $this->me($request);
         $emoji = $request->string('emoji')->toString();
 

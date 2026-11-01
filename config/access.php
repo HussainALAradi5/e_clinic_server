@@ -176,6 +176,18 @@ return [
             ],
             'actions' => ['patients.view_medical', 'dispensing.dispense', 'inventory.receive', 'inventory.adjust', 'codes.generate', 'codes.scan', 'attendance.self', 'leaves.request', 'companies.export', 'companies.import', 'medications.export', 'medications.import', 'inventory.export', 'dispensing.export'],
         ],
+        // The support team: every ticket (take, answer, solve), and the usual personal pages.
+        'support' => [
+            'access' => [
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_all', 'create', 'write'],
+                'attachments' => ['read_own', 'create'],
+                'attendance' => ['read_own'],
+                'leaves' => ['read_own', 'create', 'write'],
+                'payroll' => ['read_own'],
+            ],
+            'actions' => ['tickets.resolve', 'attendance.self', 'leaves.request'],
+        ],
         'hr_manager' => [
             'access' => [
                 'chat' => ['read_own', 'create', 'write'],

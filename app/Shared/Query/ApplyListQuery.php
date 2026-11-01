@@ -19,6 +19,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class ApplyListQuery
 {
+    /** Words of a search that count; the rest are ignored (a pasted paragraph is not a search). */
+    private const MAX_SEARCH_WORDS = 5;
+
     public function __construct(private readonly ClinicClock $clock) {}
 
     /**
@@ -94,21 +97,25 @@ final class ApplyListQuery
             return;
         }
 
-        $query->where(function (Builder $nested) use ($q, $scope): void {
-            $pattern = '%'.self::escapeLike($q->search).'%';
-            foreach ($scope->columns as $column) {
-                $this->whereLike($nested, $column, $pattern, 'or');
-            }
-            foreach ($scope->relations as $relation => $columns) {
-                $nested->orWhereHas($relation, function (Builder $related) use ($columns, $pattern): void {
-                    $related->where(function (Builder $any) use ($columns, $pattern): void {
-                        foreach ($columns as $column) {
-                            $this->whereLike($any, $any->qualifyColumn($column), $pattern, 'or');
-                        }
+        // Every word must match some column: "omar khalil" finds Omar (first name) Khalil (last name).
+        $words = array_slice(preg_split('/\s+/', trim($q->search), -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, self::MAX_SEARCH_WORDS);
+        foreach ($words as $word) {
+            $query->where(function (Builder $nested) use ($word, $scope): void {
+                $pattern = '%'.self::escapeLike($word).'%';
+                foreach ($scope->columns as $column) {
+                    $this->whereLike($nested, $column, $pattern, 'or');
+                }
+                foreach ($scope->relations as $relation => $columns) {
+                    $nested->orWhereHas($relation, function (Builder $related) use ($columns, $pattern): void {
+                        $related->where(function (Builder $any) use ($columns, $pattern): void {
+                            foreach ($columns as $column) {
+                                $this->whereLike($any, $any->qualifyColumn($column), $pattern, 'or');
+                            }
+                        });
                     });
-                });
-            }
-        });
+                }
+            });
+        }
     }
 
     /**

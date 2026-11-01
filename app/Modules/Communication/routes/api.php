@@ -35,6 +35,10 @@ Route::middleware(['auth:sanctum', EnsureStaff::ALIAS])->group(function (): void
             Route::post('conversations/{conversation}/members', 'addMembers')->whereUuid('conversation')->name('members.add');
             Route::patch('conversations/{conversation}/members/{user}', 'setRole')->whereUuid(['conversation', 'user'])->name('members.role');
             Route::delete('conversations/{conversation}/members/{user}', 'removeMember')->whereUuid(['conversation', 'user'])->name('members.remove');
+            Route::delete('conversations/{conversation}', 'destroy')->whereUuid('conversation')->name('destroy');
+        });
+        Route::middleware(['access:chat.read_all', 'throttle:write'])->group(function (): void {
+            Route::patch('conversations/{conversation}/restore', 'restore')->whereUuid('conversation')->name('restore');
         });
     });
 

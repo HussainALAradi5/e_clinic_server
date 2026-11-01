@@ -27,8 +27,17 @@ interface ChatServiceInterface
      */
     public function conversations(User $me, ConversationFilter $filter): LengthAwarePaginator;
 
-    /** A chat I am in (`CHAT_NOT_A_MEMBER` otherwise). */
-    public function find(User $me, string $id): Conversation;
+    /**
+     * A chat I am in (`CHAT_NOT_A_MEMBER` otherwise; `CHAT_DELETED` once deleted). With `$orDeleted`, an admin
+     * (chat.read_all) also gets a deleted chat, to read it.
+     */
+    public function find(User $me, string $id, bool $orDeleted = false): Conversation;
+
+    /** Soft-deletes the chat (never removed): either person in a one-to-one chat, a leader in a group. */
+    public function delete(User $me, Conversation $conversation): void;
+
+    /** An admin brings a deleted chat back to its members. */
+    public function restore(User $me, string $id): Conversation;
 
     /** The one direct chat with a colleague, created on first use. */
     public function startDirect(User $me, string $partnerId): Conversation;

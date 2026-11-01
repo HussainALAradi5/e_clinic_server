@@ -38,7 +38,7 @@ class Message extends Model implements OwnedByUser
     use HasUuids;
 
     /** @var list<string> */
-    protected $fillable = ['conversation_id', 'sender_id', 'body', 'kind', 'mentions'];
+    protected $fillable = ['conversation_id', 'sender_id', 'reply_to_id', 'body', 'kind', 'mentions'];
 
     /** @var array<string, mixed> */
     protected $attributes = ['kind' => 'text'];
@@ -49,6 +49,16 @@ class Message extends Model implements OwnedByUser
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    /**
+     * The message this one answers (same chat), shown as a quote.
+     *
+     * @return BelongsTo<Message, $this>
+     */
+    public function replyTo(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reply_to_id');
     }
 
     /**

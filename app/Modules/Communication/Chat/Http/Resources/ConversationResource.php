@@ -39,6 +39,8 @@ final class ConversationResource extends JsonResource
             'messages_count' => $this->when($this->getAttribute('messages_count') !== null, fn (): int => (int) $this->getAttribute('messages_count')),
             'last_message_at' => $this->last_message_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'deleted_at' => $this->deleted_at?->toIso8601String(),
+            'deleted_by' => $this->deleted_at === null ? null : $this->deleter?->person->full_name,
         ];
     }
 }

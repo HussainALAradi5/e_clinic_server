@@ -80,6 +80,9 @@ it('hires a new person as employee + invited account with one shared id', functi
     $this->postJson('/api/v1/hr/employees', hirePayload($dept->id, ['person' => ['phone' => '+97336999999', 'email' => 'other@example.com']]))
         ->assertStatus(409)->assertJsonPath('error_code', 'ALREADY_EMPLOYEE');
     $this->getJson('/api/v1/hr/employees?search=karim')->assertOk()->assertJsonCount(1, 'data');
+    // Every word counts, across first and last name.
+    $this->getJson('/api/v1/hr/employees?search='.urlencode('huda  karim'))->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/api/v1/hr/employees?search='.urlencode('huda nobody'))->assertOk()->assertJsonCount(0, 'data');
 });
 
 it('reuses an existing person and gives staff who never sign in an inactive account without email', function () {

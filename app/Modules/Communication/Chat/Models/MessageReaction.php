@@ -22,8 +22,16 @@ class MessageReaction extends Model
 {
     use HasUuids;
 
-    /** The emojis offered (as on WhatsApp). */
+    /** The quick row offered on a message (as on WhatsApp). */
     public const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+    /** Everything behind "+": the quick row first, then more faces, hands and work signs. */
+    public const ALL_EMOJIS = [
+        ...self::EMOJIS,
+        '😀', '😊', '🥰', '😍', '😎', '🤔', '😅', '🙂', '😉', '🤗', '😴', '😬', '😡', '🥲', '😭', '🤩',
+        '👏', '🙌', '👌', '✌️', '🤝', '💪', '👀', '👎', '🫡', '🤞',
+        '🔥', '✨', '🎉', '💯', '✅', '❌', '⚠️', '⭐', '💡', '📌', '⏰', '☕', '🩺', '💊', '🚑', '❤️‍🩹',
+    ];
 
     /** @var list<string> */
     protected $fillable = ['message_id', 'user_id', 'emoji'];

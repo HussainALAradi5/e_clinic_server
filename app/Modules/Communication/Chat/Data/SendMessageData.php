@@ -6,7 +6,7 @@ namespace App\Modules\Communication\Chat\Data;
 
 use Illuminate\Http\UploadedFile;
 
-/** What a member sends: text, files (or one recorded voice note), and the members it @mentions. */
+/** What a member sends: text, files (or one recorded voice note), the members it @mentions, the message it answers. */
 final readonly class SendMessageData
 {
     /**
@@ -18,5 +18,6 @@ final readonly class SendMessageData
         public array $files = [],
         public array $mentions = [],
         public bool $voice = false,
+        public ?string $replyToId = null,
     ) {}
 }

@@ -119,3 +119,31 @@ it('publishes the ticket enums with their labels, even after the enum list was c
         ->assertJsonPath('data.TicketConfirmation.options.0.value', 'awaiting')
         ->assertJsonPath('data.TreatmentPriority.options.0.value', 'medium');
 });
+
+it('shows each person only their own tickets, while the support team sees, takes and solves every one', function () {
+    $nurse = User::factory()->state(['user_type' => UserType::MedicalStaff])->withRole(RoleName::Nurse->value)->create();
+    $doctor = User::factory()->state(['user_type' => UserType::Doctor])->withRole(RoleName::Doctor->value)->create();
+    $support = User::factory()->state(['user_type' => UserType::Admin])->withRole(RoleName::Support->value)->create();
+    $open = function (User $who, string $subject): string {
+        Sanctum::actingAs($who);
+
+        return $this->postJson('/api/v1/support/tickets', [
+            'subject' => $subject, 'description' => 'Something on my screen is not working as it should.', 'category' => 'technical',
+        ])->assertCreated()->json('data.id');
+    };
+
+    $mine = $open($nurse, 'Nurse station screen');
+    $open($doctor, 'Doctor laptop is slow');
+
+    Sanctum::actingAs($nurse);
+    $this->getJson('/api/v1/support/tickets')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.subject', 'Nurse station screen');
+    Sanctum::actingAs($doctor);
+    $this->getJson("/api/v1/support/tickets/{$mine}")->assertNotFound();
+
+    Sanctum::actingAs($support);
+    $this->getJson('/api/v1/support/tickets')->assertOk()->assertJsonCount(2, 'data');
+    $this->patchJson("/api/v1/support/tickets/{$mine}/status", ['status' => 'in_progress', 'version' => 1])
+        ->assertOk()->assertJsonPath('data.assignee.id', $support->id);
+    $this->postJson("/api/v1/support/tickets/{$mine}/comments", ['body' => 'Coming over now.'])
+        ->assertCreated()->assertJsonPath('data.author.is_support', true);
+});

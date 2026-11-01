@@ -7,7 +7,7 @@ namespace App\Modules\Communication\Chat\Data;
 use App\Enums\Communication\ConversationType;
 use Carbon\CarbonImmutable;
 
-/** Filters of the chat list (all optional): name, type, read state and the last-activity date range. */
+/** Filters of the chat list (all optional): name, type, read state, the last-activity date range, deleted chats (admins). */
 final readonly class ConversationFilter
 {
     public function __construct(
@@ -17,5 +17,7 @@ final readonly class ConversationFilter
         public ?CarbonImmutable $from = null,
         public ?CarbonImmutable $to = null,
         public int $perPage = 30,
+        /** Admins only: every deleted chat instead of mine. */
+        public bool $deleted = false,
     ) {}
 }

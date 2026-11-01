@@ -23,5 +23,7 @@ enum RoleName: string implements HasLabel
     case HrManager = 'hr_manager';
     case Accountant = 'accountant';
     case Cashier = 'cashier';
+    /** The support team: sees and answers every support ticket. */
+    case Support = 'support';
     case Patient = 'patient';
 }

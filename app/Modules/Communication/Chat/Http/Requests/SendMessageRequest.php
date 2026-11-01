@@ -23,6 +23,8 @@ final class SendMessageRequest extends FormRequest
             'voice' => ['nullable', 'boolean'],
             'mentions' => ['nullable', 'array', 'max:50'],
             'mentions.*' => ['uuid', 'distinct'],
+            // A message of the same chat (checked by the service).
+            'reply_to_id' => ['nullable', 'uuid'],
         ];
     }
 
@@ -37,6 +39,7 @@ final class SendMessageRequest extends FormRequest
             files: $files,
             mentions: array_values(array_map('strval', (array) $this->input('mentions', []))),
             voice: $this->boolean('voice') && count($files) === 1,
+            replyToId: $this->filled('reply_to_id') ? $this->string('reply_to_id')->toString() : null,
         );
     }
 }

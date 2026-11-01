@@ -24,6 +24,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string $created_by
  * @property CarbonImmutable|null $last_message_at
  * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $deleted_at
+ * @property string|null $deleted_by
+ * @property-read User|null $deleter
  * @property-read Collection<int, ConversationParticipant> $participants
  * @property-read Message|null $latestMessage
  */
@@ -32,7 +35,7 @@ class Conversation extends Model
     use HasUuids;
 
     /** @var list<string> */
-    protected $fillable = ['type', 'title', 'direct_key', 'created_by', 'last_message_at'];
+    protected $fillable = ['type', 'title', 'direct_key', 'created_by', 'last_message_at', 'deleted_at', 'deleted_by'];
 
     /** The key that makes a direct chat between two people unique, whoever starts it. */
     public static function directKey(string $a, string $b): string
@@ -75,6 +78,21 @@ class Conversation extends Model
     }
 
     /**
+     * Who deleted the chat (it is only ever stamped, never removed).
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function deleter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->deleted_at !== null;
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function creator(): BelongsTo
@@ -92,6 +110,7 @@ class Conversation extends Model
         return [
             'type' => ConversationType::class,
             'last_message_at' => 'immutable_datetime',
+            'deleted_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

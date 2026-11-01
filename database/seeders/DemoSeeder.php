@@ -48,6 +48,7 @@ final class DemoSeeder extends Seeder
         ['email' => 'hr@demo.eclinic.bh', 'first' => 'Layla', 'last' => 'Mansour', 'gender' => Gender::Female, 'role' => RoleName::HrManager, 'type' => UserType::Hr],
         ['email' => 'accountant@demo.eclinic.bh', 'first' => 'Hassan', 'last' => 'Ali', 'gender' => Gender::Male, 'role' => RoleName::Accountant, 'type' => UserType::Accountant],
         ['email' => 'cashier@demo.eclinic.bh', 'first' => 'Fatima', 'last' => 'Jaber', 'gender' => Gender::Female, 'role' => RoleName::Cashier, 'type' => UserType::Cashier],
+        ['email' => 'support@demo.eclinic.bh', 'first' => 'Ziad', 'last' => 'Karim', 'gender' => Gender::Male, 'role' => RoleName::Support, 'type' => UserType::Admin],
         ['email' => 'patient@demo.eclinic.bh', 'first' => 'Ahmed', 'last' => 'Yousif', 'gender' => Gender::Male, 'role' => RoleName::Patient, 'type' => UserType::Patient],
         ['email' => 'locked@demo.eclinic.bh', 'first' => 'Khalid', 'last' => 'Locked', 'gender' => Gender::Male, 'role' => RoleName::Receptionist, 'type' => UserType::Receptionist, 'status' => UserStatus::Locked],
         ['email' => 'inactive@demo.eclinic.bh', 'first' => 'Noor', 'last' => 'Inactive', 'gender' => Gender::Female, 'role' => RoleName::Cashier, 'type' => UserType::Cashier, 'status' => UserStatus::Inactive],

@@ -21,7 +21,7 @@ beforeEach(function () {
 it('seeds the system roles with the default access matrix', function () {
     $receptionist = Role::findByName('receptionist', 'sanctum');
 
-    expect(Role::query()->where('is_system', true)->count())->toBe(10)
+    expect(Role::query()->where('is_system', true)->count())->toBe(count(RoleName::cases()))
         ->and($receptionist->code)->toStartWith('ROL-')
         ->and($receptionist->hasPermissionTo('appointments.read_all'))->toBeTrue()
         ->and($receptionist->hasPermissionTo('appointments.read_own'))->toBeTrue()
@@ -44,7 +44,7 @@ it('returns the effective access of the signed-in user', function () {
 it('lists roles with counts, permissions grouped by module and protected resources', function () {
     signedInSuperAdmin();
 
-    $this->getJson('/api/v1/roles?sort=display_name&per_page=20')->assertOk()->assertJsonCount(10, 'data')
+    $this->getJson('/api/v1/roles?sort=display_name&per_page=20')->assertOk()->assertJsonCount(count(RoleName::cases()), 'data')
         ->assertJsonPath('data.0.users_count', 0);
     $groups = collect($this->getJson('/api/v1/roles/permissions')->assertOk()->json('data'));
     expect($groups->pluck('module'))->toContain('identity', 'payments');
