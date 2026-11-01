@@ -54,17 +54,20 @@ final class ChatService implements ChatServiceInterface
 
     public function conversations(User $me, ConversationFilter $filter): LengthAwarePaginator
     {
-        $search = $filter->search;
+        $words = preg_split('/\s+/', trim((string) $filter->search), flags: PREG_SPLIT_NO_EMPTY) ?: [];
         $activity = 'COALESCE(conversations.last_message_at, conversations.created_at)';
 
         return $this->mine($me)
             ->withCount('messages')
-            ->when($search !== null && $search !== '', function (Builder $q) use ($search, $me): void {
-                $like = '%'.$search.'%';
-                $q->where(fn (Builder $w) => $w->where('title', 'like', $like)->orWhereHas(
-                    'participants.user.person',
-                    fn (Builder $p) => $p->where('users.id', '!=', $me->id)->where(fn (Builder $n) => $n->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like)),
-                ));
+            // Every word must match the group name or another member's first / last name ("sara nasser").
+            ->when($words !== [], function (Builder $q) use ($words, $me): void {
+                foreach ($words as $word) {
+                    $like = '%'.$word.'%';
+                    $q->where(fn (Builder $w) => $w->whereLike('title', $like)->orWhereHas(
+                        'participants.user.person',
+                        fn (Builder $p) => $p->where('users.id', '!=', $me->id)->where(fn (Builder $n) => $n->whereLike('first_name', $like)->orWhereLike('last_name', $like)),
+                    ));
+                }
             })
             ->when($filter->type !== null, fn (Builder $q) => $q->where('conversations.type', $filter->type))
             ->when($filter->unread === true, fn (Builder $q) => $q->whereExists($this->unreadMessages($me)->toBase()))
@@ -304,8 +307,8 @@ final class ChatService implements ChatServiceInterface
             ->where('user_type', '!=', UserType::Patient)
             ->join('persons', 'persons.id', '=', 'users.id')
             ->when($search !== null && $search !== '', fn (Builder $q) => $q->where(fn (Builder $w) => $w
-                ->where('persons.first_name', 'like', '%'.$search.'%')
-                ->orWhere('persons.last_name', 'like', '%'.$search.'%')))
+                ->whereLike('persons.first_name', '%'.$search.'%')
+                ->orWhereLike('persons.last_name', '%'.$search.'%')))
             ->orderBy('persons.first_name')
             ->orderBy('persons.last_name')
             ->limit($limit)

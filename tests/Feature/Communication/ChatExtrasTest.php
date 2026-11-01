@@ -133,7 +133,11 @@ it('filters the chat list on the server by type, read state and date, with count
         ->and($ids('?type=direct'))->toBe([$direct])
         ->and($ids('?read=unread'))->toBe([$group])
         ->and($ids('?read=read'))->toBe([$direct])
-        ->and($ids('?from=2000-01-01&to=2000-01-31'))->toBe([]);
+        ->and($ids('?from=2000-01-01&to=2000-01-31'))->toBe([])
+        // A full name in any case finds the one-to-one chat; a name not in the chat finds nothing.
+        ->and($ids('?search='.urlencode(mb_strtolower($rana->person->full_name))))->toEqualCanonicalizing([$group, $direct])
+        ->and($ids('?search='.urlencode(mb_strtolower($sara->person->full_name))))->toBe([$group])
+        ->and($ids('?search=zzqx'))->toBe([]);
     $this->getJson('/api/v1/chat/conversations?type=group')->assertJsonPath('data.0.messages_count', 1)->assertJsonPath('data.0.unread_count', 1);
     $this->getJson('/api/v1/chat/conversations?read=maybe')->assertUnprocessable();
 });

@@ -149,6 +149,8 @@ final class DemoSeeder extends Seeder
         $this->call(HrDemoSeeder::class);
         // Ten weeks of visits, results, prescriptions, payments and expenses, plus three weeks of bookings ahead.
         $this->call(HistoryDemoSeeder::class);
+        // Staff chat: groups with leaders, one-to-one chats, files, a voice note, mentions and reactions.
+        $this->call(ChatDemoSeeder::class);
 
         $this->command->info('Demo data ready — accounts in e_clinic_documentation/DEMO_USERS.md (password '.self::DEMO_PASSWORD.').');
     }
