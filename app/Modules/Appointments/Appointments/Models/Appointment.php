@@ -10,6 +10,7 @@ use App\Enums\Appointments\AppointmentType;
 use App\Enums\Appointments\CancelledBy;
 use App\Modules\Appointments\Doctors\Models\Doctor;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Support\CareTeam;
 use App\Modules\Appointments\Records\Models\MedicalRecord;
 use App\Modules\Appointments\Rooms\Models\Room;
 use App\Modules\HR\Employees\Models\Employee;
@@ -224,7 +225,9 @@ class Appointment extends BaseModel implements Chargeable, OwnedByUser
     {
         $id = $user->getAuthIdentifier();
 
-        return $query->where(fn (Builder $q) => $q->where('appointments.patient_id', $id)->orWhere('appointments.provider_id', $id));
+        // A patient's whole visit history is open to the clinicians caring for them (CareTeam).
+        return $query->where(fn (Builder $q) => $q->where('appointments.patient_id', $id)->orWhere('appointments.provider_id', $id)
+            ->orWhereIn('appointments.patient_id', CareTeam::patientIds($user)));
     }
 
     protected function casts(): array

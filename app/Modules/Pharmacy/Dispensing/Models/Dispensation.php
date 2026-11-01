@@ -7,6 +7,7 @@ namespace App\Modules\Pharmacy\Dispensing\Models;
 use App\Enums\Pharmacy\DispensationKind;
 use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Support\CareTeam;
 use App\Modules\HR\Employees\Models\Employee;
 use App\Modules\Payments\Invoices\Concerns\BilledOnInvoice;
 use App\Modules\Pharmacy\Prescriptions\Models\Prescription;
@@ -173,7 +174,8 @@ class Dispensation extends BaseModel implements Chargeable, OwnedByUser
 
         return $query->where(fn (Builder $q) => $q->where('dispensations.patient_id', $id)
             ->orWhere('dispensations.dispensed_by', $id)
-            ->orWhereIn('dispensations.appointment_id', Appointment::query()->select('id')->where('provider_id', $id)));
+            ->orWhereIn('dispensations.appointment_id', Appointment::query()->select('id')->where('provider_id', $id))
+            ->orWhereIn('dispensations.patient_id', CareTeam::patientIds($user)));
     }
 
     protected function casts(): array

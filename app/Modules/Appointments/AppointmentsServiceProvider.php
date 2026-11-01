@@ -35,8 +35,10 @@ use App\Modules\Appointments\Orders\Listeners\SendOrderNotifications;
 use App\Modules\Appointments\Orders\Models\ClinicalOrder;
 use App\Modules\Appointments\Orders\Services\ClinicalOrderService;
 use App\Modules\Appointments\Patients\Contracts\PatientServiceInterface;
+use App\Modules\Appointments\Patients\Events\EmergencyAccessGranted;
 use App\Modules\Appointments\Patients\Http\Resources\PatientResource;
 use App\Modules\Appointments\Patients\Imports\PatientImport;
+use App\Modules\Appointments\Patients\Listeners\NotifyEmergencyAccess;
 use App\Modules\Appointments\Patients\Models\Patient;
 use App\Modules\Appointments\Patients\Services\PatientService;
 use App\Modules\Appointments\Records\Console\ImportIcd10Command;
@@ -91,6 +93,7 @@ final class AppointmentsServiceProvider extends ServiceProvider
     public function boot(BulkActionRegistry $bulk): void
     {
         Event::listen(EmployeeTerminated::class, StopBookingsOfTerminatedDoctor::class);
+        Event::listen(EmergencyAccessGranted::class, NotifyEmergencyAccess::class);
         Event::listen([AppointmentBooked::class, AppointmentCancelled::class, AppointmentRescheduled::class], SendAppointmentNotifications::class);
         Event::listen([PatientCheckedIn::class, AppointmentStarted::class, AppointmentCompleted::class, AppointmentNoShow::class], TrackTreatmentSessions::class);
         Event::listen([TreatmentCreated::class, TreatmentAttendanceAlert::class, TreatmentCompleted::class], SendTreatmentNotifications::class);

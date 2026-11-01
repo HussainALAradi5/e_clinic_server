@@ -13,10 +13,12 @@ use App\Modules\Appointments\Orders\Models\ClinicalOrder;
 use App\Modules\Appointments\Patients\Contracts\PatientServiceInterface;
 use App\Modules\Appointments\Patients\Data\PatientData;
 use App\Modules\Appointments\Patients\Data\PatientTimelineEntry;
+use App\Modules\Appointments\Patients\Events\EmergencyAccessGranted;
 use App\Modules\Appointments\Patients\Events\PatientRegistered;
 use App\Modules\Appointments\Patients\Exceptions\DuplicatePatientException;
 use App\Modules\Appointments\Patients\Exceptions\PatientAlreadyHasAccountException;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Models\PatientAccessGrant;
 use App\Modules\Appointments\Treatments\Models\Treatment;
 use App\Modules\Identity\Users\Contracts\UserServiceInterface;
 use App\Modules\Identity\Users\Data\CreateUserData;
@@ -40,6 +42,9 @@ use Illuminate\Validation\ValidationException;
 
 final class PatientService implements PatientServiceInterface
 {
+    /** How long a break-the-glass grant lasts (a shift). */
+    private const EMERGENCY_ACCESS_HOURS = 12;
+
     public function __construct(
         private readonly ApplyListQuery $listQuery,
         private readonly UserServiceInterface $users,
@@ -175,6 +180,39 @@ final class PatientService implements PatientServiceInterface
         }
 
         return $entries->sortByDesc(fn (PatientTimelineEntry $e): int => $e->at->getTimestamp())->values();
+    }
+
+    public function lookup(?string $code, ?string $nationalId): ?Patient
+    {
+        if (blank($code) && blank($nationalId)) {
+            return null;
+        }
+        $patient = Patient::query()
+            ->select('patients.*')
+            ->join('persons', 'persons.id', '=', 'patients.id')
+            ->where('persons.is_deleted', false)
+            ->when(filled($code), fn (Builder $q) => $q->where('persons.code', mb_strtoupper(trim((string) $code))))
+            ->when(filled($nationalId), fn (Builder $q) => $q->where('persons.national_id_hash', BlindIndex::make((string) $nationalId, Person::BLIND_INDEX_CONTEXT)))
+            ->with('person')
+            ->first();
+        if ($patient !== null) {
+            $patient->setAttribute('in_care', $this->patients()->whereKey($patient->id)->exists());
+        }
+
+        return $patient;
+    }
+
+    public function grantEmergencyAccess(Patient $patient, User $clinician, string $reason): PatientAccessGrant
+    {
+        $grant = DB::transaction(fn (): PatientAccessGrant => PatientAccessGrant::query()->create([
+            'patient_id' => $patient->id,
+            'user_id' => $clinician->id,
+            'reason' => $reason,
+            'expires_at' => $this->clock->now()->addHours(self::EMERGENCY_ACCESS_HOURS),
+        ]));
+        EmergencyAccessGranted::dispatch($patient->loadMissing('person'), $grant);
+
+        return $grant;
     }
 
     /**

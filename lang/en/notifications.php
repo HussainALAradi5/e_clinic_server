@@ -5,6 +5,12 @@
 */
 
 return [
+    'patient' => [
+        'emergency_access' => [
+            'subject' => 'Emergency access to patient :patient',
+            'body' => ':clinician opened patient :patient outside their care. Reason: :reason',
+        ],
+    ],
     'appointment' => [
         'booked' => [
             'subject' => 'Appointment booked: :date at :time',

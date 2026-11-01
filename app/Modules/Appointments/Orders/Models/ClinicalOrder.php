@@ -10,6 +10,7 @@ use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Doctors\Models\Doctor;
 use App\Modules\Appointments\Doctors\Models\Specialty;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Support\CareTeam;
 use App\Modules\Appointments\Rooms\Models\Room;
 use App\Modules\Appointments\Treatments\Models\Treatment;
 use App\Modules\HR\Employees\Models\Employee;
@@ -239,7 +240,8 @@ class ClinicalOrder extends BaseModel implements Chargeable, OwnedByUser, Releas
         return $query->where(fn (Builder $q) => $q->where('clinical_orders.patient_id', $id)
             ->orWhere('clinical_orders.ordered_by', $id)
             ->orWhere('clinical_orders.performed_by', $id)
-            ->orWhere('clinical_orders.referred_to_doctor_id', $id));
+            ->orWhere('clinical_orders.referred_to_doctor_id', $id)
+            ->orWhereIn('clinical_orders.patient_id', CareTeam::patientIds($user)));
     }
 
     /** The report and images of a completed order belong to its patient too (portal results). */

@@ -40,6 +40,7 @@ return [
        in-app inbox, which the portal shows. */
     'templates' => [
         'task.completed' => ['channels' => ['in_app']],
+        'patient.emergency_access' => ['channels' => ['in_app', 'email']],
         'task.failed' => ['channels' => ['in_app']],
         'appointment.booked' => ['channels' => ['in_app', 'sms', 'email']],
         'appointment.rescheduled' => ['channels' => ['in_app', 'sms', 'email']],

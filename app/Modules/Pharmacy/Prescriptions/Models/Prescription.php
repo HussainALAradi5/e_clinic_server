@@ -7,6 +7,7 @@ namespace App\Modules\Pharmacy\Prescriptions\Models;
 use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Doctors\Models\Doctor;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Support\CareTeam;
 use App\Modules\Appointments\Treatments\Models\Treatment;
 use App\Modules\Pharmacy\Dispensing\Models\Dispensation;
 use App\Modules\Pharmacy\Support\Qty;
@@ -175,7 +176,8 @@ class Prescription extends BaseModel implements OwnedByUser
     {
         $id = $user->getAuthIdentifier();
 
-        return $query->where(fn (Builder $q) => $q->where('prescriptions.patient_id', $id)->orWhere('prescriptions.doctor_id', $id));
+        return $query->where(fn (Builder $q) => $q->where('prescriptions.patient_id', $id)->orWhere('prescriptions.doctor_id', $id)
+            ->orWhereIn('prescriptions.patient_id', CareTeam::patientIds($user)));
     }
 
     /** @return list<string> */

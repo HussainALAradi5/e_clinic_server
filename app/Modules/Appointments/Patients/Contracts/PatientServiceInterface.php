@@ -7,6 +7,7 @@ namespace App\Modules\Appointments\Patients\Contracts;
 use App\Modules\Appointments\Patients\Data\PatientData;
 use App\Modules\Appointments\Patients\Data\PatientTimelineEntry;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Models\PatientAccessGrant;
 use App\Modules\Identity\Users\Data\PersonData;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Query\ListQuery;
@@ -46,4 +47,16 @@ interface PatientServiceInterface
      * @return Collection<int, PatientTimelineEntry>
      */
     public function timeline(Patient $patient): Collection;
+
+    /**
+     * Finds a patient by file number or exact national ID whether or not they are in the caller's care — identity
+     * only (no medical data), with `in_care`, so a clinician can confirm the person before breaking the glass.
+     */
+    public function lookup(?string $code, ?string $nationalId): ?Patient;
+
+    /**
+     * Break the glass: opens the patient's file (and history) to the clinician for a few hours, with a reason that is
+     * kept and audited; admins are told.
+     */
+    public function grantEmergencyAccess(Patient $patient, User $clinician, string $reason): PatientAccessGrant;
 }

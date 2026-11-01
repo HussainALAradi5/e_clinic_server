@@ -326,3 +326,47 @@ it('requires a valid consent before a procedure that needs one, and revoking it 
     $this->postJson("/api/v1/patients/{$child->id}/consents", [...$consent, 'type' => 'general_treatment', 'appointment_id' => null, 'signed_by_name' => 'Child'])
         ->assertUnprocessable()->assertJsonStructure(['errors' => ['signer_relationship']]);
 });
+
+it('opens a patient\'s whole history to the doctors caring for them, keeps writing with the visit\'s doctor, and breaks the glass with a reason', function () {
+    $omar = FrontDesk::doctor();
+    $sara = FrontDesk::doctor(['license_number' => 'NHRA-99001']);
+    $shared = FrontDesk::patient();
+    $notMine = FrontDesk::patient();
+    $admin = User::factory()->withRole(RoleName::Admin->value)->create();
+    deskUser();
+    $omarsVisit = postKeyed('/api/v1/appointments', ['patient_id' => $shared->id, 'provider_id' => $omar->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->assertCreated()->json('data.id');
+    $sarasVisit = postKeyed('/api/v1/appointments', ['patient_id' => $shared->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'phone'])->assertCreated()->json('data.id');
+    postKeyed('/api/v1/appointments', ['patient_id' => $notMine->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->assertCreated();
+    foreach ([$omarsVisit, $sarasVisit] as $visit) {
+        $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
+    }
+    signedIn($sara->id);
+    $this->patchJson("/api/v1/appointments/{$sarasVisit}/start")->assertOk();
+    $this->putJson("/api/v1/appointments/{$sarasVisit}/medical-record", ['chief_complaint' => 'Chest pain', 'assessment' => 'Musculoskeletal'])->assertOk();
+
+    // Omar sees his patient's visit with Sara and her notes, but cannot write in them.
+    signedIn($omar->id);
+    $this->getJson("/api/v1/appointments/{$sarasVisit}/medical-record")->assertOk()->assertJsonPath('data.assessment', 'Musculoskeletal');
+    $this->putJson("/api/v1/appointments/{$sarasVisit}/medical-record", ['version' => 1, 'plan' => 'Mine now'])->assertForbidden();
+    expect(collect($this->getJson("/api/v1/patients/{$shared->id}/timeline")->assertOk()->json('data'))->pluck('id'))->toContain($sarasVisit);
+
+    // Family history is kept by the care team, shown with medical rights.
+    $version = $this->getJson("/api/v1/patients/{$shared->id}")->json('data.version');
+    $this->putJson("/api/v1/patients/{$shared->id}/medical-history", ['version' => $version, 'family_history' => 'Father: type 2 diabetes', 'surgical_history' => 'Appendectomy 2010'])
+        ->assertOk()->assertJsonPath('data.family_history', 'Father: type 2 diabetes')->assertJsonPath('data.surgical_history', 'Appendectomy 2010');
+
+    // Sara's other patient is closed to Omar until he breaks the glass with a reason; it is audited and the admin told.
+    $this->getJson("/api/v1/patients/{$notMine->id}")->assertNotFound();
+    $code = $notMine->person->code;
+    $this->getJson("/api/v1/patients/lookup?code={$code}")->assertOk()->assertJsonPath('data.in_care', false)->assertJsonMissingPath('data.allergies');
+    $this->postJson("/api/v1/patients/{$notMine->id}/emergency-access", ['reason' => 'short'])->assertUnprocessable();
+    $this->postJson("/api/v1/patients/{$notMine->id}/emergency-access", ['reason' => 'Collapsed in the waiting room, needs allergies'])
+        ->assertCreated()->assertJsonPath('data.patient.id', $notMine->id);
+    $this->getJson("/api/v1/patients/{$notMine->id}")->assertOk();
+    expect(DB::table('audit_logs')->where('action', 'emergency_access')->where('user_id', $omar->id)->exists())->toBeTrue()
+        ->and(DB::table('notifications')->where('template', 'patient.emergency_access')->where('person_id', $admin->id)->exists())->toBeTrue();
+
+    // The grant ends after the shift.
+    $this->travel(13)->hours();
+    $this->getJson("/api/v1/patients/{$notMine->id}")->assertNotFound();
+});

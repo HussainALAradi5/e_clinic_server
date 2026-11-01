@@ -12,7 +12,7 @@ use Illuminate\Support\Arr;
  */
 final readonly class PatientData
 {
-    private const FIELDS = ['blood_group', 'allergies', 'chronic_conditions', 'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation', 'insurance_company_id', 'insurance_policy_number', 'insurance_expiry_date', 'insurance_coverage_percent', 'notes'];
+    private const FIELDS = ['blood_group', 'allergies', 'chronic_conditions', 'family_history', 'surgical_history', 'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation', 'insurance_company_id', 'insurance_policy_number', 'insurance_expiry_date', 'insurance_coverage_percent', 'notes'];
 
     /**
      * @param  array<string, mixed>  $values

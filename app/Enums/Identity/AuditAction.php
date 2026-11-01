@@ -28,4 +28,6 @@ enum AuditAction: string implements HasLabel
     case Posted = 'posted';
     case Reversed = 'reversed';
     case Approved = 'approved';
+    // Break the glass: a clinician opened a patient outside their care.
+    case EmergencyAccess = 'emergency_access';
 }

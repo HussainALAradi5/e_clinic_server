@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Identity\Users\Models;
 
+use App\Enums\Identity\UserType;
+use App\Modules\Appointments\Patients\Models\Patient;
 use App\Modules\Reference\Addresses\Models\Address;
 use App\Modules\Reference\Countries\Models\Country;
+use App\Shared\Access\OwnershipScope;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Enums\Gender;
 use App\Shared\Models\BaseModel;
@@ -142,10 +145,14 @@ class Person extends BaseModel implements OwnedByUser
 
     public function isOwnedBy(Authenticatable $user): bool
     {
-        return $this->getKey() === $user->getAuthIdentifier();
+        return static::query()->ownedBy($user)->whereKey($this->getKey())->exists();
     }
 
     /**
+     * The people a user with `people.read_own` sees. A patient: only themself. Staff: themself, every staff member
+     * (colleagues, employee profiles) and the patients whose files they may open — the patient-file rule itself, so
+     * the two never drift apart. Without patient rights (HR) that is staff only.
+     *
      * @template TModel of Model
      *
      * @param  Builder<TModel>  $query
@@ -153,7 +160,15 @@ class Person extends BaseModel implements OwnedByUser
      */
     public function scopeOwnedBy(Builder $query, Authenticatable $user): Builder
     {
-        return $query->whereKey($user->getAuthIdentifier());
+        if (! $user instanceof User || $user->user_type === UserType::Patient) {
+            return $query->whereKey($user->getAuthIdentifier());
+        }
+        $patients = OwnershipScope::apply(Patient::query()->select('patients.id'), 'patients', $user);
+
+        return $query->where(fn (Builder $q) => $q
+            ->whereKey($user->getAuthIdentifier())
+            ->orWhereHas('user', fn (Builder $u) => $u->where('user_type', '!=', UserType::Patient))
+            ->orWhereIn($q->qualifyColumn('id'), $patients));
     }
 
     /** @return list<string> */

@@ -44,7 +44,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
             Route::get('/', 'index')->name('index');
             Route::get('{patient}', 'show')->whereUuid('patient')->name('show');
             Route::get('{patient}/timeline', 'timeline')->whereUuid('patient')->name('timeline');
+            Route::get('lookup', 'lookup')->middleware(EnsureStaff::ALIAS)->name('lookup');
         });
+        // Break the glass (clinicians with medical rights) and the medical history kept by the care team.
+        Route::post('{patient}/emergency-access', 'emergencyAccess')->whereUuid('patient')
+            ->middleware(['access:patients.read_own&patients.view_medical', EnsureStaff::ALIAS, 'throttle:sensitive'])->name('emergency-access');
+        Route::put('{patient}/medical-history', 'medicalHistory')->whereUuid('patient')
+            ->middleware(['access:records.write&patients.view_medical', 'throttle:write'])->name('medical-history');
         Route::middleware('throttle:write')->group(function (): void {
             Route::post('/', 'store')->middleware('access:patients.create')->name('store');
             Route::put('{patient}', 'update')->whereUuid('patient')->middleware('access:patients.write')->name('update');

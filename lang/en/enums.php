@@ -7,6 +7,11 @@
 
 return [
     'GenericStatus' => ['pending' => 'Pending', 'in_progress' => 'In progress', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
+    'ConversationType' => ['direct' => 'Direct', 'group' => 'Group'],
+    'ParticipantRole' => ['admin' => 'Admin', 'member' => 'Member'],
+    'TicketCategory' => ['technical' => 'Technical problem', 'access' => 'Access & accounts', 'equipment' => 'Equipment', 'data' => 'Wrong data', 'other' => 'Other'],
+    'TicketPriority' => ['low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'],
+    'TicketStatus' => ['open' => 'Open', 'in_progress' => 'In progress', 'resolved' => 'Resolved', 'closed' => 'Closed'],
     'ApprovalStatus' => ['draft' => 'Draft', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled'],
     'SortDirection' => ['asc' => 'Ascending', 'desc' => 'Descending'],
     'Currency' => ['BHD' => 'Bahraini Dinar', 'USD' => 'US Dollar', 'SAR' => 'Saudi Riyal'],
@@ -28,7 +33,7 @@ return [
     'UserType' => ['admin' => 'Admin', 'doctor' => 'Doctor', 'medical_staff' => 'Medical staff', 'pharmacist' => 'Pharmacist', 'receptionist' => 'Receptionist', 'accountant' => 'Accountant', 'cashier' => 'Cashier', 'hr' => 'HR', 'patient' => 'Patient'],
     'UserStatus' => ['active' => 'Active', 'inactive' => 'Inactive', 'locked' => 'Locked', 'pending_verification' => 'Pending verification'],
     'RoleName' => ['super_admin' => 'Super admin', 'admin' => 'Admin', 'receptionist' => 'Receptionist', 'doctor' => 'Doctor', 'nurse' => 'Nurse', 'pharmacist' => 'Pharmacist', 'hr_manager' => 'HR manager', 'accountant' => 'Accountant', 'cashier' => 'Cashier', 'patient' => 'Patient'],
-    'AuditAction' => ['created' => 'Created', 'updated' => 'Updated', 'deleted' => 'Deleted', 'restored' => 'Restored', 'status_changed' => 'Status changed', 'login' => 'Login', 'logout' => 'Logout', 'login_failed' => 'Login failed', 'password_changed' => 'Password changed', 'permission_changed' => 'Permission changed', 'exported' => 'Exported', 'posted' => 'Posted', 'reversed' => 'Reversed', 'approved' => 'Approved'],
+    'AuditAction' => ['created' => 'Created', 'updated' => 'Updated', 'deleted' => 'Deleted', 'restored' => 'Restored', 'status_changed' => 'Status changed', 'login' => 'Login', 'logout' => 'Logout', 'login_failed' => 'Login failed', 'password_changed' => 'Password changed', 'permission_changed' => 'Permission changed', 'exported' => 'Exported', 'posted' => 'Posted', 'reversed' => 'Reversed', 'approved' => 'Approved', 'emergency_access' => 'Emergency access'],
     'LoginFailureReason' => ['invalid_credentials' => 'Invalid credentials', 'account_locked' => 'Account locked', 'account_inactive' => 'Account inactive', 'too_many_attempts' => 'Too many attempts', 'invalid_2fa_code' => 'Invalid 2FA code'],
     'TaskType' => ['report_export' => 'Report export', 'audit_export' => 'Audit export', 'transaction_export' => 'Transaction export', 'payroll_calculation' => 'Payroll calculation', 'payslip_emailing' => 'Payslip e-mailing', 'fiscal_year_close' => 'Fiscal year close', 'bulk_notification' => 'Bulk notification', 'bulk_action' => 'Bulk action', 'attachments_zip' => 'Attachments ZIP', 'list_export' => 'List export'],
     'TaskCancelReason' => ['user' => 'Cancelled by user', 'failed' => 'Failed', 'timeout' => 'Timed out'],

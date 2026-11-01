@@ -8,6 +8,7 @@ use App\Enums\Appointments\ConsentType;
 use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Orders\Models\ClinicalOrder;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Support\CareTeam;
 use App\Modules\Appointments\Treatments\Models\Treatment;
 use App\Modules\HR\Employees\Models\Employee;
 use App\Modules\Identity\Attachments\Models\Attachment;
@@ -140,7 +141,7 @@ class PatientConsent extends BaseModel implements OwnedByUser
 
         return $query->where(fn (Builder $q) => $q->where('patient_consents.patient_id', $id)
             ->orWhere('patient_consents.explained_by', $id)
-            ->orWhereIn('patient_consents.patient_id', Appointment::query()->select('patient_id')->where('provider_id', $id)));
+            ->orWhereIn('patient_consents.patient_id', CareTeam::patientIds($user)));
     }
 
     protected function casts(): array

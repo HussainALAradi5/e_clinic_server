@@ -24,6 +24,8 @@ final class PatientRequest extends FormRequest
             'blood_group' => ['sometimes', Rule::enum(BloodGroup::class)],
             'allergies' => ['nullable', 'string', 'max:2000'],
             'chronic_conditions' => ['nullable', 'string', 'max:2000'],
+            'family_history' => ['nullable', 'string', 'max:2000'],
+            'surgical_history' => ['nullable', 'string', 'max:2000'],
             'emergency_contact_name' => ['nullable', 'string', 'max:150'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:20', 'phone:INTERNATIONAL,BH'],
             'emergency_contact_relation' => ['nullable', 'string', 'max:50'],

@@ -26,6 +26,7 @@ return [
         'attendance' => ['module' => 'hr', 'actions' => ['approve_overtime', 'self', 'export'], 'ownership' => '`employee_id` = the user\'s id (own attendance, payslips, leave requests)'],
         'audit' => ['module' => 'identity', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
         'cash_sessions' => ['module' => 'transactions', 'actions' => ['operate', 'supervise'], 'ownership' => '`cashier_id` = user'],
+        'chat' => ['module' => 'identity', 'actions' => [], 'ownership' => 'conversations the user takes part in'],
         'claims' => ['module' => 'payments', 'actions' => ['decide', 'remit'], 'ownership' => '`patient_id` = the user\'s id (portal: own claims, without diagnoses)'],
         'codes' => ['module' => 'identity', 'actions' => ['generate', 'scan'], 'ownership' => 'the coded record passes its own resource rule (e.g. a patient\'s own booking)'],
         'companies' => ['module' => 'reference_data', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
@@ -46,9 +47,9 @@ return [
         'patients' => ['module' => 'appointments', 'actions' => ['export', 'force_create', 'import', 'view_medical'], 'ownership' => '`id` = the user\'s id (portal patient) or patients with an appointment / treatment with the user as provider'],
         'payments' => ['module' => 'payments', 'actions' => ['void'], 'ownership' => '`patient_id` = the user\'s id or created / received by the user'],
         'payroll' => ['module' => 'hr', 'actions' => ['approve', 'pay', 'export'], 'ownership' => '`employee_id` = the user\'s id (own attendance, payslips, leave requests)'],
-        'people' => ['module' => 'identity', 'actions' => ['export', 'import'], 'ownership' => '`id` = the user\'s id (own person record)'],
+        'people' => ['module' => 'identity', 'actions' => ['export', 'import'], 'ownership' => 'patients: their own record; staff: themself, every staff member and the patients whose files they may open'],
         'prescriptions' => ['module' => 'pharmacy', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id or `doctor_id` = the user\'s id'],
-        'records' => ['module' => 'appointments', 'actions' => [], 'ownership' => 'Follows its appointment: `patient_id` = the user\'s id or `provider_id` = the user\'s id'],
+        'records' => ['module' => 'appointments', 'actions' => [], 'ownership' => 'Follows its appointment: the patient, the visit\'s provider, or the clinicians caring for the patient (CareTeam: their visits, treatment plans, emergency access)'],
         'reference' => ['module' => 'reference_data', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
         'refunds' => ['module' => 'payments', 'actions' => ['approve', 'process', 'request'], 'ownership' => '`patient_id` = the user\'s id or created / received by the user'],
         'reports' => ['module' => 'accounting', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
@@ -57,6 +58,7 @@ return [
         'schedules' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`doctor_id` = the user\'s id'],
         'services' => ['module' => 'payments', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
         'specialties' => ['module' => 'appointments', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
+        'tickets' => ['module' => 'identity', 'actions' => ['resolve'], 'ownership' => '`requester_id` = the user\'s id'],
         'transactions' => ['module' => 'transactions', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
         'treatments' => ['module' => 'appointments', 'actions' => ['override_priority'], 'ownership' => '`patient_id` = the user\'s id or `doctor_id` = the user\'s id'],
         'users' => ['module' => 'identity', 'actions' => ['change_status', 'export', 'import'], 'ownership' => '`id` = the user\'s id (own person record)'],
@@ -73,6 +75,8 @@ return [
         'admin' => ['access' => '*', 'actions' => '*', 'except_actions' => ['fiscal.reopen']],
         'receptionist' => [
             'access' => [
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
                 'consents' => ['read_all', 'create', 'write'],
                 'notifications' => ['read_all', 'write'],
@@ -101,6 +105,8 @@ return [
         ],
         'doctor' => [
             'access' => [
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_own', 'create', 'write'],
                 'consents' => ['read_own', 'create', 'write'],
                 'patients' => ['read_own'],
                 'doctors' => ['read_all'],
@@ -111,7 +117,7 @@ return [
                 'treatments' => ['read_own', 'create', 'write', 'delete'],
                 'orders' => ['read_own', 'create', 'write', 'delete'],
                 'records' => ['read_own', 'write'],
-                'people' => ['read_all'],
+                'people' => ['read_own'],
                 'companies' => ['read_all'],
                 'prescriptions' => ['read_own', 'create', 'write'],
                 'medications' => ['read_all'],
@@ -127,6 +133,8 @@ return [
         ],
         'nurse' => [
             'access' => [
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_own', 'create', 'write'],
                 'consents' => ['read_all', 'create', 'write'],
                 'patients' => ['read_all', 'write'],
                 'doctors' => ['read_all'],
@@ -137,7 +145,7 @@ return [
                 'treatments' => ['read_all'],
                 'orders' => ['read_all', 'write'],
                 'records' => ['read_all', 'write'],
-                'people' => ['read_all'],
+                'people' => ['read_own'],
                 'medications' => ['read_all'],
                 'dispensing' => ['read_own'],
                 'attachments' => ['read_all', 'create', 'write'],
@@ -150,6 +158,8 @@ return [
         ],
         'pharmacist' => [
             'access' => [
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_own', 'create', 'write'],
                 'companies' => ['read_all', 'create', 'write'],
                 'reference' => ['read_all'],
                 'medications' => ['read_all', 'create', 'write', 'delete'],
@@ -168,7 +178,9 @@ return [
         ],
         'hr_manager' => [
             'access' => [
-                'people' => ['read_all', 'write'],
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_own', 'create', 'write'],
+                'people' => ['read_own', 'write'],
                 'departments' => ['read_all', 'create', 'write', 'delete'],
                 'employees' => ['read_all', 'create', 'write'],
                 'attendance' => ['read_all', 'create', 'write'],
@@ -186,6 +198,8 @@ return [
         ],
         'accountant' => [
             'access' => [
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
                 'companies' => ['read_all', 'create', 'write'],
                 'accounts' => ['read_all', 'create', 'write', 'delete'],
@@ -214,6 +228,8 @@ return [
         ],
         'cashier' => [
             'access' => [
+                'chat' => ['read_own', 'create', 'write'],
+                'tickets' => ['read_own', 'create', 'write'],
                 'patients' => ['read_all'],
                 'codes' => ['read_all'],
                 'dispensing' => ['read_all'],

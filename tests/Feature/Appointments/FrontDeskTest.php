@@ -175,3 +175,25 @@ it('replaces a weekly schedule only when no booking is left outside, and holiday
     expect(Appointment::query()->first()->status->value)->toBe('cancelled');
     $this->getJson("/api/v1/appointments/available-slots?provider_id={$doctor->id}&date=2026-11-02&type=consultation")->assertOk()->assertJsonCount(0, 'data');
 });
+
+it('shows people by role: a doctor their own patients and staff, HR staff only, a patient only themself', function () {
+    $doctor = FrontDesk::doctor();
+    $mine = FrontDesk::patient();
+    $other = FrontDesk::patient();
+    $hr = FrontDesk::employee(UserType::Hr, RoleName::HrManager);
+    receptionist();
+    book(booking($doctor, $mine->id))->assertCreated();
+    $seen = fn (): array => collect(test()->getJson('/api/v1/people?per_page=100')->assertOk()->json('data'))->pluck('id')->all();
+
+    Sanctum::actingAs(User::query()->findOrFail($doctor->id));
+    expect($seen())->toContain($doctor->id, $hr->id, $mine->id)->not->toContain($other->id);
+    $this->putJson("/api/v1/people/{$other->id}", ['version' => 1, 'first_name' => 'X'])->assertForbidden();
+
+    Sanctum::actingAs(User::query()->findOrFail($hr->id));
+    expect($seen())->toContain($doctor->id, $hr->id)->not->toContain($mine->id)->not->toContain($other->id);
+    $this->putJson("/api/v1/people/{$mine->id}", ['version' => 1, 'first_name' => 'X'])->assertNotFound();
+    $this->putJson("/api/v1/people/{$doctor->id}", ['version' => 1, 'first_name' => 'Omar'])->assertOk();
+
+    Sanctum::actingAs(User::factory()->state(['id' => $mine->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
+    expect($seen())->toBe([$mine->id]);
+});

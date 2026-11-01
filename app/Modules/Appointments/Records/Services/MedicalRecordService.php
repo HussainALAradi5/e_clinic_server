@@ -57,6 +57,12 @@ final class MedicalRecordService implements MedicalRecordServiceInterface
         if (! in_array($appointment->status, self::WRITABLE, true)) {
             throw new InvalidStateTransitionException(context: ['from' => $appointment->status->value, 'to' => 'documented']);
         }
+        // The care team reads every visit of a patient; only the visit's own provider (or someone with full record
+        // rights, e.g. the nurse taking vitals) writes in it.
+        $actor = Auth::user();
+        if (! $actor instanceof User || ($actor->id !== $appointment->provider_id && ! $actor->can('records.read_all'))) {
+            throw new AuthorizationException(__('errors.FORBIDDEN'));
+        }
 
         DB::transaction(function () use ($appointment, $data): void {
             $record = MedicalRecord::query()->lockForUpdate()->find($appointment->id) ?? new MedicalRecord(['id' => $appointment->id]);

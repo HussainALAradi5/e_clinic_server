@@ -6,6 +6,7 @@ namespace App\Modules\Appointments\Patients\Models;
 
 use App\Enums\Appointments\BloodGroup;
 use App\Modules\Appointments\Appointments\Models\Appointment;
+use App\Modules\Appointments\Patients\Support\CareTeam;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
 use App\Modules\Reference\Companies\Models\Company;
@@ -25,12 +26,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Patient file — the medical extension of a person (same id). The person code (`PRS-…`) is the MRN.
- * Allergies and chronic conditions are PHI: encrypted, masked in the audit trail, shown with patients.view_medical.
+ * Allergies, chronic conditions and family / surgical history are PHI: encrypted, masked in the audit trail, shown
+ * with patients.view_medical.
  *
  * @property string $id
  * @property BloodGroup $blood_group
  * @property ?string $allergies
  * @property ?string $chronic_conditions
+ * @property ?string $family_history
+ * @property ?string $surgical_history
  * @property ?string $emergency_contact_name
  * @property ?string $emergency_contact_phone
  * @property ?string $emergency_contact_relation
@@ -118,8 +122,7 @@ class Patient extends Model implements Auditable, OwnedByUser
     /** Own file (portal) or a patient the user has / had a booking with as provider. */
     public function isOwnedBy(Authenticatable $user): bool
     {
-        return $this->id === $user->getAuthIdentifier()
-            || $this->appointments()->where('provider_id', $user->getAuthIdentifier())->exists();
+        return static::query()->ownedBy($user)->whereKey($this->id)->exists();
     }
 
     /**
@@ -132,14 +135,13 @@ class Patient extends Model implements Auditable, OwnedByUser
     {
         $id = $user->getAuthIdentifier();
 
-        return $query->where(fn (Builder $q) => $q->where('patients.id', $id)
-            ->orWhereIn('patients.id', Appointment::query()->select('patient_id')->where('provider_id', $id)));
+        return $query->where(fn (Builder $q) => $q->where('patients.id', $id)->orWhereIn('patients.id', CareTeam::patientIds($user)));
     }
 
     /** @return list<string> */
     public function auditMasked(): array
     {
-        return ['allergies', 'chronic_conditions'];
+        return ['allergies', 'chronic_conditions', 'family_history', 'surgical_history'];
     }
 
     protected function casts(): array
@@ -148,6 +150,8 @@ class Patient extends Model implements Auditable, OwnedByUser
             'blood_group' => BloodGroup::class,
             'allergies' => 'encrypted',
             'chronic_conditions' => 'encrypted',
+            'family_history' => 'encrypted',
+            'surgical_history' => 'encrypted',
             'insurance_expiry_date' => 'immutable_date',
             'insurance_coverage_percent' => 'decimal:2',
             'created_at' => 'immutable_datetime',

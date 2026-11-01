@@ -9,6 +9,7 @@ use App\Enums\Appointments\TreatmentType;
 use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Doctors\Models\Doctor;
 use App\Modules\Appointments\Patients\Models\Patient;
+use App\Modules\Appointments\Patients\Support\CareTeam;
 use App\Modules\Payments\Catalog\Models\BillableService;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Enums\GenericStatus;
@@ -159,7 +160,8 @@ class Treatment extends BaseModel implements OwnedByUser
 
         return $query->where(fn (Builder $q) => $q->where('treatments.patient_id', $id)
             ->orWhere('treatments.doctor_id', $id)
-            ->orWhereIn('treatments.id', Appointment::query()->select('treatment_id')->whereNotNull('treatment_id')->where('provider_id', $id)));
+            ->orWhereIn('treatments.id', Appointment::query()->select('treatment_id')->whereNotNull('treatment_id')->where('provider_id', $id))
+            ->orWhereIn('treatments.patient_id', CareTeam::patientIds($user)));
     }
 
     /** @return list<string> */

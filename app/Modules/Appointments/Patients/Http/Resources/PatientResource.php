@@ -38,6 +38,8 @@ final class PatientResource extends JsonResource
             'blood_group' => $this->when($medical, fn (): string => $this->blood_group->value),
             'allergies' => $this->when($medical, fn (): ?string => $this->allergies),
             'chronic_conditions' => $this->when($medical, fn (): ?string => $this->chronic_conditions),
+            'family_history' => $this->when($medical, fn (): ?string => $this->family_history),
+            'surgical_history' => $this->when($medical, fn (): ?string => $this->surgical_history),
             'has_medical_alerts' => $medical ? filled($this->allergies) : null,
             'emergency_contact_name' => $this->emergency_contact_name,
             'emergency_contact_phone' => $this->emergency_contact_phone,
