@@ -1,3 +1,18 @@
+# e-Clinic — API (Laravel)
+
+## Live demo
+
+| | Address |
+|---|---|
+| Web app (staff and patient portal) | https://e-clinic-web.onrender.com |
+| API | https://e-clinic-api.onrender.com/api/v1 |
+
+Free Render instances sleep when idle: the first visit can take about a minute to wake the API. Demo accounts are
+listed in [DEMO_USERS.md](https://github.com/HussainALAradi5/e_clinic_documentation/blob/main/DEMO_USERS.md)
+(the repositories are private).
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
