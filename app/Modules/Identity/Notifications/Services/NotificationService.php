@@ -173,11 +173,13 @@ final class NotificationService implements NotificationServiceInterface
         return (int) DeviceToken::query()->where('user_id', $user->id)->delete();
     }
 
-    public function inbox(User $user, ListQuery $query, bool $unreadOnly = false): LengthAwarePaginator|CursorPaginator
+    public function inbox(User $user, ListQuery $query, ?bool $unread = null): LengthAwarePaginator|CursorPaginator
     {
         $builder = Notification::query()->where('user_id', $user->id)->where('channel', NotificationChannel::InApp)
             ->where('status', NotificationStatus::Delivered)
-            ->when($unreadOnly, fn ($q) => $q->whereNull('read_at'))
+            // true = unread only, false = read only, null = both.
+            ->when($unread === true, fn ($q) => $q->whereNull('read_at'))
+            ->when($unread === false, fn ($q) => $q->whereNotNull('read_at'))
             ->orderByRaw('read_at IS NOT NULL');
 
         return $this->listQuery->paginate($builder, $query);

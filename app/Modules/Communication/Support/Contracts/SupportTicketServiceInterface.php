@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Support\Contracts;
 
-use App\Enums\Communication\TicketStatus;
 use App\Modules\Communication\Support\Data\TicketData;
 use App\Modules\Communication\Support\Models\SupportTicket;
 use App\Modules\Communication\Support\Models\TicketComment;
 use App\Modules\Identity\Users\Models\User;
+use App\Shared\Enums\GenericStatus;
 use App\Shared\Query\ListQuery;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -34,8 +34,8 @@ interface SupportTicketServiceInterface
     public function comment(SupportTicket $ticket, User $author, string $body): TicketComment;
 
     /**
-     * Admins only: open ⇄ in progress → resolved (with what was done) → closed. Taking a ticket in progress assigns
+     * Admins only: pending ⇄ in progress → completed (solved, with what was done) or cancelled; a solved ticket can be reopened. Taking a ticket in progress assigns
      * it to the admin; the requester is told of every change.
      */
-    public function changeStatus(SupportTicket $ticket, User $admin, TicketStatus $to, ?string $resolution, int $version): SupportTicket;
+    public function changeStatus(SupportTicket $ticket, User $admin, GenericStatus $to, ?string $resolution, int $version): SupportTicket;
 }

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Support\Http\Controllers;
 
-use App\Enums\Communication\TicketStatus;
 use App\Modules\Communication\Support\Contracts\SupportTicketServiceInterface;
 use App\Modules\Communication\Support\Http\Requests\TicketRequest;
 use App\Modules\Communication\Support\Http\Resources\TicketCommentResource;
 use App\Modules\Communication\Support\Http\Resources\TicketResource;
 use App\Modules\Communication\Support\Models\SupportTicket;
 use App\Modules\Identity\Users\Models\User;
+use App\Shared\Enums\GenericStatus;
 use App\Shared\Http\Concerns\ApiResponse;
 use App\Shared\Query\ListQuery;
 use Illuminate\Auth\AuthenticationException;
@@ -53,7 +53,7 @@ final class SupportTicketController
     public function status(Request $request, string $ticket): JsonResponse
     {
         $request->validate([
-            'status' => ['required', Rule::enum(TicketStatus::class)],
+            'status' => ['required', Rule::enum(GenericStatus::class)],
             'resolution' => ['nullable', 'string', 'max:1000'],
             'version' => ['required', 'integer', 'min:1'],
         ]);
@@ -61,7 +61,7 @@ final class SupportTicketController
         return $this->ok(new TicketResource($this->tickets->changeStatus(
             $this->tickets->find($ticket),
             $this->me($request),
-            TicketStatus::from($request->string('status')->toString()),
+            GenericStatus::from($request->string('status')->toString()),
             $request->filled('resolution') ? trim($request->string('resolution')->toString()) : null,
             $request->integer('version'),
         )));

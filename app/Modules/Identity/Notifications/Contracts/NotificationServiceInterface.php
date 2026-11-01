@@ -57,7 +57,7 @@ interface NotificationServiceInterface
      *
      * @return LengthAwarePaginator<int, Notification>|CursorPaginator<int, Notification>
      */
-    public function inbox(User $user, ListQuery $query, bool $unreadOnly = false): LengthAwarePaginator|CursorPaginator;
+    public function inbox(User $user, ListQuery $query, ?bool $unread = null): LengthAwarePaginator|CursorPaginator;
 
     public function unreadCount(User $user): int;
 

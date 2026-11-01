@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Support\Models;
 
+use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Communication\TicketCategory;
-use App\Enums\Communication\TicketPriority;
-use App\Enums\Communication\TicketStatus;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Contracts\OwnedByUser;
+use App\Shared\Enums\GenericStatus;
 use App\Shared\Models\BaseModel;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\HasListQuery;
@@ -31,8 +31,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $subject
  * @property string $description
  * @property TicketCategory $category
- * @property TicketPriority $priority
- * @property TicketStatus $status
+ * @property TreatmentPriority $priority
+ * @property GenericStatus $status
  * @property ?string $assigned_to
  * @property ?string $resolved_by
  * @property ?CarbonImmutable $resolved_at
@@ -60,8 +60,8 @@ class SupportTicket extends BaseModel implements OwnedByUser
         return ListQueryConfig::make()
             ->resource('tickets')
             ->sortable('created_at', 'updated_at', 'code', 'status', 'priority', 'category')
-            ->filterable('status', ['eq', 'in', 'nin'], enum: TicketStatus::class)
-            ->filterable('priority', ['eq', 'in'], enum: TicketPriority::class)
+            ->filterable('status', ['eq', 'in', 'nin'], enum: GenericStatus::class)
+            ->filterable('priority', ['eq', 'in'], enum: TreatmentPriority::class)
             ->filterable('category', ['eq', 'in'], enum: TicketCategory::class)
             ->filterable('requester_id', ['eq'], resource: 'users', label: 'Opened by')
             ->filterable('assigned_to', ['eq', 'null'], resource: 'users', label: 'Assigned to')
@@ -73,6 +73,7 @@ class SupportTicket extends BaseModel implements OwnedByUser
             ->column('priority', 'Priority')
             ->column('status', 'Status')
             ->column('requester', 'Opened by')
+            ->column('assignee', 'Assigned to')
             ->column('created_at', 'Opened')
             ->dateFields('created_at', 'resolved_at')
             ->defaultSort('-created_at');
@@ -110,6 +111,27 @@ class SupportTicket extends BaseModel implements OwnedByUser
         return $this->hasMany(TicketComment::class, 'ticket_id')->orderBy('created_at');
     }
 
+    /**
+     * The ticket flow on the shared GenericStatus: pending (open) ⇄ in progress → completed (solved) or cancelled.
+     * A solved ticket can be reopened (back to pending); a cancelled one is final.
+     *
+     * @return list<GenericStatus>
+     */
+    public static function nextStatuses(GenericStatus $from): array
+    {
+        return match ($from) {
+            GenericStatus::Pending => [GenericStatus::InProgress, GenericStatus::Completed, GenericStatus::Cancelled],
+            GenericStatus::InProgress => [GenericStatus::Pending, GenericStatus::Completed, GenericStatus::Cancelled],
+            GenericStatus::Completed => [GenericStatus::Pending],
+            GenericStatus::Cancelled => [],
+        };
+    }
+
+    public function canMoveTo(GenericStatus $to): bool
+    {
+        return in_array($to, self::nextStatuses($this->status), true);
+    }
+
     public function isOwnedBy(Authenticatable $user): bool
     {
         return $this->requester_id === $user->getAuthIdentifier();
@@ -130,8 +152,8 @@ class SupportTicket extends BaseModel implements OwnedByUser
     {
         return [
             'category' => TicketCategory::class,
-            'priority' => TicketPriority::class,
-            'status' => TicketStatus::class,
+            'priority' => TreatmentPriority::class,
+            'status' => GenericStatus::class,
             'resolved_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

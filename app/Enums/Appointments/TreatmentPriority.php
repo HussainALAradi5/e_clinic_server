@@ -8,7 +8,8 @@ use App\Shared\Contracts\HasLabel;
 use App\Shared\Traits\EnumHelpers;
 
 /**
- * Clinical priority of a treatment or clinical order: urgent → first session within 24 h, high → 72 h.
+ * Priority shared by treatments, clinical orders and support tickets: medium · high · urgent.
+ * For treatments: urgent → first session within 24 h, high → 72 h.
  */
 enum TreatmentPriority: string implements HasLabel
 {

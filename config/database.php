@@ -38,8 +38,10 @@ return [
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-            'busy_timeout' => null,
-            'journal_mode' => null,
+            // Local SQLite is shared by the web server and the queue worker: wait for a lock instead of failing at
+            // once, and let readers work while the worker writes (WAL).
+            'busy_timeout' => env('DB_BUSY_TIMEOUT', 5000),
+            'journal_mode' => env('DB_JOURNAL_MODE', 'wal'),
             'synchronous' => null,
             'transaction_mode' => 'DEFERRED',
         ],

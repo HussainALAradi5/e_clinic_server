@@ -13,8 +13,6 @@ return [
     'BubbleStyle' => ['rounded' => 'Rounded', 'square' => 'Square', 'minimal' => 'Minimal'],
     'BubbleColor' => ['blue' => 'Blue', 'green' => 'Green', 'teal' => 'Teal', 'purple' => 'Purple', 'rose' => 'Rose', 'slate' => 'Slate'],
     'TicketCategory' => ['technical' => 'Technical problem', 'access' => 'Access & accounts', 'equipment' => 'Equipment', 'data' => 'Wrong data', 'other' => 'Other'],
-    'TicketPriority' => ['low' => 'Low', 'normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'],
-    'TicketStatus' => ['open' => 'Open', 'in_progress' => 'In progress', 'resolved' => 'Resolved', 'closed' => 'Closed'],
     'ApprovalStatus' => ['draft' => 'Draft', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled'],
     'SortDirection' => ['asc' => 'Ascending', 'desc' => 'Descending'],
     'Currency' => ['BHD' => 'Bahraini Dinar', 'USD' => 'US Dollar', 'SAR' => 'Saudi Riyal'],

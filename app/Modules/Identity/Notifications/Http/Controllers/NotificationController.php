@@ -24,9 +24,12 @@ final class NotificationController
     /** Own in-app inbox (meta.unread_count drives the bell badge). */
     public function inbox(Request $request): JsonResponse
     {
+        $request->validate(['read' => ['nullable', 'in:unread,read']]);
         $user = $this->user($request);
         $query = ListQuery::fromRequest($request, Notification::listQueryConfig());
-        $page = $this->notifications->inbox($user, $query, $request->boolean('unread'));
+        // `read=unread|read` (the inbox page chips); `unread=1` is the older form the bell uses.
+        $unread = $request->filled('read') ? $request->input('read') === 'unread' : ($request->boolean('unread') ? true : null);
+        $page = $this->notifications->inbox($user, $query, $unread);
 
         return $this->paginated(NotificationResource::collection($page), $query, extraMeta: ['unread_count' => $this->notifications->unreadCount($user)]);
     }

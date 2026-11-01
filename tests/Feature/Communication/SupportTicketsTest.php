@@ -22,9 +22,9 @@ it('lets staff open and follow their own tickets while only admins move and reso
         ->assertUnprocessable()->assertJsonValidationErrors(['subject', 'description', 'category']);
     $ticket = $this->postJson('/api/v1/support/tickets', [
         'subject' => 'Label printer offline', 'description' => 'The ward 2 label printer shows a red light since 8:00.', 'category' => 'equipment', 'priority' => 'high',
-    ])->assertCreated()->assertJsonPath('data.status', 'open')->assertJsonPath('data.priority', 'high')->json('data');
+    ])->assertCreated()->assertJsonPath('data.status', 'pending')->assertJsonPath('data.priority', 'high')->json('data');
     expect($ticket['code'])->toStartWith('TKT-')->and($notified('ticket.opened', $admin))->toBeTrue();
-    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'resolved', 'resolution' => 'x', 'version' => 1])->assertForbidden();
+    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'completed', 'resolution' => 'x', 'version' => 1])->assertForbidden();
 
     // A colleague does not see it.
     Sanctum::actingAs($colleague);
@@ -35,21 +35,21 @@ it('lets staff open and follow their own tickets while only admins move and reso
     Sanctum::actingAs($admin);
     $this->getJson('/api/v1/support/tickets')->assertOk()->assertJsonCount(1, 'data');
     $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'in_progress', 'version' => 1])
-        ->assertOk()->assertJsonPath('data.assignee.id', $admin->id)->assertJsonPath('data.allowed_transitions', ['open', 'resolved', 'closed']);
+        ->assertOk()->assertJsonPath('data.assignee.id', $admin->id)->assertJsonPath('data.allowed_transitions', ['pending', 'completed', 'cancelled']);
     $this->postJson("/api/v1/support/tickets/{$ticket['id']}/comments", ['body' => 'On my way with a new cartridge.'])
         ->assertCreated()->assertJsonPath('data.author.is_support', true);
     expect($notified('ticket.replied', $nurse))->toBeTrue();
-    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'resolved', 'version' => 2])->assertUnprocessable()->assertJsonPath('error_code', 'TICKET_RESOLUTION_REQUIRED');
-    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'resolved', 'resolution' => 'Cartridge replaced.', 'version' => 1])->assertStatus(409);
-    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'resolved', 'resolution' => 'Cartridge replaced.', 'version' => 2])
-        ->assertOk()->assertJsonPath('data.status', 'resolved')->assertJsonPath('data.resolver.id', $admin->id);
+    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'completed', 'version' => 2])->assertUnprocessable()->assertJsonPath('error_code', 'TICKET_RESOLUTION_REQUIRED');
+    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'completed', 'resolution' => 'Cartridge replaced.', 'version' => 1])->assertStatus(409);
+    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'completed', 'resolution' => 'Cartridge replaced.', 'version' => 2])
+        ->assertOk()->assertJsonPath('data.status', 'completed')->assertJsonPath('data.allowed_transitions', ['pending'])->assertJsonPath('data.resolver.id', $admin->id);
     expect($notified('ticket.resolved', $nurse))->toBeTrue();
 
-    // Still broken: the nurse answers and the ticket opens again; closed is final.
+    // Still broken: the nurse answers and the ticket opens again (pending); cancelled is final.
     Sanctum::actingAs($nurse);
     $this->postJson("/api/v1/support/tickets/{$ticket['id']}/comments", ['body' => 'Red light is back.'])->assertCreated();
-    $this->getJson("/api/v1/support/tickets/{$ticket['id']}")->assertOk()->assertJsonPath('data.status', 'open')->assertJsonCount(2, 'data.comments');
+    $this->getJson("/api/v1/support/tickets/{$ticket['id']}")->assertOk()->assertJsonPath('data.status', 'pending')->assertJsonCount(2, 'data.comments');
     Sanctum::actingAs($admin);
-    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'closed', 'version' => 4])->assertOk();
+    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'cancelled', 'version' => 4])->assertOk()->assertJsonPath('data.allowed_transitions', []);
     $this->postJson("/api/v1/support/tickets/{$ticket['id']}/comments", ['body' => 'More'])->assertStatus(409);
 });

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Support\Listeners;
 
-use App\Enums\Communication\TicketStatus;
 use App\Modules\Communication\Support\Events\TicketChanged;
 use App\Modules\Identity\Notifications\Contracts\NotificationServiceInterface;
 use App\Modules\Identity\Users\Models\Person;
+use App\Shared\Enums\GenericStatus;
 use App\Shared\Support\Recipients;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
@@ -22,12 +22,12 @@ final class SendTicketNotifications implements ShouldHandleEventsAfterCommit
     public function handle(TicketChanged $event): void
     {
         $ticket = $event->ticket;
-        $data = ['code' => $ticket->code, 'subject' => $ticket->subject, 'status' => $ticket->status->label(), 'resolution' => (string) $ticket->resolution];
+        $data = ['code' => $ticket->code, 'subject' => $ticket->subject, 'status' => mb_strtolower($ticket->status->label()), 'resolution' => (string) $ticket->resolution];
         $byRequester = $event->actorId === $ticket->requester_id;
 
         [$template, $people] = match ($event->change) {
             'opened' => ['ticket.opened', Recipients::withPermission('tickets.resolve', [$event->actorId])],
-            'status' => [$ticket->status === TicketStatus::Resolved ? 'ticket.resolved' : 'ticket.updated', Recipients::user($ticket->requester_id)],
+            'status' => [$ticket->status === GenericStatus::Completed ? 'ticket.resolved' : 'ticket.updated', Recipients::user($ticket->requester_id)],
             'commented' => ['ticket.replied', match (true) {
                 ! $byRequester => Recipients::user($ticket->requester_id),
                 $ticket->assigned_to !== null => Recipients::user($ticket->assigned_to),

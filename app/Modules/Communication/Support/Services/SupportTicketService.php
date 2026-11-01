@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Support\Services;
 
-use App\Enums\Communication\TicketStatus;
 use App\Modules\Communication\Support\Contracts\SupportTicketServiceInterface;
 use App\Modules\Communication\Support\Data\TicketData;
 use App\Modules\Communication\Support\Events\TicketBroadcast;
@@ -14,6 +13,7 @@ use App\Modules\Communication\Support\Models\SupportTicket;
 use App\Modules\Communication\Support\Models\TicketComment;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Access\OwnershipScope;
+use App\Shared\Enums\GenericStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
 use App\Shared\Query\ApplyListQuery;
 use App\Shared\Services\BaseEntityService;
@@ -48,7 +48,7 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
             'description' => $data->description,
             'category' => $data->category,
             'priority' => $data->priority,
-            'status' => TicketStatus::Open,
+            'status' => GenericStatus::Pending,
         ]));
         $this->announce($ticket, 'opened', $requester);
 
@@ -57,14 +57,14 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
 
     public function comment(SupportTicket $ticket, User $author, string $body): TicketComment
     {
-        if ($ticket->status === TicketStatus::Closed) {
-            throw new InvalidStateTransitionException(context: ['from' => 'closed', 'to' => 'commented']);
+        if ($ticket->status === GenericStatus::Cancelled) {
+            throw new InvalidStateTransitionException(context: ['from' => GenericStatus::Cancelled->value, 'to' => 'commented']);
         }
         $comment = DB::transaction(function () use ($ticket, $author, $body): TicketComment {
             $comment = $ticket->comments()->create(['author_id' => $author->id, 'body' => $body]);
-            // The requester answering a resolved ticket means it is not fixed yet.
-            if ($ticket->status === TicketStatus::Resolved && $author->id === $ticket->requester_id) {
-                $ticket->forceFill(['status' => TicketStatus::Open, 'resolved_at' => null, 'resolved_by' => null])->save();
+            // The requester answering a solved ticket means it is not fixed yet: it opens again.
+            if ($ticket->status === GenericStatus::Completed && $author->id === $ticket->requester_id) {
+                $ticket->forceFill(['status' => GenericStatus::Pending, 'resolved_at' => null, 'resolved_by' => null])->save();
             } else {
                 $ticket->touch();
             }
@@ -76,7 +76,7 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
         return $comment->load('author.person');
     }
 
-    public function changeStatus(SupportTicket $ticket, User $admin, TicketStatus $to, ?string $resolution, int $version): SupportTicket
+    public function changeStatus(SupportTicket $ticket, User $admin, GenericStatus $to, ?string $resolution, int $version): SupportTicket
     {
         if (! $admin->can('tickets.resolve')) {
             throw new AuthorizationException(__('errors.FORBIDDEN'));
@@ -85,18 +85,21 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
         $ticket = DB::transaction(function () use ($ticket, $admin, $to, $resolution, $version): SupportTicket {
             $locked = SupportTicket::query()->lockForUpdate()->findOrFail($ticket->id);
             $locked->assertVersion($version);
-            if (! $locked->status->canTransitionTo($to)) {
+            if (! $locked->canMoveTo($to)) {
                 throw new InvalidStateTransitionException(context: ['from' => $locked->status->value, 'to' => $to->value]);
             }
-            if ($to === TicketStatus::Resolved && blank($resolution)) {
+            if ($to === GenericStatus::Completed && blank($resolution)) {
                 throw new TicketResolutionRequiredException;
             }
             $locked->status = $to;
-            if ($to === TicketStatus::InProgress && $locked->assigned_to === null) {
+            if ($to === GenericStatus::InProgress && $locked->assigned_to === null) {
                 $locked->assigned_to = $admin->id;
             }
-            if ($to === TicketStatus::Resolved) {
+            if ($to === GenericStatus::Completed) {
                 $locked->fill(['resolution' => $resolution, 'resolved_by' => $admin->id, 'resolved_at' => $this->clock->now()]);
+            } elseif ($to === GenericStatus::Pending) {
+                // Reopened: no longer solved.
+                $locked->fill(['resolved_by' => null, 'resolved_at' => null]);
             }
             $locked->save();
 
@@ -109,7 +112,7 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
 
     protected function query(): Builder
     {
-        return OwnershipScope::apply(SupportTicket::query()->with(self::RELATIONS), 'tickets', Auth::user());
+        return OwnershipScope::apply(SupportTicket::query()->with(self::RELATIONS)->withCount('comments'), 'tickets', Auth::user());
     }
 
     /**

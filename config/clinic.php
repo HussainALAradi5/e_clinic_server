@@ -123,8 +123,6 @@ return [
         Communication\MessageKind::class,
         Communication\ParticipantRole::class,
         Communication\TicketCategory::class,
-        Communication\TicketPriority::class,
-        Communication\TicketStatus::class,
         Enums\GenericStatus::class,
         Enums\ApprovalStatus::class,
         Enums\SortDirection::class,

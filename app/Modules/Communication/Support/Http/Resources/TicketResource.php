@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication\Support\Http\Resources;
 
-use App\Enums\Communication\TicketStatus;
 use App\Modules\Communication\Support\Models\SupportTicket;
 use App\Modules\Identity\Users\Models\User;
+use App\Shared\Enums\GenericStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,7 +33,7 @@ final class TicketResource extends JsonResource
             'category' => $this->category->value,
             'priority' => $this->priority->value,
             'status' => $this->status->value,
-            'allowed_transitions' => array_map(fn (TicketStatus $s): string => $s->value, TicketStatus::transitions()[$this->status->value]),
+            'allowed_transitions' => array_map(fn (GenericStatus $s): string => $s->value, SupportTicket::nextStatuses($this->status)),
             'requester' => $this->whenLoaded('requester', fn (): ?array => $person($this->requester)),
             'assignee' => $this->whenLoaded('assignee', fn (): ?array => $person($this->assignee)),
             'resolver' => $this->whenLoaded('resolver', fn (): ?array => $person($this->resolver)),

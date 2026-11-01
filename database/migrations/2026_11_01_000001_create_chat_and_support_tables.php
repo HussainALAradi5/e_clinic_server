@@ -1,14 +1,14 @@
 <?php
 
+use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Communication\ConversationType;
 use App\Enums\Communication\ParticipantRole;
 use App\Enums\Communication\TicketCategory;
-use App\Enums\Communication\TicketPriority;
-use App\Enums\Communication\TicketStatus;
 use App\Modules\Identity\Roles\Models\Permission;
 use App\Modules\Identity\Roles\Models\Role;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Database\Constraints;
+use App\Shared\Enums\GenericStatus;
 use App\Shared\Support\CacheKeys;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Migrations\Migration;
@@ -69,8 +69,8 @@ return new class extends Migration
             $table->string('subject', 150);
             $table->text('description');
             $table->string('category', 20);
-            $table->string('priority', 10)->default(TicketPriority::Normal->value);
-            $table->string('status', 15)->default(TicketStatus::Open->value);
+            $table->string('priority', 10)->default(TreatmentPriority::Medium->value);
+            $table->string('status', 15)->default(GenericStatus::Pending->value);
             $table->foreignUuid('assigned_to')->nullable()->index()->constrained('users')->nullOnDelete();
             $table->foreignUuid('resolved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestampTz('resolved_at')->nullable();
@@ -78,8 +78,8 @@ return new class extends Migration
             $table->index(['status', 'priority']);
         });
         Constraints::enum('support_tickets', 'category', TicketCategory::class);
-        Constraints::enum('support_tickets', 'priority', TicketPriority::class);
-        Constraints::enum('support_tickets', 'status', TicketStatus::class);
+        Constraints::enum('support_tickets', 'priority', TreatmentPriority::class);
+        Constraints::enum('support_tickets', 'status', GenericStatus::class);
 
         Schema::create('ticket_comments', function (Blueprint $table) {
             $table->uuid('id')->primary();
