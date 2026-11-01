@@ -5,15 +5,32 @@ use App\Modules\HR\Departments\Http\Controllers\DepartmentController;
 use App\Modules\HR\Employees\Http\Controllers\EmployeeController;
 use App\Modules\HR\Leaves\Http\Controllers\LeaveController;
 use App\Modules\HR\Payroll\Http\Controllers\PayrollController;
+use App\Modules\HR\Shifts\Http\Controllers\ShiftController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Human Resources API (prefix /api/v1/hr) — Departments, Employees, Attendance, Leaves, Payroll
+| Human Resources API (prefix /api/v1/hr) — Departments, Shifts, Employees, Attendance, Leaves, Payroll
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('auth:sanctum')->prefix('hr')->name('hr.')->group(function (): void {
+
+    // Shifts (fixed / flexible) and who is on them
+    Route::prefix('shifts')->name('shifts.')->controller(ShiftController::class)->group(function (): void {
+        Route::middleware(['access:shifts.read_all|shifts.read_own', 'throttle:read'])->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::get('{shift}', 'show')->whereUuid('shift')->name('show');
+        });
+        Route::middleware('throttle:write')->group(function (): void {
+            Route::post('/', 'store')->middleware('access:shifts.create')->name('store');
+            Route::put('{shift}', 'update')->whereUuid('shift')->middleware('access:shifts.write')->name('update');
+            Route::delete('{shift}', 'destroy')->whereUuid('shift')->middleware('access:shifts.delete')->name('destroy');
+            Route::post('{shift}/employees', 'assign')->whereUuid('shift')->middleware('access:shifts.write&employees.write')->name('employees.assign');
+            Route::delete('{shift}/employees/{employee}', 'unassign')->whereUuid(['shift', 'employee'])->middleware('access:shifts.write&employees.write')->name('employees.unassign');
+        });
+    });
+    Route::bulkActions('shifts', 'shifts')->middleware('access:shifts.write|shifts.delete');
 
     // Departments
     Route::prefix('departments')->name('departments.')->controller(DepartmentController::class)->group(function (): void {

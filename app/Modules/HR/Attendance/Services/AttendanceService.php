@@ -8,6 +8,7 @@ use App\Enums\HR\AttendanceSource;
 use App\Enums\HR\AttendanceStatus;
 use App\Enums\HR\EmployeeStatus;
 use App\Enums\HR\PayrollStatus;
+use App\Enums\HR\ShiftType;
 use App\Modules\HR\Attendance\Contracts\AttendanceServiceInterface;
 use App\Modules\HR\Attendance\Data\AttendanceSummaryData;
 use App\Modules\HR\Attendance\Data\ClockLocationData;
@@ -22,6 +23,7 @@ use App\Modules\HR\Employees\Models\Employee;
 use App\Modules\HR\Leaves\Models\LeaveRequest;
 use App\Modules\HR\Payroll\Models\PayrollRun;
 use App\Modules\HR\Support\WorkCalendar;
+use App\Modules\Identity\Notifications\Contracts\NotificationServiceInterface;
 use App\Shared\Access\OwnershipScope;
 use App\Shared\Enums\ApprovalStatus;
 use App\Shared\Exceptions\InvalidStateTransitionException;
@@ -50,6 +52,7 @@ final class AttendanceService implements AttendanceServiceInterface
         private readonly ApplyListQuery $listQuery,
         private readonly ClinicClock $clock,
         private readonly WorkCalendar $calendar,
+        private readonly NotificationServiceInterface $notifications,
     ) {}
 
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator
@@ -85,6 +88,7 @@ final class AttendanceService implements AttendanceServiceInterface
                 'check_in_ip' => $ip,
                 'needs_review' => false,
             ])->save();
+            DB::afterCommit(fn () => $this->tellShift($employee, $row, 'checked_in'));
 
             return $row->load('employee.person');
         });
@@ -105,9 +109,10 @@ final class AttendanceService implements AttendanceServiceInterface
             $row->fill([
                 'check_out_at' => $now,
                 'worked_minutes' => $this->minutes($row->check_in_at, $now),
-                'overtime_minutes' => $this->overtimeMinutes($employee, $today, $now),
+                'overtime_minutes' => $this->overtimeMinutes($employee, $today, $now, $row->check_in_at),
                 'overtime_approved' => false,
             ])->save();
+            DB::afterCommit(fn () => $this->tellShift($employee, $row, 'checked_out'));
 
             return $row->load('employee.person');
         });
@@ -129,7 +134,7 @@ final class AttendanceService implements AttendanceServiceInterface
                     'check_out_at' => $out,
                     'late_minutes' => $late,
                     'worked_minutes' => $out === null ? 0 : $this->minutes($in, $out),
-                    'overtime_minutes' => $out === null ? 0 : $this->overtimeMinutes($employee, $data->date, $out),
+                    'overtime_minutes' => $out === null ? 0 : $this->overtimeMinutes($employee, $data->date, $out, $in),
                     'status' => $data->status === AttendanceStatus::HalfDay ? AttendanceStatus::HalfDay : ($late > 0 ? AttendanceStatus::Late : AttendanceStatus::Present),
                 ]);
             } else {
@@ -325,17 +330,57 @@ final class AttendanceService implements AttendanceServiceInterface
 
     private function lateMinutes(Employee $employee, CarbonInterface $date, CarbonImmutable $at): int
     {
-        $start = $this->clock->combine($date, substr($employee->work_start_time, 0, 5));
+        // A shift decides (the start, or a flexible shift's latest start); otherwise the employee's own hours.
+        $start = $this->clock->combine($date, $employee->shift?->arriveBy() ?? substr($employee->work_start_time, 0, 5));
         $late = $this->minutes($start, $at);
 
         return $late > Config::integer('hr.attendance.late_grace_minutes') ? $late : 0;
     }
 
-    private function overtimeMinutes(Employee $employee, CarbonInterface $date, CarbonImmutable $out): int
+    private function overtimeMinutes(Employee $employee, CarbonInterface $date, CarbonImmutable $out, ?CarbonInterface $in = null): int
     {
-        $overtime = $this->minutes($this->clock->combine($date, substr($employee->work_end_time, 0, 5)), $out);
+        $shift = $employee->shift;
+        // Flexible: whatever was worked beyond the hours due. Fixed (or no shift): after the end of the day.
+        $overtime = $shift?->type === ShiftType::Flexible && $in !== null
+            ? $this->minutes($in, $out) - $shift->required_minutes
+            : $this->minutes($this->clock->combine($date, $shift?->expectedEnd() ?? substr($employee->work_end_time, 0, 5)), $out);
 
         return $overtime >= Config::integer('hr.attendance.overtime_min_minutes') ? $overtime : 0;
+    }
+
+    /**
+     * Tells the employee how the day stands against their shift: on time or late at check-in; on time, overtime
+     * (waiting for approval) or left early at check-out.
+     */
+    private function tellShift(Employee $employee, Attendance $row, string $moment): void
+    {
+        $shift = $employee->shift;
+        $at = $this->clock->toClinic($moment === 'checked_in' ? $row->check_in_at : $row->check_out_at);
+        $end = $this->clock->combine($row->date, $shift?->expectedEnd() ?? substr($employee->work_end_time, 0, 5));
+        $early = $moment === 'checked_out' && $row->overtime_minutes === 0
+            ? ($shift?->type === ShiftType::Flexible ? max(0, $shift->required_minutes - $row->worked_minutes) : $this->minutes($at, $end))
+            : 0;
+        $verdict = match (true) {
+            $moment === 'checked_in' && $row->late_minutes > 0 => 'late',
+            $moment === 'checked_out' && $row->overtime_minutes > 0 => 'overtime',
+            $moment === 'checked_out' && $early >= Config::integer('hr.attendance.late_grace_minutes') => 'early',
+            default => 'on_time',
+        };
+        $this->notifications->send("attendance.{$moment}_{$verdict}", $employee->person, $row, [
+            'time' => $at->format('H:i'),
+            'shift' => $shift === null ? __('notifications.attendance.your_hours') : "{$shift->name} ({$shift->code})",
+            'hours' => ($shift?->arriveBy() ?? substr($employee->work_start_time, 0, 5)).'–'.($shift?->expectedEnd() ?? substr($employee->work_end_time, 0, 5)),
+            'late' => $this->duration($row->late_minutes),
+            'overtime' => $this->duration($row->overtime_minutes),
+            'early' => $this->duration($early),
+            'worked' => $this->duration($row->worked_minutes),
+        ]);
+    }
+
+    /** "1 h 05 min", "40 min". */
+    private function duration(int $minutes): string
+    {
+        return $minutes >= 60 ? sprintf('%d h %02d min', intdiv($minutes, 60), $minutes % 60) : "{$minutes} min";
     }
 
     /** Whole minutes from → to, 0 when to is not after from. */

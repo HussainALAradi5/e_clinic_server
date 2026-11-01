@@ -160,6 +160,7 @@ return [
         Accounting\JournalEntryType::class,
         Accounting\ReportType::class,
         HR\EmploymentType::class,
+        HR\ShiftType::class,
         HR\EmployeeStatus::class,
         HR\TerminationReason::class,
         HR\SalaryComponentType::class,

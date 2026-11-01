@@ -8,6 +8,7 @@ use App\Enums\HR\EmployeeStatus;
 use App\Enums\HR\EmploymentType;
 use App\Enums\HR\TerminationReason;
 use App\Modules\HR\Departments\Models\Department;
+use App\Modules\HR\Shifts\Models\Shift;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Identity\Users\Models\User;
 use App\Shared\Casts\MoneyCast;
@@ -40,6 +41,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?TerminationReason $termination_reason
  * @property string $work_start_time
  * @property string $work_end_time
+ * @property ?string $shift_id
+ * @property-read ?Shift $shift
  * @property list<int> $weekly_off_days
  * @property Money $basic_salary
  * @property ?string $bank_name
@@ -76,6 +79,7 @@ class Employee extends Model implements Auditable, OwnedByUser
             ->resource('employees')
             ->sortable('code', 'last_name', 'first_name', 'job_title', 'hire_date', 'status')
             ->filterable('department_id', ['eq', 'in'], column: 'employees.department_id', resource: 'departments')
+            ->filterable('shift_id', ['eq', 'in', 'null'], column: 'employees.shift_id', resource: 'shifts', label: 'Shift')
             ->filterable('status', ['eq', 'in'], column: 'employees.status', enum: EmployeeStatus::class)
             ->filterable('employment_type', ['eq', 'in'], column: 'employees.employment_type', enum: EmploymentType::class)
             ->filterable('hire_date', ['gte', 'lte', 'between'], column: 'employees.hire_date', type: 'date')
@@ -110,6 +114,16 @@ class Employee extends Model implements Auditable, OwnedByUser
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class, 'id');
+    }
+
+    /**
+     * The shift attendance is measured against (none: the employee's own working hours).
+     *
+     * @return BelongsTo<Shift, $this>
+     */
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
     }
 
     /**

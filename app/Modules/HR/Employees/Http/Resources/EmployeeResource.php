@@ -44,6 +44,8 @@ final class EmployeeResource extends JsonResource
             'probation_end_date' => $this->probation_end_date?->toDateString(),
             'termination_date' => $this->termination_date?->toDateString(),
             'termination_reason' => $this->termination_reason?->value,
+            'shift_id' => $this->shift_id,
+            'shift' => $this->whenLoaded('shift', fn (): ?array => $this->shift === null ? null : ['id' => $this->shift->id, 'code' => $this->shift->code, 'name' => $this->shift->name, 'type' => $this->shift->type->value]),
             'work_start_time' => substr($this->work_start_time, 0, 5),
             'work_end_time' => substr($this->work_end_time, 0, 5),
             'weekly_off_days' => $this->weekly_off_days,

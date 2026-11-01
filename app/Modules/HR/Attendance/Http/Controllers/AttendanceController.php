@@ -39,7 +39,13 @@ final class AttendanceController
 
         return $this->ok([
             'attendance' => $row === null ? null : new AttendanceResource($row),
-            'shift' => ['start' => substr($employee->work_start_time, 0, 5), 'end' => substr($employee->work_end_time, 0, 5)],
+            'shift' => [
+                'start' => $employee->shift?->arriveBy() ?? substr($employee->work_start_time, 0, 5),
+                'end' => $employee->shift?->expectedEnd() ?? substr($employee->work_end_time, 0, 5),
+                'code' => $employee->shift?->code,
+                'name' => $employee->shift?->name,
+                'type' => $employee->shift?->type->value,
+            ],
         ]);
     }
 

@@ -152,6 +152,29 @@ return [
             'body' => 'Your task ":task" could not be completed: :reason',
         ],
     ],
+    'attendance' => [
+        'your_hours' => 'your working hours',
+        'checked_in_on_time' => [
+            'subject' => 'Checked in on time — :time',
+            'body' => 'You checked in at :time, on time for :shift (:hours).',
+        ],
+        'checked_in_late' => [
+            'subject' => 'Checked in late — :late',
+            'body' => 'You checked in at :time, :late late for :shift (:hours).',
+        ],
+        'checked_out_on_time' => [
+            'subject' => 'Checked out on time — :time',
+            'body' => 'You checked out at :time after :worked, on time for :shift (:hours).',
+        ],
+        'checked_out_overtime' => [
+            'subject' => 'Overtime today — :overtime',
+            'body' => 'You checked out at :time after :worked: :overtime overtime on :shift (:hours). It is waiting for HR approval.',
+        ],
+        'checked_out_early' => [
+            'subject' => 'Left early — :early',
+            'body' => 'You checked out at :time after :worked, :early before the end of :shift (:hours).',
+        ],
+    ],
     'leave' => [
         'requested' => [
             'subject' => 'Leave to approve: :employee',

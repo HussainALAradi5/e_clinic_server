@@ -31,6 +31,10 @@ use App\Modules\HR\Payroll\Listeners\SendPayrollNotifications;
 use App\Modules\HR\Payroll\Models\PayrollRun;
 use App\Modules\HR\Payroll\Models\Payslip;
 use App\Modules\HR\Payroll\Services\PayrollService;
+use App\Modules\HR\Shifts\Contracts\ShiftServiceInterface;
+use App\Modules\HR\Shifts\Http\Resources\ShiftResource;
+use App\Modules\HR\Shifts\Models\Shift;
+use App\Modules\HR\Shifts\Services\ShiftService;
 use App\Shared\Bulk\BulkActionRegistry;
 use App\Shared\Support\MoneyHelper;
 use Closure;
@@ -40,13 +44,14 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * Human Resources module: departments, employees, attendance, leaves and monthly payroll.
+ * Human Resources module: departments, shifts, employees, attendance, leaves and monthly payroll.
  */
 final class HumanResourcesServiceProvider extends ServiceProvider
 {
     /** @var array<class-string, class-string> */
     public array $singletons = [
         DepartmentServiceInterface::class => DepartmentService::class,
+        ShiftServiceInterface::class => ShiftService::class,
         EmployeeServiceInterface::class => EmployeeService::class,
         AttendanceServiceInterface::class => AttendanceService::class,
         LeaveServiceInterface::class => LeaveService::class,
@@ -64,6 +69,8 @@ final class HumanResourcesServiceProvider extends ServiceProvider
                 'parent' => fn (Model $d): string => $d instanceof Department ? (string) $d->parent?->name : '',
                 'manager' => fn (Model $d): string => $d instanceof Department ? (string) $d->manager?->user->person->full_name : '',
             ]);
+        $bulk->register('shifts', Shift::class, Shift::listQueryConfig(), ShiftService::class)
+            ->exportable(ShiftResource::class, fn (Builder $q) => $q->withCount('employees'));
         $bulk->register('employees', Employee::class, Employee::listQueryConfig())
             ->exportable(EmployeeResource::class, fn (Builder $q) => $q->select('employees.*')->join('persons', 'persons.id', '=', 'employees.id')->where('persons.is_deleted', false)->with(['person', 'user.roles', 'department']), values: [
                 'department' => fn (Model $e): string => $e instanceof Employee ? $e->department->name : '',

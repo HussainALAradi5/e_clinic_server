@@ -148,6 +148,7 @@ final class DemoSeeder extends Seeder
         $this->call(BillingDemoSeeder::class);
         $this->call(PharmacyDemoSeeder::class);
         $this->call(HrDemoSeeder::class);
+        $this->call(ShiftDemoSeeder::class);
         // Ten weeks of visits, results, prescriptions, payments and expenses, plus three weeks of bookings ahead.
         $this->call(HistoryDemoSeeder::class);
         // Staff chat: groups with leaders, one-to-one chats, files, a voice note, mentions and reactions.
