@@ -43,7 +43,9 @@ return [
             'busy_timeout' => env('DB_BUSY_TIMEOUT', 5000),
             'journal_mode' => env('DB_JOURNAL_MODE', 'wal'),
             'synchronous' => null,
-            'transaction_mode' => 'DEFERRED',
+            // IMMEDIATE takes the write lock when a transaction starts, so two processes wait for each other
+            // (busy_timeout) instead of failing with "database is locked" when a read upgrades to a write.
+            'transaction_mode' => env('DB_TRANSACTION_MODE', 'IMMEDIATE'),
         ],
 
         'mysql' => [
