@@ -5,6 +5,7 @@ use App\Shared\Http\Middleware\AssignRequestId;
 use App\Shared\Http\Middleware\CheckAccess;
 use App\Shared\Http\Middleware\EnsureIdempotency;
 use App\Shared\Http\Middleware\EnsurePatient;
+use App\Shared\Http\Middleware\EnsureStaff;
 use App\Shared\Http\Middleware\EnsureTwoFactor;
 use App\Shared\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -16,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
         apiPrefix: 'api/v1',
     )
@@ -27,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureIdempotency::ALIAS => EnsureIdempotency::class,
             EnsureTwoFactor::ALIAS => EnsureTwoFactor::class,
             EnsurePatient::ALIAS => EnsurePatient::class,
+            EnsureStaff::ALIAS => EnsureStaff::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

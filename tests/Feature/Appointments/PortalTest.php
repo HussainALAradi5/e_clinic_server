@@ -90,6 +90,13 @@ it('books for the signed-in patient only, at least two hours ahead, and cancels 
         ->assertJsonPath('data.patient_id', $patient->id)->assertJsonPath('data.status', 'pending')->assertJsonPath('data.source', 'portal')
         ->json('data.id');
 
+    // The staff endpoints take any patient id or search everyone: a patient's portal rights do not open them.
+    portalPost('/api/v1/appointments', [
+        'patient_id' => $other->id, 'provider_id' => $doctor->id, 'type' => 'consultation',
+        'scheduled_date' => '2026-11-03', 'start_time' => '09:00', 'source' => 'walk_in',
+    ])->assertForbidden();
+    $this->postJson('/api/v1/people/duplicates', ['first_name' => 'Any', 'last_name' => 'One', 'date_of_birth' => '1990-01-01'])->assertForbidden();
+
     $this->getJson('/api/v1/appointments')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $own);
     $this->get("/api/v1/codes/appointment/{$own}")->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
     $this->get("/api/v1/codes/appointment/{$othersBooking}")->assertNotFound();

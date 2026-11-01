@@ -13,6 +13,7 @@ use App\Modules\Appointments\Schedules\Http\Controllers\ScheduleController;
 use App\Modules\Appointments\Treatments\Http\Controllers\TreatmentController;
 use App\Shared\Http\Middleware\EnsureIdempotency;
 use App\Shared\Http\Middleware\EnsurePatient;
+use App\Shared\Http\Middleware\EnsureStaff;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -135,7 +136,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
             Route::get('{appointment}/history', 'history')->whereUuid('appointment')->name('history');
         });
         Route::middleware('throttle:write')->group(function (): void {
-            Route::post('/', 'store')->middleware(['access:appointments.create', EnsureIdempotency::ALIAS])->name('store');
+            Route::post('/', 'store')->middleware(['access:appointments.create', EnsureStaff::ALIAS, EnsureIdempotency::ALIAS])->name('store');
             Route::patch('{appointment}/confirm', 'confirm')->whereUuid('appointment')->middleware('access:appointments.write')->name('confirm');
             Route::patch('{appointment}/check-in', 'checkIn')->whereUuid('appointment')->middleware('access:appointments.write&appointments.check_in')->name('check-in');
             Route::patch('{appointment}/start', 'start')->whereUuid('appointment')->middleware('access:appointments.write&appointments.treat')->name('start');
@@ -158,7 +159,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         });
         Route::middleware('throttle:write')->group(function (): void {
             Route::post('/', 'store')->middleware(['access:treatments.create', EnsureIdempotency::ALIAS])->name('store');
-            Route::post('{treatment}/sessions', 'bookSession')->whereUuid('treatment')->middleware(['access:appointments.create', EnsureIdempotency::ALIAS])->name('sessions.store');
+            Route::post('{treatment}/sessions', 'bookSession')->whereUuid('treatment')->middleware(['access:appointments.create', EnsureStaff::ALIAS, EnsureIdempotency::ALIAS])->name('sessions.store');
             Route::put('{treatment}', 'update')->whereUuid('treatment')->middleware('access:treatments.write')->name('update');
             Route::patch('{treatment}/priority', 'changePriority')->whereUuid('treatment')->middleware('access:treatments.write')->name('priority');
             Route::patch('{treatment}/complete', 'complete')->whereUuid('treatment')->middleware('access:treatments.write')->name('complete');
@@ -186,7 +187,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
             Route::put('{order}', 'update')->whereUuid('order')->middleware('access:orders.write')->name('update');
             Route::patch('{order}/start', 'start')->whereUuid('order')->middleware('access:orders.write&orders.perform')->name('start');
             Route::patch('{order}/complete', 'complete')->whereUuid('order')->middleware('access:orders.write&orders.perform')->name('complete');
-            Route::patch('{order}/referral-appointment', 'linkReferralAppointment')->whereUuid('order')->middleware('access:orders.write|appointments.create')->name('referral-appointment');
+            Route::patch('{order}/referral-appointment', 'linkReferralAppointment')->whereUuid('order')->middleware(['access:orders.write|appointments.create', EnsureStaff::ALIAS])->name('referral-appointment');
             Route::patch('{order}/cancel', 'cancel')->whereUuid('order')->middleware('access:orders.write')->name('cancel');
             Route::patch('{order}/archive', 'archive')->whereUuid('order')->middleware('access:orders.write')->name('archive');
             Route::patch('{order}/unarchive', 'unarchive')->whereUuid('order')->middleware('access:orders.write')->name('unarchive');

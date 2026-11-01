@@ -51,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // People & Users
     Route::controller(UserController::class)->group(function (): void {
         Route::get('people', 'searchPeople')->middleware(['access:people.read_all|people.read_own', 'throttle:read'])->name('people.index');
-        Route::post('people/duplicates', 'duplicates')->middleware(['access:people.read_all|people.read_own', 'throttle:write'])->name('people.duplicates');
+        Route::post('people/duplicates', 'duplicates')->middleware(['access:people.read_all|people.read_own', 'staff', 'throttle:write'])->name('people.duplicates');
         Route::put('people/{person}', 'updatePerson')->whereUuid('person')->middleware(['access:people.write', 'throttle:write'])->name('people.update');
 
         Route::get('users', 'index')->middleware(['access:users.read_all|users.read_own', 'throttle:read'])->name('users.index');
