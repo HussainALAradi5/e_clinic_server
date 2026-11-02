@@ -79,7 +79,7 @@ final class FrontDeskDemoSeeder extends Seeder
         'CONS-DERM' => ['Dermatology consultation', ServiceCategory::Consultation, '25.000', '4100', 'DERM'],
         'PROC-DRESS' => ['Wound dressing', ServiceCategory::Procedure, '6.000', '4200', null],
         'PROC-NEB' => ['Nebuliser session', ServiceCategory::Procedure, '5.000', '4200', null],
-        'PROC-INJ' => ['Injection (nurse)', ServiceCategory::Procedure, '4.000', '4200', null],
+        'PROC-IM' => ['Injection (nurse)', ServiceCategory::Procedure, '4.000', '4200', null],
         'PROC-LASER' => ['Laser session', ServiceCategory::Procedure, '20.000', '4200', 'DERM'],
         'LAB-CBC' => ['Complete blood count', ServiceCategory::Laboratory, '7.500', '4300', null],
         'LAB-HBA1C' => ['HbA1c', ServiceCategory::Laboratory, '9.000', '4300', null],

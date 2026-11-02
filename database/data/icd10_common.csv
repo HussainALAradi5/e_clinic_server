@@ -101,3 +101,10 @@ Z48.00,Encounter for change or removal of nonsurgical wound dressing,"زيارة
 Z51.89,Encounter for other specified aftercare,"زيارة لرعاية لاحقة محددة أخرى",Z00-Z99,1
 Z76.0,Encounter for issue of repeat prescription,"زيارة لتجديد وصفة طبية",Z00-Z99,1
 Z09,Encounter for follow-up examination after completed treatment,"فحص متابعة بعد انتهاء العلاج",Z00-Z99,1
+K01.1,Impacted teeth,"أسنان منطمرة",K00-K95,1
+K03.6,Deposits [accretions] on teeth,"ترسبات على الأسنان",K00-K95,1
+K04.0,Pulpitis,"التهاب لب السن",K00-K95,1
+K04.7,Periapical abscess without sinus,"خراج حول الذروة بدون ناسور",K00-K95,1
+K05.10,"Chronic gingivitis, plaque induced","التهاب اللثة المزمن الناتج عن البلاك",K00-K95,1
+K05.6,"Periodontal disease, unspecified","مرض دواعم السن، غير محدد",K00-K95,1
+K08.89,Other specified disorders of teeth and supporting structures,"اضطرابات أخرى محددة في الأسنان والبنى الداعمة",K00-K95,1

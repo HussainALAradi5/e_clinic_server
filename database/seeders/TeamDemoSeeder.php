@@ -46,6 +46,7 @@ final class TeamDemoSeeder extends Seeder
         'doctor4' => ['Huda', 'Al-Sayed', Gender::Female, RoleName::Doctor, UserType::Doctor, 'OPD', 'Dermatologist', '2700', 'BH'],
         'doctor5' => ['Rajesh', 'Menon', Gender::Male, RoleName::Doctor, UserType::Doctor, 'OPD', 'Orthopaedic surgeon', '3200', 'IN'],
         'doctor6' => ['Mona', 'Farouk', Gender::Female, RoleName::Doctor, UserType::Doctor, 'OPD', 'Cardiologist', '3400', 'EG'],
+        'doctor7' => ['Noora', 'Al-Mannai', Gender::Female, RoleName::Doctor, UserType::Doctor, 'OPD', 'Dentist', '2600', 'BH'],
         'nurse2' => ['Grace', 'Dela Cruz', Gender::Female, RoleName::Nurse, UserType::MedicalStaff, 'PHYSIO', 'Physiotherapist', '850', 'PH'],
         'cashier2' => ['Ali', 'Hasan', Gender::Male, RoleName::Cashier, UserType::Cashier, 'DESK', 'Cashier', '420', 'BH'],
         'reception2' => ['Zainab', 'Abdulla', Gender::Female, RoleName::Receptionist, UserType::Receptionist, 'DESK', 'Receptionist', '450', 'BH'],
@@ -59,6 +60,8 @@ final class TeamDemoSeeder extends Seeder
         'doctor4' => ['DERM', 'CONS-DERM', 'FU-DERM', 'R-105', 'Specialist', 15, [['10:00', '13:00'], ['16:00', '19:00']]],
         'doctor5' => ['ORTHO', 'CONS-ORTHO', 'FU-ORTHO', 'R-106', 'Consultant', 20, [['08:00', '13:00']]],
         'doctor6' => ['CARD', 'CONS-CARD', 'FU-CARD', 'R-107', 'Consultant', 30, [['09:00', '15:00']]],
+        // The dentist works the evening clinic in the dental room.
+        'doctor7' => ['DENT', 'CONS-DENT', 'FU-DENT', 'D-1', 'Specialist', 30, [['15:00', '21:00']]],
     ];
 
     /** code => [name, category, price, revenue account, specialty] */
@@ -78,6 +81,11 @@ final class TeamDemoSeeder extends Seeder
         'XR-SPINE' => ['Lumbar spine X-ray', ServiceCategory::Radiology, '20.000', '4400', null],
         'PROC-CRYO' => ['Cryotherapy (warts)', ServiceCategory::Procedure, '15.000', '4200', 'DERM'],
         'PROC-INJ' => ['Joint injection', ServiceCategory::Procedure, '30.000', '4200', 'ORTHO'],
+        'CONS-DENT' => ['Dental examination', ServiceCategory::Consultation, '15.000', '4100', 'DENT'],
+        'FU-DENT' => ['Dental follow-up', ServiceCategory::Consultation, '8.000', '4100', 'DENT'],
+        'PROC-SCALE' => ['Scaling and polishing', ServiceCategory::Procedure, '25.000', '4200', 'DENT'],
+        'PROC-FILL' => ['Tooth filling', ServiceCategory::Procedure, '30.000', '4200', 'DENT'],
+        'XR-DENT' => ['Dental panoramic X-ray (OPG)', ServiceCategory::Radiology, '18.000', '4400', 'DENT'],
     ];
 
     /** code => [name, floor] (consultation rooms of the new doctors). */
@@ -148,7 +156,7 @@ final class TeamDemoSeeder extends Seeder
     /** @return array<string, BillableService> */
     private function services(): array
     {
-        $specialties = ['IM' => 'Internal medicine', 'DERM' => 'Dermatology', 'ORTHO' => 'Orthopaedics', 'CARD' => 'Cardiology'];
+        $specialties = ['IM' => 'Internal medicine', 'DERM' => 'Dermatology', 'ORTHO' => 'Orthopaedics', 'CARD' => 'Cardiology', 'DENT' => 'Dentistry'];
         foreach ($specialties as $code => $name) {
             Specialty::query()->firstOrCreate(['code' => $code], ['name' => $name]);
         }
@@ -170,6 +178,7 @@ final class TeamDemoSeeder extends Seeder
         foreach (self::ROOMS as $code => [$name, $floor]) {
             Room::query()->firstOrCreate(['code' => $code], ['name' => $name, 'type' => RoomType::Consultation, 'floor' => $floor, 'capacity' => 1, 'department_id' => $opd]);
         }
+        Room::query()->firstOrCreate(['code' => 'D-1'], ['name' => 'Dental room', 'type' => RoomType::Dental, 'floor' => '1', 'capacity' => 1, 'department_id' => $opd]);
         foreach (self::DOCTORS as $prefix => [$specialty, $consultation, $followUp, $room, $title, $slot, $blocks]) {
             $id = (string) Person::query()->where('email', $prefix.DemoSeeder::EMAIL_DOMAIN)->value('id');
             Doctor::query()->create([

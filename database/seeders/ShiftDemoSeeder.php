@@ -40,7 +40,7 @@ final class ShiftDemoSeeder extends Seeder
             'shift_id' => $shift->id, 'work_start_time' => $shift->arriveBy(), 'work_end_time' => $shift->expectedEnd(),
         ]);
         $assign($morning, $byEmail(array_map($at, ['doctor', 'doctor2', 'doctor3', 'doctor5', 'nurse', 'nurse2', 'reception', 'pharmacist', 'cashier'])));
-        $assign($evening, $byEmail(array_map($at, ['doctor4', 'reception2', 'cashier2'])));
+        $assign($evening, $byEmail(array_map($at, ['doctor4', 'doctor7', 'reception2', 'cashier2'])));
         $assign($office, $byEmail(array_map($at, ['hr', 'accountant', 'support'])));
     }
 }

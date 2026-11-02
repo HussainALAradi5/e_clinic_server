@@ -106,6 +106,8 @@ final class HistoryDemoSeeder extends Seeder
             ['M25.561', 'M25.562', 'M54.5', 'M54.2', 'M25.511', 'M17.11', 'G56.0'], ['XR-KNEE', 'XR-SPINE', 'LAB-VITD']],
         'CARD' => [['Palpitations', 'Chest pain on exertion', 'Hypertension review', 'Breathlessness', 'Pre-operative check'],
             ['I10', 'I20.9', 'I48.91', 'I25.10', 'R07.9', 'E78.5'], ['ECG', 'LAB-LIPID', 'US-ABD']],
+        'DENT' => [['Toothache', 'Check-up and cleaning', 'Bleeding gums', 'Broken filling', 'Sensitive teeth', 'Wisdom tooth pain'],
+            ['K02.9', 'K04.0', 'K04.7', 'K05.10', 'K05.6', 'K03.6', 'K01.1'], ['XR-DENT']],
     ];
 
     /** Reports by order kind, normal and abnormal. */
@@ -121,6 +123,7 @@ final class HistoryDemoSeeder extends Seeder
         'XR-SPINE' => ['Normal alignment, no fracture.', 'Reduced L4–L5 disc height with osteophytes.'],
         'ECG' => ['Sinus rhythm 72/min, normal axis and intervals.', 'Atrial fibrillation, ventricular rate 104/min.'],
         'US-ABD' => ['Normal liver, gallbladder, kidneys and spleen.', 'Fatty liver; gallbladder stones without wall thickening.'],
+        'XR-DENT' => ['Panoramic (OPG): no caries or bone loss; third molars erupted.', 'Panoramic (OPG): deep caries 36 with periapical radiolucency; impacted 48.'],
     ];
 
     /** Prescriptions by specialty: [medication code, quantity, dose, frequency, days, route] */
@@ -131,6 +134,7 @@ final class HistoryDemoSeeder extends Seeder
         'DERM' => [['MED-FUSI-2', '1', 'Thin layer', 'Twice daily', 7, 'topical']],
         'ORTHO' => [['MED-IBU-400', '20', '1 tablet', '3 times daily after meals', 7, 'oral'], ['MED-PARA-500', '20', '1–2 tablets', 'Every 6 hours as needed', 5, 'oral']],
         'CARD' => [['MED-AZIT-250', '6', '2 tablets on day 1, then 1', 'Once daily', 5, 'oral']],
+        'DENT' => [['MED-AMOX-500', '15', '1 capsule', '3 times daily', 5, 'oral'], ['MED-IBU-400', '10', '1 tablet', '3 times daily after meals', 3, 'oral']],
     ];
 
     private ClinicClock $clock;
@@ -412,7 +416,7 @@ final class HistoryDemoSeeder extends Seeder
         };
         $recent = $orderedAt->gt($this->now->subDays(2));
         $abnormal = fake()->boolean(25);
-        $room = Room::query()->where('code', $type === ClinicalOrderType::LabTest ? 'LAB-1' : ($type === ClinicalOrderType::Xray ? 'X-1' : 'TR-1'))->value('id');
+        $room = Room::query()->where('code', $type === ClinicalOrderType::LabTest ? 'LAB-1' : ($type === ClinicalOrderType::Xray ? 'X-1' : 'US-1'))->value('id');
         $done = $orderedAt->addMinutes(fake()->numberBetween(30, 180));
         ClinicalOrder::query()->create([
             'patient_id' => $visit->patient_id,
@@ -421,7 +425,7 @@ final class HistoryDemoSeeder extends Seeder
             'type' => $type,
             'billable_service_id' => $service->id,
             'body_part' => match ($serviceCode) {
-                'XR-CHEST' => 'Chest PA', 'XR-KNEE' => 'Right knee', 'XR-SPINE' => 'Lumbar spine', 'US-ABD' => 'Abdomen', 'ECG' => null, default => 'Blood',
+                'XR-CHEST' => 'Chest PA', 'XR-KNEE' => 'Right knee', 'XR-SPINE' => 'Lumbar spine', 'US-ABD' => 'Abdomen', 'XR-DENT' => 'Teeth (panoramic)', 'ECG' => null, default => 'Blood',
             },
             'priority' => fake()->randomElement([TreatmentPriority::Medium, TreatmentPriority::Medium, TreatmentPriority::High]),
             'status' => $recent ? fake()->randomElement([GenericStatus::Pending, GenericStatus::InProgress]) : GenericStatus::Completed,
@@ -645,7 +649,7 @@ final class HistoryDemoSeeder extends Seeder
     {
         $doctors = Doctor::query()->with('specialty')->get()->keyBy(fn (Doctor $d): string => $d->specialty->code ?? 'GP');
         $rooms = Room::query()->whereIn('code', ['PT-1', 'TR-1'])->pluck('id', 'code');
-        $services = BillableService::query()->whereIn('code', ['PT-SESSION', 'PROC-DRESS', 'PROC-INJ', 'PROC-NEB', 'PROC-LASER'])->pluck('id', 'code');
+        $services = BillableService::query()->whereIn('code', ['PT-SESSION', 'PROC-DRESS', 'PROC-IM', 'PROC-NEB', 'PROC-LASER'])->pluck('id', 'code');
         $nurse = $this->users['nurse']->id;
         $physio = $this->users['nurse2']->id;
         $kinds = [
@@ -680,7 +684,7 @@ final class HistoryDemoSeeder extends Seeder
             [$therapist, $room, $service] = match ($type) {
                 TreatmentType::Physiotherapy, TreatmentType::Rehabilitation => [$physio, $rooms['PT-1'] ?? null, $services['PT-SESSION'] ?? null],
                 TreatmentType::WoundCare => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-DRESS'] ?? null],
-                TreatmentType::Injection => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-INJ'] ?? null],
+                TreatmentType::Injection => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-IM'] ?? null],
                 TreatmentType::RespiratoryTherapy => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-NEB'] ?? null],
                 TreatmentType::Laser => [$doctor->id, null, $services['PROC-LASER'] ?? null],
                 default => [$nurse, $rooms['TR-1'] ?? null, null],
