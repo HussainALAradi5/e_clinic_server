@@ -6,6 +6,7 @@ namespace App\Modules\Pharmacy\Medications\Models;
 
 use App\Enums\Pharmacy\DispenseUnit;
 use App\Enums\Pharmacy\MedicationForm;
+use App\Enums\Pharmacy\StockLocation;
 use App\Modules\Identity\Attachments\Models\Attachment;
 use App\Modules\Payments\Catalog\Models\BillableService;
 use App\Modules\Pharmacy\Inventory\Models\MedicationBatch;
@@ -52,6 +53,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  * @property-read ?string $stock_on_hand
+ * @property-read ?string $stock_treatment_room
+ * @property-read ?string $next_expiry
  * @property-read ?Company $manufacturer
  * @property-read ?Country $originCountry
  * @property-read BillableService $billableService
@@ -76,7 +79,7 @@ class Medication extends BaseModel implements OwnedByUser
     {
         return ListQueryConfig::make()
             ->resource('medications')
-            ->sortable('code', 'generic_name', 'brand_name', 'form', 'stock_on_hand', 'reorder_level', 'created_at')
+            ->sortable('code', 'generic_name', 'brand_name', 'form', 'stock_on_hand', 'next_expiry', 'reorder_level', 'created_at')
             ->filterable('form', ['eq', 'in'], enum: MedicationForm::class)
             ->filterable('unit', ['eq', 'in'], enum: DispenseUnit::class)
             ->filterable('manufacturer_id', ['eq', 'in', 'null'], resource: 'companies')
@@ -94,7 +97,10 @@ class Medication extends BaseModel implements OwnedByUser
             ->column('form', 'Form')
             ->column('price', 'Price')
             ->column('stock_on_hand', 'In stock')
+            ->column('stock_treatment_room', 'In treatment room')
+            ->column('next_expiry', 'Next expiry')
             ->column('reorder_level', 'Reorder level')
+            ->column('created_at', 'Added')
             ->dateFields('created_at')
             ->defaultSort('generic_name');
     }
@@ -121,10 +127,15 @@ class Medication extends BaseModel implements OwnedByUser
             $query->select('medications.*');
         }
 
-        return $query->addSelect(['stock_on_hand' => MedicationBatch::query()
-            ->selectRaw('COALESCE(SUM(qty_on_hand), 0)')
-            ->whereColumn('medication_batches.medication_id', 'medications.id')
-            ->dispensable($today)]);
+        $usable = fn () => MedicationBatch::query()->whereColumn('medication_batches.medication_id', 'medications.id')->dispensable($today);
+
+        return $query->addSelect([
+            'stock_on_hand' => $usable()->selectRaw('COALESCE(SUM(qty_on_hand), 0)'),
+            // Of which in the treatment room (the rest is in the pharmacy).
+            'stock_treatment_room' => $usable()->where('medication_batches.location', StockLocation::TreatmentRoom)->selectRaw('COALESCE(SUM(qty_on_hand), 0)'),
+            // The first usable lot to expire (what goes out next).
+            'next_expiry' => $usable()->where('medication_batches.qty_on_hand', '>', 0)->selectRaw('MIN(expiry_date)'),
+        ]);
     }
 
     /**

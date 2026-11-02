@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Pharmacy\Inventory\Models;
 
+use App\Enums\Pharmacy\StockLocation;
 use App\Modules\Identity\Attachments\Models\Attachment;
 use App\Modules\Pharmacy\Medications\Models\Medication;
 use App\Modules\Reference\Companies\Models\Company;
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property string $id
  * @property string $code
  * @property string $medication_id
+ * @property StockLocation $location
  * @property string $batch_number
  * @property CarbonImmutable $expiry_date
  * @property string $qty_received
@@ -62,6 +64,7 @@ class MedicationBatch extends BaseModel implements OwnedByUser
             ->resource('inventory')
             ->sortable('code', 'batch_number', 'expiry_date', 'qty_on_hand', 'received_at')
             ->filterable('medication_id', ['eq', 'in'], resource: 'medications')
+            ->filterable('location', ['eq', 'in'], enum: StockLocation::class)
             ->filterable('supplier_id', ['eq', 'in', 'null'], resource: 'companies')
             ->filterable('expiry_date', ['lt', 'lte', 'gte', 'between'], type: 'date')
             ->filterable('qty_on_hand', ['gt', 'gte', 'lte', 'eq'], type: 'number')
@@ -71,10 +74,12 @@ class MedicationBatch extends BaseModel implements OwnedByUser
             ->column('code', 'Lot')
             ->column('medication', 'Medication')
             ->column('batch_number', 'Batch no.')
+            ->column('location', 'Location')
             ->column('expiry_date', 'Expiry')
             ->column('qty_on_hand', 'On hand')
             ->column('unit_cost', 'Unit cost')
             ->column('supplier', 'Supplier')
+            ->column('received_at', 'Received')
             ->dateFields('received_at', 'expiry_date')
             ->defaultSort('expiry_date');
     }
@@ -145,6 +150,7 @@ class MedicationBatch extends BaseModel implements OwnedByUser
     protected function casts(): array
     {
         return [
+            'location' => StockLocation::class,
             'expiry_date' => 'immutable_date',
             'qty_received' => 'decimal:2',
             'qty_on_hand' => 'decimal:2',

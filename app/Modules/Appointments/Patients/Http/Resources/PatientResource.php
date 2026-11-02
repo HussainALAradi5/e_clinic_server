@@ -10,7 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Patient file with the person's data. Blood group, allergies and chronic conditions only with patients.view_medical;
+ * Patient file with the person's data. Blood group and allergies only with patients.view_medical; chronic conditions,
+ * surgical and family history only with patients.view_history (doctors);
  * staff notes are not shown to the patient themselves.
  *
  * @mixin Patient
@@ -24,6 +25,8 @@ final class PatientResource extends JsonResource
     {
         $person = $this->person;
         $medical = $request->user()?->can('patients.view_medical') ?? false;
+        // Health, surgical and family history: the treating doctors only (not nurses or the front desk).
+        $history = $request->user()?->can('patients.view_history') ?? false;
 
         return [
             'id' => $this->id,
@@ -37,9 +40,9 @@ final class PatientResource extends JsonResource
             'person' => new PersonResource($person),
             'blood_group' => $this->when($medical, fn (): string => $this->blood_group->value),
             'allergies' => $this->when($medical, fn (): ?string => $this->allergies),
-            'chronic_conditions' => $this->when($medical, fn (): ?string => $this->chronic_conditions),
-            'family_history' => $this->when($medical, fn (): ?string => $this->family_history),
-            'surgical_history' => $this->when($medical, fn (): ?string => $this->surgical_history),
+            'chronic_conditions' => $this->when($history, fn (): ?string => $this->chronic_conditions),
+            'family_history' => $this->when($history, fn (): ?string => $this->family_history),
+            'surgical_history' => $this->when($history, fn (): ?string => $this->surgical_history),
             'has_medical_alerts' => $medical ? filled($this->allergies) : null,
             'emergency_contact_name' => $this->emergency_contact_name,
             'emergency_contact_phone' => $this->emergency_contact_phone,

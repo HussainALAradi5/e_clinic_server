@@ -46,6 +46,8 @@ final class MedicationResource extends JsonResource
             'reorder_level' => $this->reorder_level,
             'storage_notes' => $this->storage_notes,
             'stock_on_hand' => $stock === null ? null : Qty::str($stock),
+            'stock_treatment_room' => $this->stock_treatment_room === null ? null : Qty::str($this->stock_treatment_room),
+            'next_expiry' => $this->next_expiry === null ? null : substr((string) $this->next_expiry, 0, 10),
             'is_low_stock' => $stock !== null && $this->reorder_level > 0 && Qty::of($stock)->isLessThanOrEqualTo($this->reorder_level),
             'is_archived' => $this->is_archived,
             'is_deleted' => $this->is_deleted,

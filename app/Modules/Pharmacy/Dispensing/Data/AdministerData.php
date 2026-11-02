@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Pharmacy\Dispensing\Data;
 
+use App\Enums\Pharmacy\StockLocation;
+
 /**
- * Medicines given during a session (injection, infusion, dressing): no prescription, route and dose per item.
+ * Medicines given during a session (injection, infusion, dressing): no prescription, route and dose per item, taken
+ * from the treatment room's stock (default) or the pharmacy's.
  */
 final readonly class AdministerData
 {
@@ -16,6 +19,7 @@ final readonly class AdministerData
         public array $items,
         public ?string $witnessId = null,
         public ?string $notes = null,
+        public StockLocation $from = StockLocation::TreatmentRoom,
     ) {}
 
     /**
@@ -30,6 +34,7 @@ final readonly class AdministerData
             array_map(DispenseItemData::fromArray(...), $items),
             isset($input['witness_id']) ? (string) $input['witness_id'] : null,
             isset($input['notes']) && $input['notes'] !== '' ? (string) $input['notes'] : null,
+            isset($input['from']) ? StockLocation::from((string) $input['from']) : StockLocation::TreatmentRoom,
         );
     }
 }

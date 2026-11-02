@@ -79,6 +79,8 @@ final class FrontDeskDemoSeeder extends Seeder
         'CONS-DERM' => ['Dermatology consultation', ServiceCategory::Consultation, '25.000', '4100', 'DERM'],
         'PROC-DRESS' => ['Wound dressing', ServiceCategory::Procedure, '6.000', '4200', null],
         'PROC-NEB' => ['Nebuliser session', ServiceCategory::Procedure, '5.000', '4200', null],
+        'PROC-INJ' => ['Injection (nurse)', ServiceCategory::Procedure, '4.000', '4200', null],
+        'PROC-LASER' => ['Laser session', ServiceCategory::Procedure, '20.000', '4200', 'DERM'],
         'LAB-CBC' => ['Complete blood count', ServiceCategory::Laboratory, '7.500', '4300', null],
         'LAB-HBA1C' => ['HbA1c', ServiceCategory::Laboratory, '9.000', '4300', null],
         'XR-CHEST' => ['Chest X-ray', ServiceCategory::Radiology, '18.000', '4400', null],
@@ -94,6 +96,10 @@ final class FrontDeskDemoSeeder extends Seeder
         'TR-1' => ['Treatment room', RoomType::TreatmentRoom, '1', 'NURS'],
         'X-1' => ['X-ray', RoomType::Xray, 'G', 'CLIN'],
         'LAB-1' => ['Sample collection', RoomType::Laboratory, 'G', 'CLIN'],
+        'US-1' => ['Ultrasound', RoomType::Ultrasound, 'G', 'CLIN'],
+        'PR-1' => ['Procedure room', RoomType::Procedure, '1', 'NURS'],
+        'VAC-1' => ['Vaccination', RoomType::Vaccination, '1', 'NURS'],
+        'PH-1' => ['Pharmacy', RoomType::Pharmacy, 'G', 'PHARM'],
     ];
 
     public function run(ClinicClock $clock): void

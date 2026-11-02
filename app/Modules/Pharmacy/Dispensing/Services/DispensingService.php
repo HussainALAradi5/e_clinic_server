@@ -7,6 +7,7 @@ namespace App\Modules\Pharmacy\Dispensing\Services;
 use App\Enums\Accounting\AccountMappingKey;
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Pharmacy\DispensationKind;
+use App\Enums\Pharmacy\StockLocation;
 use App\Modules\Accounting\Journal\Contracts\JournalEntryServiceInterface;
 use App\Modules\Accounting\Journal\Data\AutomaticEntryData;
 use App\Modules\Accounting\Journal\Data\JournalLineData;
@@ -112,7 +113,7 @@ final class DispensingService implements DispensingServiceInterface
                 throw new AdministrationRequiresSessionException(context: ['status' => $appointment->status->value]);
             }
 
-            return $this->record(DispensationKind::Administered, $appointment->patient_id, $data->items, $this->medications($data->items), $data->witnessId, $data->notes, appointment: $appointment);
+            return $this->record(DispensationKind::Administered, $appointment->patient_id, $data->items, $this->medications($data->items), $data->witnessId, $data->notes, appointment: $appointment, from: $data->from);
         });
         MedicationsDispensed::dispatch($dispensation);
 
@@ -168,7 +169,8 @@ final class DispensingService implements DispensingServiceInterface
     }
 
     /**
-     * Shared flow of both kinds: controlled-drug rule, FEFO issue per medicine, lines with price / cost snapshots,
+     * Shared flow of both kinds: controlled-drug rule, FEFO issue per medicine from one place (take-home: the
+     * pharmacy; given in a session: the treatment room unless the pharmacy is chosen), lines with price / cost snapshots,
      * prescription status, invoice charge and the cost-of-goods-sold entry.
      *
      * @param  list<DispenseItemData>  $items
@@ -183,6 +185,7 @@ final class DispensingService implements DispensingServiceInterface
         ?string $notes,
         ?Prescription $prescription = null,
         ?Appointment $appointment = null,
+        StockLocation $from = StockLocation::Pharmacy,
     ): Dispensation {
         $dispenser = $this->actingEmployee();
         $this->assertControlledRule($kind, $items, $medications, $dispenser, $witnessId, $prescription);
@@ -202,7 +205,7 @@ final class DispensingService implements DispensingServiceInterface
         $cost = MoneyHelper::zero();
         foreach ($items as $item) {
             $medication = $medications[$item->medicationId];
-            foreach ($this->inventory->issue($medication, $item->quantity, $item->batchId, $dispensation) as $issue) {
+            foreach ($this->inventory->issue($medication, $item->quantity, $item->batchId, $dispensation, $from) as $issue) {
                 DispensationItem::query()->create([
                     'dispensation_id' => $dispensation->id,
                     'prescription_item_id' => $item->prescriptionItemId,

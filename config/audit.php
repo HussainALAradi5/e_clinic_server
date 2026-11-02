@@ -12,6 +12,7 @@ use App\Modules\Appointments\Records\Models\PatientConsent;
 use App\Modules\Appointments\Rooms\Models\Room;
 use App\Modules\Appointments\Schedules\Models\ProviderSchedule;
 use App\Modules\Appointments\Schedules\Models\ScheduleException;
+use App\Modules\Appointments\SickLeaves\Models\SickLeave;
 use App\Modules\Appointments\Treatments\Models\Treatment;
 use App\Modules\Communication\Chat\Models\Conversation;
 use App\Modules\Communication\Chat\Models\Message;
@@ -101,6 +102,7 @@ return [
         'clinical_order' => ClinicalOrder::class,
         'medical_record' => MedicalRecord::class,
         'patient_consent' => PatientConsent::class,
+        'sick_leave' => SickLeave::class,
         'invoice' => Invoice::class,
         'payment' => Payment::class,
         'refund' => Refund::class,

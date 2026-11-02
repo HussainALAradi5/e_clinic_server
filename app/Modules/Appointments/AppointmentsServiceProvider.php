@@ -52,6 +52,7 @@ use App\Modules\Appointments\Rooms\Models\Room;
 use App\Modules\Appointments\Rooms\Services\RoomService;
 use App\Modules\Appointments\Schedules\Contracts\ScheduleServiceInterface;
 use App\Modules\Appointments\Schedules\Services\ScheduleService;
+use App\Modules\Appointments\SickLeaves\Models\SickLeave;
 use App\Modules\Appointments\Treatments\Contracts\TreatmentServiceInterface;
 use App\Modules\Appointments\Treatments\Events\TreatmentAttendanceAlert;
 use App\Modules\Appointments\Treatments\Events\TreatmentCompleted;
@@ -125,6 +126,7 @@ final class AppointmentsServiceProvider extends ServiceProvider
                 'department' => fn (Model $r): string => $r instanceof Room ? (string) $r->department?->name : '',
             ]);
 
+        $bulk->register('sick_leaves', SickLeave::class, SickLeave::listQueryConfig(), genericActions: false);
         $bulk->register('appointments', Appointment::class, Appointment::listQueryConfig(), genericActions: false)
             ->action('confirm', 'appointments.write', [AppointmentServiceInterface::class, 'confirm'])
             ->action('cancel', 'appointments.cancel', fn (Model $a, ?string $reason): mixed => $a instanceof Appointment

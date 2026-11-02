@@ -78,7 +78,7 @@ final class HumanResourcesServiceProvider extends ServiceProvider
 
         $employee = fn (Model $m): string => $m->getRelationValue('employee') instanceof Employee ? $m->getRelationValue('employee')->person->full_name : '';
         $bulk->register('attendance', Attendance::class, Attendance::listQueryConfig(), genericActions: false)
-            ->exportable(AttendanceResource::class, fn (Builder $q) => $q->with(['employee.person', 'employee.department']), values: ['employee' => $employee]);
+            ->exportable(AttendanceResource::class, fn (Builder $q) => $q->with(['employee.person', 'employee.department', 'employee.shift']), values: ['employee' => $employee]);
 
         $bulk->register('leaves', LeaveRequest::class, LeaveRequest::listQueryConfig(), genericActions: false)
             ->action('approve', 'leaves.write&leaves.approve', [LeaveServiceInterface::class, 'approve'])

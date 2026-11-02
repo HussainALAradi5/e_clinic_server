@@ -10,6 +10,7 @@ use App\Modules\Appointments\Records\Http\Controllers\ConsentController;
 use App\Modules\Appointments\Records\Http\Controllers\MedicalRecordController;
 use App\Modules\Appointments\Rooms\Http\Controllers\RoomController;
 use App\Modules\Appointments\Schedules\Http\Controllers\ScheduleController;
+use App\Modules\Appointments\SickLeaves\Http\Controllers\SickLeaveController;
 use App\Modules\Appointments\Treatments\Http\Controllers\TreatmentController;
 use App\Shared\Http\Middleware\EnsureIdempotency;
 use App\Shared\Http\Middleware\EnsurePatient;
@@ -50,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('{patient}/emergency-access', 'emergencyAccess')->whereUuid('patient')
             ->middleware(['access:patients.read_own&patients.view_medical', EnsureStaff::ALIAS, 'throttle:sensitive'])->name('emergency-access');
         Route::put('{patient}/medical-history', 'medicalHistory')->whereUuid('patient')
-            ->middleware(['access:records.write&patients.view_medical', 'throttle:write'])->name('medical-history');
+            ->middleware(['access:records.write&patients.view_history', 'throttle:write'])->name('medical-history');
         Route::middleware('throttle:write')->group(function (): void {
             Route::post('/', 'store')->middleware('access:patients.create')->name('store');
             Route::put('{patient}', 'update')->whereUuid('patient')->middleware('access:patients.write')->name('update');
@@ -214,6 +215,16 @@ Route::middleware('auth:sanctum')->group(function (): void {
         });
     });
     Route::get('icd10', [MedicalRecordController::class, 'icd10'])->middleware(['access:records.read_all|records.read_own', 'throttle:read'])->name('icd10.search');
+
+    // Sick leave certificates: issued at a visit by its doctor; patients, doctors and the front desk list and print them.
+    Route::controller(SickLeaveController::class)->name('sick-leaves.')->group(function (): void {
+        Route::middleware(['access:sick_leaves.read_all|sick_leaves.read_own', 'throttle:read'])->group(function (): void {
+            Route::get('sick-leaves', 'index')->name('index');
+            Route::get('sick-leaves/{sickLeave}', 'show')->whereUuid('sickLeave')->name('show');
+        });
+        Route::post('appointments/{appointment}/sick-leaves', 'store')->whereUuid('appointment')->middleware(['access:sick_leaves.create', 'throttle:write'])->name('store');
+        Route::patch('sick-leaves/{sickLeave}/cancel', 'cancel')->whereUuid('sickLeave')->middleware(['access:sick_leaves.write', 'throttle:write'])->name('cancel');
+    });
 
     // Patient consents
     Route::controller(ConsentController::class)->name('consents.')->group(function (): void {

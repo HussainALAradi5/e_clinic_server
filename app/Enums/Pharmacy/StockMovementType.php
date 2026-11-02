@@ -19,4 +19,6 @@ enum StockMovementType: string implements HasLabel
     case Return = 'return';
     case Adjustment = 'adjustment';
     case ExpiryWriteoff = 'expiry_writeoff';
+    /** Moved between the pharmacy and the treatment room (− on one lot, + on the other). */
+    case Transfer = 'transfer';
 }

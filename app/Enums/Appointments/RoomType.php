@@ -8,7 +8,7 @@ use App\Shared\Contracts\HasLabel;
 use App\Shared\Traits\EnumHelpers;
 
 /**
- * Kind of room.
+ * Kind of room: what happens there (and which rooms a booking may use).
  */
 enum RoomType: string implements HasLabel
 {
@@ -20,4 +20,10 @@ enum RoomType: string implements HasLabel
     case SessionRoom = 'session_room';
     case Xray = 'xray';
     case Laboratory = 'laboratory';
+    case Ultrasound = 'ultrasound';
+    case Dental = 'dental';
+    /** Minor surgery and procedures (excisions, suturing). */
+    case Procedure = 'procedure';
+    case Vaccination = 'vaccination';
+    case Pharmacy = 'pharmacy';
 }

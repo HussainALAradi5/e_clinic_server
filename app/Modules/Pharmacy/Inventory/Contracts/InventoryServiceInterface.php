@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Pharmacy\Inventory\Contracts;
 
+use App\Enums\Pharmacy\StockLocation;
 use App\Modules\Pharmacy\Inventory\Data\ReceiveStockData;
 use App\Modules\Pharmacy\Inventory\Data\StockAdjustmentData;
 use App\Modules\Pharmacy\Inventory\Data\StockIssue;
@@ -56,7 +57,13 @@ interface InventoryServiceInterface
      *
      * @return list<StockIssue>
      */
-    public function issue(Medication $medication, BigDecimal $quantity, ?string $batchId, Model $source): array;
+    public function issue(Medication $medication, BigDecimal $quantity, ?string $batchId, Model $source, StockLocation $from = StockLocation::Pharmacy): array;
+
+    /**
+     * Moves units of a lot to the other place (pharmacy ↔ treatment room): the same batch, expiry and cost there,
+     * one lot per place, `transfer` movements on both. Returns the lot at [$to].
+     */
+    public function transfer(MedicationBatch $batch, BigDecimal $quantity, StockLocation $to, ?string $reason = null): MedicationBatch;
 
     /** **Internal (dispensing cancel)** — puts a returned quantity back on its lot (`return` movement). */
     public function restock(MedicationBatch $batch, BigDecimal $quantity, Model $source, string $reason): void;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Pharmacy\Inventory\Services;
 
 use App\Enums\Accounting\AccountMappingKey;
+use App\Enums\Pharmacy\StockLocation;
 use App\Enums\Pharmacy\StockMovementType;
 use App\Enums\Transactions\ExpenseCategory;
 use App\Modules\Accounting\Journal\Contracts\JournalEntryServiceInterface;
@@ -76,7 +77,8 @@ final class InventoryService implements InventoryServiceInterface
             $medication = Medication::query()->where('is_archived', false)->findOrFail($data->medicationId);
             $cost = MoneyHelper::of($data->unitCost);
 
-            $batch = MedicationBatch::query()->where('medication_id', $medication->id)->where('batch_number', $data->batchNumber)->lockForUpdate()->first();
+            $batch = MedicationBatch::query()->where('medication_id', $medication->id)->where('batch_number', $data->batchNumber)
+                ->where('location', StockLocation::Pharmacy)->lockForUpdate()->first();
             if ($batch !== null && ! $batch->expiry_date->isSameDay($data->expiryDate)) {
                 throw ValidationException::withMessages(['expiry_date' => [__('validation.same', ['attribute' => 'expiry date', 'other' => "lot {$batch->code} ({$batch->expiry_date->toDateString()})"])]]);
             }
@@ -125,7 +127,7 @@ final class InventoryService implements InventoryServiceInterface
             $after = Qty::of($batch->qty_on_hand)->plus($data->quantity);
             if ($after->isNegative()) {
                 throw new InsufficientStockException(
-                    __('errors.INSUFFICIENT_STOCK', ['medication' => $batch->medication->displayName(), 'available' => Qty::str($batch->qty_on_hand)]),
+                    __('errors.INSUFFICIENT_STOCK', ['medication' => $batch->medication->displayName(), 'available' => Qty::str($batch->qty_on_hand), 'place' => mb_strtolower($batch->location->label())]),
                     ['medication_id' => $batch->medication_id, 'available' => Qty::str($batch->qty_on_hand)],
                 );
             }
@@ -191,25 +193,25 @@ final class InventoryService implements InventoryServiceInterface
         return $count;
     }
 
-    public function issue(Medication $medication, BigDecimal $quantity, ?string $batchId, Model $source): array
+    public function issue(Medication $medication, BigDecimal $quantity, ?string $batchId, Model $source, StockLocation $from = StockLocation::Pharmacy): array
     {
         $today = $this->clock->today();
         if ($batchId !== null) {
             $batch = MedicationBatch::query()->lockForUpdate()->find($batchId);
-            if (! $batch instanceof MedicationBatch || $batch->medication_id !== $medication->id || $batch->is_deleted || ! $batch->isDispensable($today)) {
+            if (! $batch instanceof MedicationBatch || $batch->medication_id !== $medication->id || $batch->location !== $from || $batch->is_deleted || ! $batch->isDispensable($today)) {
                 throw new BatchExpiredException(__('errors.BATCH_EXPIRED', ['batch' => $batch->code ?? $batchId]), ['batch_id' => $batchId]);
             }
             $batches = collect([$batch]);
         } else {
-            $batches = MedicationBatch::query()->where('medication_id', $medication->id)->dispensable($today)
+            $batches = MedicationBatch::query()->where('medication_id', $medication->id)->where('location', $from)->dispensable($today)
                 ->where('qty_on_hand', '>', 0)->orderBy('expiry_date')->orderBy('received_at')->lockForUpdate()->get();
         }
 
         $available = $batches->reduce(fn (BigDecimal $sum, MedicationBatch $b): BigDecimal => $sum->plus(Qty::of($b->qty_on_hand)), Qty::zero());
         if ($available->isLessThan($quantity)) {
             throw new InsufficientStockException(
-                __('errors.INSUFFICIENT_STOCK', ['medication' => $medication->displayName(), 'available' => (string) $available]),
-                ['medication_id' => $medication->id, 'available' => (string) $available],
+                __('errors.INSUFFICIENT_STOCK', ['medication' => $medication->displayName(), 'available' => Qty::str($available), 'place' => mb_strtolower($from->label())]),
+                ['medication_id' => $medication->id, 'available' => (string) $available, 'location' => $from->value],
             );
         }
 
@@ -246,6 +248,38 @@ final class InventoryService implements InventoryServiceInterface
     }
 
     /** Ledger row + on-hand change of a locked lot. */
+    public function transfer(MedicationBatch $batch, BigDecimal $quantity, StockLocation $to, ?string $reason = null): MedicationBatch
+    {
+        return DB::transaction(function () use ($batch, $quantity, $to, $reason): MedicationBatch {
+            $source = MedicationBatch::query()->lockForUpdate()->findOrFail($batch->id);
+            if ($source->location === $to) {
+                throw ValidationException::withMessages(['to' => [__('errors.STOCK_SAME_LOCATION')]]);
+            }
+            if (! $source->isDispensable($this->clock->today())) {
+                throw new BatchExpiredException(__('errors.BATCH_EXPIRED', ['batch' => $source->code]), ['batch_id' => $source->id]);
+            }
+            if (Qty::of($source->qty_on_hand)->isLessThan($quantity)) {
+                throw new InsufficientStockException(
+                    __('errors.INSUFFICIENT_STOCK', ['medication' => $source->medication->displayName(), 'available' => Qty::str($source->qty_on_hand), 'place' => mb_strtolower($source->location->label())]),
+                    ['batch_id' => $source->id, 'available' => (string) Qty::of($source->qty_on_hand)],
+                );
+            }
+            // The same batch at the other place: one lot there, topped up (same expiry and cost).
+            $target = MedicationBatch::query()->where('medication_id', $source->medication_id)->where('batch_number', $source->batch_number)
+                ->where('location', $to)->lockForUpdate()->first()
+                ?? MedicationBatch::query()->create([
+                    'medication_id' => $source->medication_id, 'location' => $to, 'batch_number' => $source->batch_number,
+                    'expiry_date' => $source->expiry_date, 'qty_received' => '0', 'qty_on_hand' => '0', 'unit_cost' => $source->unit_cost,
+                    'supplier_id' => $source->supplier_id, 'received_at' => $this->clock->now(),
+                ]);
+            $target->forceFill(['qty_received' => (string) Qty::of($target->qty_received)->plus($quantity)])->save();
+            $this->record($source, StockMovementType::Transfer, $quantity->negated(), $target, $reason);
+            $this->record($target, StockMovementType::Transfer, $quantity, $source, $reason);
+
+            return $target->refresh()->load(['medication', 'supplier']);
+        });
+    }
+
     private function record(MedicationBatch $batch, StockMovementType $type, BigDecimal $quantity, Model $source, ?string $reason = null, ?string $approvedBy = null): StockMovement
     {
         $batch->forceFill(['qty_on_hand' => (string) Qty::of($batch->qty_on_hand)->plus($quantity)])->save();

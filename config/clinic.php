@@ -188,6 +188,7 @@ return [
         Pharmacy\MedicationForm::class,
         Pharmacy\DispenseUnit::class,
         Pharmacy\MedicationRoute::class,
+        Pharmacy\StockLocation::class,
         Pharmacy\DispensationKind::class,
         Pharmacy\StockMovementType::class,
     ],

@@ -45,6 +45,7 @@ final class MedicationBatchResource extends JsonResource
                 'is_controlled' => $this->medication->is_controlled,
             ]),
             'batch_number' => $this->batch_number,
+            'location' => $this->location->value,
             'expiry_date' => $this->expiry_date->toDateString(),
             'expiry_status' => $status,
             'qty_received' => Qty::str($this->qty_received),

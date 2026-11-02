@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Pharmacy\MedicationRoute;
+use App\Enums\Pharmacy\StockLocation;
 use App\Enums\Reference\CompanyType;
 use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Patients\Models\Patient;
@@ -116,6 +117,10 @@ final class PharmacyDemoSeeder extends Seeder
         }
         $inventory->setQuarantine($lot('IBU-1176'), true, 'Supplier recall notice GDD-RC-118');
         $inventory->adjust($lot('PAR-5521'), new StockAdjustmentData(Qty::of('-4'), 'Strips damaged on the shelf'));
+        // Ward stock: injectables and the dressing cream the nurses give in the treatment room.
+        foreach (['CFT-4471' => '10', 'DCL-2290' => '15', 'FUC-6602' => '5'] as $number => $units) {
+            $inventory->transfer($lot($number), Qty::of($units), StockLocation::TreatmentRoom, 'Weekly treatment room top-up');
+        }
 
         // Prescriptions from today's and recent visits.
         $visits = Appointment::query()->where('provider_id', $doctor->id)

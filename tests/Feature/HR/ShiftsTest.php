@@ -118,4 +118,10 @@ it('tells employees whether they were on time, late, on overtime or left early a
         ->and($notice->subject)->toBe('Overtime today — 1 h 30 min')
         ->and($notice->body)->toContain('Office flexi')->toContain('waiting for HR approval');
     expect(shiftNotice($nurse)->body)->toContain('1 h 00 min before the end of Morning');
+
+    // HR sees, per day, the shift it was measured against.
+    shiftAs($hr);
+    $rows = collect($this->getJson('/api/v1/hr/attendance?per_page=50')->assertOk()->json('data'));
+    expect($rows->firstWhere('employee.id', $nurse->id)['shift']['name'])->toBe('Morning')
+        ->and($rows->firstWhere('employee.id', $doctor->id)['shift']['type'])->toBe('flexible');
 });

@@ -38,7 +38,8 @@ it('returns the effective access of the signed-in user', function () {
     $access = $this->getJson('/api/v1/roles/me/access')->assertOk()->json('data');
 
     expect($access['roles'])->toEqualCanonicalizing(['doctor', 'nurse'])
-        ->and($access['permissions'])->toContain('treatments.create', 'records.read_all', 'patients.view_medical');
+        ->and($access['permissions'])->toContain('treatments.create', 'records.read_own', 'patients.view_medical', 'patients.view_history')
+        ->not->toContain('records.read_all');
 });
 
 it('lists roles with counts, permissions grouped by module and protected resources', function () {

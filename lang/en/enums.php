@@ -55,7 +55,7 @@ return [
     'AppointmentType' => ['follow_up' => 'Follow-up', 'teleconsultation' => 'Video consultation', 'treatment_session' => 'Treatment session'],
     'CancelledBy' => ['system' => 'Automatically'],
     'ClinicalOrderType' => ['xray' => 'X-ray', 'ultrasound' => 'Ultrasound', 'ct' => 'CT scan', 'mri' => 'MRI scan', 'lab_test' => 'Lab test', 'ecg' => 'ECG', 'referral' => 'Referral'],
-    'RoomType' => ['physical' => 'Physiotherapy', 'xray' => 'X-ray', 'session_room' => 'Treatment sessions'],
+    'RoomType' => ['physical' => 'Physiotherapy', 'xray' => 'X-ray', 'session_room' => 'Treatment sessions', 'dental' => 'Dental', 'procedure' => 'Procedure room', 'vaccination' => 'Vaccination'],
     'DispensationKind' => ['take_home' => 'Taken home', 'administered' => 'Given at the clinic'],
     'DispenseUnit' => ['ml' => 'ml'],
     'StockMovementType' => ['receipt' => 'Delivery received', 'dispense' => 'Dispensed', 'return' => 'Returned', 'expiry_writeoff' => 'Expired — written off'],

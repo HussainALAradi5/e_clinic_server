@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Pharmacy\Dispensing\Http\Requests;
 
 use App\Enums\Pharmacy\MedicationRoute;
+use App\Enums\Pharmacy\StockLocation;
 use App\Modules\Pharmacy\Dispensing\Data\AdministerData;
 use App\Modules\Pharmacy\Dispensing\Data\DispenseData;
 use Illuminate\Foundation\Http\FormRequest;
@@ -35,6 +36,8 @@ final class DispenseRequest extends FormRequest
             'items.*.dose' => $session ? ['nullable', 'string', 'max:50'] : ['prohibited'],
             'witness_id' => ['nullable', 'uuid', Rule::exists('employees', 'id')],
             'notes' => ['nullable', 'string', 'max:500'],
+            // Give medicine only: whose stock (treatment room by default).
+            'from' => $session ? ['nullable', Rule::enum(StockLocation::class)] : ['prohibited'],
         ];
     }
 

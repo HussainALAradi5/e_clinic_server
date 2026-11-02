@@ -126,6 +126,9 @@ final class ClinicalDemoSeeder extends Seeder
     private function treatments(Doctor $doctor, string $therapist, Patient $portal, array $others, array $services, ClinicClock $clock): void
     {
         $gym = Room::query()->where('code', 'PT-1')->value('id');
+        $treatmentRoom = Room::query()->where('code', 'TR-1')->value('id');
+        // Physiotherapy belongs to the physiotherapist; the staff nurse gives the nursing treatments.
+        $physio = (string) Person::query()->where('email', 'nurse2@demo.eclinic.bh')->value('id') ?: $therapist;
         $past = $this->workdays($clock->today(), -1, 3);
         $next = $this->workdays($clock->today(), 1, 1)[0];
 
@@ -134,16 +137,16 @@ final class ClinicalDemoSeeder extends Seeder
         $knee->forceFill(['diagnosis' => 'Patellofemoral pain syndrome, right knee', 'plan' => 'Quadriceps strengthening and stretching, twice a week; ice after exercise.'])->save();
         // The missed session's number (2) is reused by the next one.
         foreach ([[$past[2], 1, AppointmentStatus::Completed], [$past[1], 2, AppointmentStatus::NoShow], [$past[0], 2, AppointmentStatus::Completed], [$next, 3, AppointmentStatus::Confirmed]] as [$date, $number, $status]) {
-            $this->session($knee, $therapist, $gym, $date, '10:00', 45, $number, $status);
+            $this->session($knee, $physio, $gym, $date, '10:00', 45, $number, $status);
         }
 
         // Urgent, waiting in the scheduling queue.
-        $this->plan($others[0], $doctor, TreatmentType::WoundCare, 'Post-operative wound care', TreatmentPriority::Urgent, 5, 20, $services['PT-SESSION'], GenericStatus::Pending, null);
+        $this->plan($others[0], $doctor, TreatmentType::WoundCare, 'Post-operative wound care', TreatmentPriority::Urgent, 5, 20, BillableService::query()->firstWhere('code', 'PROC-DRESS'), GenericStatus::Pending, null);
 
         // Two missed sessions in a row: the attendance alert.
-        $neb = $this->plan($others[1], $doctor, TreatmentType::RespiratoryTherapy, 'Nebuliser course', TreatmentPriority::High, 4, 30, null, GenericStatus::Pending, null);
-        $this->session($neb, $therapist, null, $past[1], '12:00', 30, 1, AppointmentStatus::NoShow);
-        $this->session($neb, $therapist, null, $past[0], '12:00', 30, 1, AppointmentStatus::NoShow);
+        $neb = $this->plan($others[1], $doctor, TreatmentType::RespiratoryTherapy, 'Nebuliser course', TreatmentPriority::High, 4, 30, BillableService::query()->firstWhere('code', 'PROC-NEB'), GenericStatus::Pending, null);
+        $this->session($neb, $therapist, $treatmentRoom, $past[1], '12:00', 30, 1, AppointmentStatus::NoShow);
+        $this->session($neb, $therapist, $treatmentRoom, $past[0], '12:00', 30, 1, AppointmentStatus::NoShow);
     }
 
     private function plan(Patient $patient, Doctor $doctor, TreatmentType $type, string $title, TreatmentPriority $priority, int $sessions, int $minutes, ?BillableService $service, GenericStatus $status, ?CarbonImmutable $start): Treatment

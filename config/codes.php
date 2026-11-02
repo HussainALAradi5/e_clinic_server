@@ -3,6 +3,7 @@
 use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Orders\Models\ClinicalOrder;
 use App\Modules\Appointments\Records\Models\PatientConsent;
+use App\Modules\Appointments\SickLeaves\Models\SickLeave;
 use App\Modules\Identity\Attachments\Models\Attachment;
 use App\Modules\Identity\Users\Models\Person;
 use App\Modules\Payments\Invoices\Models\Invoice;
@@ -42,6 +43,13 @@ return [
             'summary' => ['code', 'type', 'priority', 'status', 'body_part', 'created_at'],
             // Referral letters and result prints can be checked by the receiving hospital (no clinical content).
             'public' => ['code', 'type', 'status', 'created_at'],
+        ],
+        'sick_leave' => [
+            'model' => SickLeave::class,
+            'resource' => 'sick_leaves',
+            'summary' => ['code', 'start_date', 'end_date', 'days', 'issued_at', 'cancelled_at'],
+            // Employers check a certificate: its dates and whether it was cancelled — never the reason.
+            'public' => ['code', 'start_date', 'end_date', 'days', 'issued_at', 'cancelled_at'],
         ],
         'patient_consent' => [
             'model' => PatientConsent::class,

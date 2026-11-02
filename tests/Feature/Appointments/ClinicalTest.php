@@ -9,6 +9,7 @@ use App\Modules\Appointments\Appointments\Models\Appointment;
 use App\Modules\Appointments\Doctors\Models\Doctor;
 use App\Modules\Appointments\Treatments\Events\TreatmentAttendanceAlert;
 use App\Modules\Identity\Attachments\Models\Attachment;
+use App\Modules\Identity\Codes\Contracts\CodeServiceInterface;
 use App\Modules\Identity\Users\Models\User;
 use App\Modules\Reference\Companies\Models\Company;
 use Carbon\CarbonImmutable;
@@ -265,12 +266,14 @@ it('documents a visit: vitals at check-in, SOAP notes and ICD-10, signed by the 
     $this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertForbidden();
     $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
 
+    // A nurse sees only her own patients: another provider's visit is not hers to open.
     deskUser(RoleName::Nurse);
+    $this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertNotFound();
+
+    signedIn($doctor->id);
     $this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertOk()->assertJsonPath('data.exists', false);
     $this->putJson("/api/v1/appointments/{$visit}/medical-record", ['vitals' => ['temperature_c' => 38.2, 'pulse_bpm' => 96, 'weight_kg' => 80, 'height_cm' => 180, 'spo2_percent' => 97]])
         ->assertOk()->assertJsonPath('data.vitals.bmi', 24.7)->assertJsonPath('data.version', 1);
-
-    signedIn($doctor->id);
     $j069 = $this->getJson('/api/v1/icd10?search=upper respiratory')->assertOk()->assertJsonPath('data.0.code', 'J06.9')->json('data.0.id');
     $r509 = $this->getJson('/api/v1/icd10?search=R50')->assertOk()->assertJsonPath('data.0.code', 'R50.9')->json('data.0.id');
     $this->getJson('/api/v1/icd10?search=حمى')->assertOk()->assertJsonPath('data.0.code', 'R50.9');
@@ -286,7 +289,8 @@ it('documents a visit: vitals at check-in, SOAP notes and ICD-10, signed by the 
     ])->assertOk()->assertJsonPath('data.diagnoses.0.code', 'J06.9')->assertJsonPath('data.diagnoses.0.is_primary', true)->assertJsonPath('data.vitals.pulse_bpm', 96);
 
     deskUser(RoleName::Nurse);
-    $this->postJson("/api/v1/appointments/{$visit}/medical-record/sign")->assertForbidden();
+    $this->postJson("/api/v1/appointments/{$visit}/medical-record/sign")->assertNotFound();
+    $this->getJson("/api/v1/patients/{$patient->id}")->assertNotFound();
 
     signedIn($doctor->id);
     $this->postJson("/api/v1/appointments/{$visit}/medical-record/addenda", ['text' => 'x'])->assertStatus(409)->assertJsonPath('error_code', 'MEDICAL_RECORD_NOT_SIGNED');
@@ -369,4 +373,68 @@ it('opens a patient\'s whole history to the doctors caring for them, keeps writi
     // The grant ends after the shift.
     $this->travel(13)->hours();
     $this->getJson("/api/v1/patients/{$notMine->id}")->assertNotFound();
+});
+
+it('shows health, surgical and family history and past visit notes to doctors only', function () {
+    $doctor = FrontDesk::doctor();
+    $patient = FrontDesk::patient();
+    signedIn($doctor->id);
+    deskUser();
+    $visit = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'phone'])->json('data.id');
+    // The front desk cannot write histories (it never sees them).
+    $this->putJson("/api/v1/patients/{$patient->id}", ['family_history' => 'Father: diabetes'])->assertUnprocessable()->assertJsonValidationErrors(['family_history']);
+
+    signedIn($doctor->id);
+    $this->putJson("/api/v1/patients/{$patient->id}/medical-history", ['family_history' => 'Father: type 2 diabetes', 'surgical_history' => 'Appendectomy 2015', 'version' => $patient->refresh()->version])->assertOk();
+    $this->getJson("/api/v1/patients/{$patient->id}")->assertOk()
+        ->assertJsonPath('data.family_history', 'Father: type 2 diabetes')->assertJsonPath('data.surgical_history', 'Appendectomy 2015');
+
+    // A nurse whose own session it is sees the patient, the allergies — but no history and no visit notes.
+    $nurse = FrontDesk::employee(UserType::MedicalStaff, RoleName::Nurse);
+    Appointment::query()->whereKey($visit)->update(['provider_id' => $nurse->id]);
+    signedIn($nurse->id);
+    $file = $this->getJson("/api/v1/patients/{$patient->id}")->assertOk()->json('data');
+    expect($file)->toHaveKey('allergies')->not->toHaveKeys(['family_history', 'surgical_history', 'chronic_conditions']);
+    expect($this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertOk()->json('data'))->not->toHaveKeys(['assessment', 'diagnoses']);
+    $this->putJson("/api/v1/patients/{$patient->id}/medical-history", ['family_history' => 'x', 'version' => $patient->refresh()->version])->assertForbidden();
+});
+
+it('issues sick leave at a visit for its patient, printable, verifiable and cancellable by the issuing doctor', function () {
+    $doctor = FrontDesk::doctor();
+    $other = FrontDesk::doctor();
+    $patient = FrontDesk::patient();
+    $desk = deskUser();
+    $visit = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->json('data.id');
+    $leave = ['start_date' => '2026-11-01', 'end_date' => '2026-11-03', 'reason' => 'Acute gastroenteritis'];
+
+    // Not before the patient arrives, not by another doctor, nor by a nurse.
+    signedIn($doctor->id);
+    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", $leave)->assertStatus(409);
+    Appointment::query()->whereKey($visit)->update(['status' => 'in_progress']);
+    deskUser(RoleName::Nurse);
+    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", $leave)->assertForbidden();
+
+    signedIn($doctor->id);
+    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", [...$leave, 'start_date' => '2026-10-20'])->assertUnprocessable()->assertJsonValidationErrors(['start_date']);
+    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", [...$leave, 'end_date' => '2026-12-31'])->assertUnprocessable()->assertJsonValidationErrors(['end_date']);
+    $issued = $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", $leave)->assertCreated()
+        ->assertJsonPath('data.days', 3)->assertJsonPath('data.reason', 'Acute gastroenteritis')->assertJsonPath('data.show_reason', false)->json('data');
+    expect($issued['code'])->toStartWith('SLV-');
+
+    // The front desk prints it without the reason; the patient sees it with the reason.
+    Sanctum::actingAs($desk);
+    $this->getJson("/api/v1/sick-leaves/{$issued['id']}")->assertOk()->assertJsonMissingPath('data.reason');
+    Sanctum::actingAs(User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
+    $this->getJson('/api/v1/sick-leaves')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.reason', 'Acute gastroenteritis');
+    signedIn($other->id);
+    $this->getJson("/api/v1/sick-leaves/{$issued['id']}")->assertNotFound();
+
+    // An employer checks it by its QR: dates only.
+    $payload = app(CodeServiceInterface::class)->payloadFor('sick_leave', $issued['code']);
+    $public = $this->getJson('/api/v1/public/verify/'.$payload)->assertOk()->json('data');
+    expect(json_encode($public))->toContain('2026-11-03')->not->toContain('gastroenteritis');
+
+    signedIn($doctor->id);
+    $this->patchJson("/api/v1/sick-leaves/{$issued['id']}/cancel", ['reason' => 'Issued in error'])->assertOk()->assertJsonPath('data.is_cancelled', true);
+    $this->patchJson("/api/v1/sick-leaves/{$issued['id']}/cancel", ['reason' => 'Again'])->assertStatus(409);
 });

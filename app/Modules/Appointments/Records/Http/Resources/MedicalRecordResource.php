@@ -11,7 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Visit record. Without patients.view_medical only vitals and the signature state are shown (no notes, no diagnoses).
+ * Visit record. Without patients.view_history (doctors) only vitals and the signature state are shown (no notes, no
+ * diagnoses) — nurses record and read vitals only.
  *
  * @mixin MedicalRecord
  */
@@ -22,7 +23,8 @@ final class MedicalRecordResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $medical = $request->user()?->can('patients.view_medical') ?? false;
+        // Visit notes, diagnoses and addenda are the patient's health history: doctors only.
+        $medical = $request->user()?->can('patients.view_history') ?? false;
 
         return [
             'appointment_id' => $this->id,

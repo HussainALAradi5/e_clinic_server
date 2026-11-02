@@ -232,9 +232,26 @@ it('records medicines given in a session on the appointment, and returns a same-
     asUser($doctor->id);
     idempotent("/api/v1/appointments/{$visit->id}/medications", $given)->assertUnprocessable()->assertJsonPath('error_code', 'ADMINISTRATION_REQUIRES_SESSION');
     $visit->forceFill(['status' => AppointmentStatus::InProgress])->save();
-    $dose = idempotent("/api/v1/appointments/{$visit->id}/medications", $given)->assertCreated()
+    // Given in a session, medicines come from the treatment room's stock unless the pharmacy is chosen.
+    idempotent("/api/v1/appointments/{$visit->id}/medications", $given)->assertStatus(409)
+        ->assertJsonPath('error_code', 'INSUFFICIENT_STOCK')->assertJsonPath('message', 'Not enough Ceftriaxone 1 g Injection in the treatment room (0.00 available).');
+    $dose = idempotent("/api/v1/appointments/{$visit->id}/medications", [...$given, 'from' => 'pharmacy'])->assertCreated()
         ->assertJsonPath('data.kind', 'administered')->assertJsonPath('data.items.0.route', 'intramuscular')->json('data');
     $this->getJson("/api/v1/appointments/{$visit->id}/medications")->assertOk()->assertJsonPath('data.dispensations.0.id', $dose['id']);
+
+    // The pharmacy moves four vials to the treatment room: the same batch and expiry there, both lots in the ledger.
+    asUser($pharmacist->id);
+    $this->postJson("/api/v1/pharmacy/inventory/batches/{$lot['id']}/transfer", ['quantity' => '4', 'to' => 'pharmacy'])->assertUnprocessable();
+    $this->postJson("/api/v1/pharmacy/inventory/batches/{$lot['id']}/transfer", ['quantity' => '40', 'to' => 'treatment_room'])->assertStatus(409);
+    $ward = $this->postJson("/api/v1/pharmacy/inventory/batches/{$lot['id']}/transfer", ['quantity' => '4', 'to' => 'treatment_room'])->assertOk()
+        ->assertJsonPath('data.location', 'treatment_room')->assertJsonPath('data.batch_number', 'C1')
+        ->assertJsonPath('data.expiry_date', '2027-12-31')->assertJsonPath('data.qty_on_hand', '4.00')->json('data');
+    $this->getJson('/api/v1/pharmacy/inventory/stock?filter[location][eq]=treatment_room')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson("/api/v1/pharmacy/medications/{$ceft['id']}")->assertOk()
+        ->assertJsonPath('data.stock_on_hand', '9.00')->assertJsonPath('data.stock_treatment_room', '4.00')->assertJsonPath('data.next_expiry', '2027-12-31');
+    asUser($doctor->id);
+    idempotent("/api/v1/appointments/{$visit->id}/medications", $given)->assertCreated();
+    expect(MedicationBatch::query()->findOrFail($ward['id'])->qty_on_hand)->toBe('3.00');
 
     // A take-home sale returned unopened the same day: stock, draft lines and cost entry are reversed.
     asUser($pharmacist->id);
@@ -245,15 +262,15 @@ it('records medicines given in a session on the appointment, and returns a same-
     $sale = idempotent('/api/v1/pharmacy/dispensations', ['patient_id' => $patient->id, 'items' => [['medication_id' => $otc['id'], 'quantity' => '2']]]);
     $sale = $sale->assertCreated()->json('data');
     $draft = Invoice::query()->where('patient_id', $patient->id)->where('status', 'draft')->sole();
-    expect((string) $draft->total->getAmount())->toBe('4.300'); // 3.500 + 2 × 0.400
+    expect((string) $draft->total->getAmount())->toBe('7.800'); // 2 × 3.500 (two doses) + 2 × 0.400
 
     $this->patchJson("/api/v1/pharmacy/dispensations/{$sale['id']}/cancel", ['reason' => 'Returned unopened'])->assertOk()
         ->assertJsonPath('data.status', 'cancelled')->assertJsonPath('data.invoice', null);
-    expect((string) $draft->refresh()->total->getAmount())->toBe('3.500')
+    expect((string) $draft->refresh()->total->getAmount())->toBe('7.000')
         ->and(MedicationBatch::query()->where('batch_number', 'O1')->value('qty_on_hand'))->toBe('5.00')
         ->and(JournalEntry::query()->findOrFail($sale['journal_entry_id'])->status->value)->toBe('reversed');
     $this->patchJson("/api/v1/pharmacy/dispensations/{$sale['id']}/cancel", ['reason' => 'Again'])->assertStatus(409);
-    expect(MedicationBatch::query()->findOrFail($lot['id'])->qty_on_hand)->toBe('9.00');
+    expect(MedicationBatch::query()->findOrFail($lot['id'])->qty_on_hand)->toBe('5.00');
 });
 
 it('corrects counts (large ones approved by a colleague), blocks quarantined lots and writes off expired stock', function () {

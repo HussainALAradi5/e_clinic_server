@@ -72,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
             Route::post('receipts', 'receive')->middleware(['access:inventory.create&inventory.receive', 'throttle:write', EnsureIdempotency::ALIAS])->name('receive');
             Route::middleware('throttle:sensitive')->group(function (): void {
                 Route::post('batches/{batch}/adjust', 'adjust')->whereUuid('batch')->middleware('access:inventory.write&inventory.adjust')->name('adjust');
+                Route::post('batches/{batch}/transfer', 'transfer')->whereUuid('batch')->middleware('access:inventory.write&inventory.adjust')->name('transfer');
                 Route::patch('batches/{batch}/quarantine', 'quarantine')->whereUuid('batch')->middleware('access:inventory.write&inventory.adjust')->name('quarantine');
             });
         });

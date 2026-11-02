@@ -637,14 +637,17 @@ final class HistoryDemoSeeder extends Seeder
 
     /**
      * Treatment plans over the window: finished courses, running ones with sessions booked ahead, one cancelled and
-     * a few waiting in the scheduling queue — on the two physiotherapists' calendars.
+     * a few waiting in the scheduling queue. Who gives each session follows the kind of treatment the doctor ordered:
+     * physiotherapy and rehab — the physiotherapist in the gym; wound care, injections, nebulisers — the staff nurse
+     * in the treatment room; laser — the dermatologist who ordered it.
      */
     private function treatments(CarbonImmutable $start, CarbonImmutable $today): void
     {
         $doctors = Doctor::query()->with('specialty')->get()->keyBy(fn (Doctor $d): string => $d->specialty->code ?? 'GP');
-        $gym = Room::query()->where('code', 'PT-1')->value('id');
-        $session = BillableService::query()->where('code', 'PT-SESSION')->value('id');
-        $therapists = [$this->users['nurse']->id, $this->users['nurse2']->id];
+        $rooms = Room::query()->whereIn('code', ['PT-1', 'TR-1'])->pluck('id', 'code');
+        $services = BillableService::query()->whereIn('code', ['PT-SESSION', 'PROC-DRESS', 'PROC-INJ', 'PROC-NEB', 'PROC-LASER'])->pluck('id', 'code');
+        $nurse = $this->users['nurse']->id;
+        $physio = $this->users['nurse2']->id;
         $kinds = [
             [TreatmentType::Physiotherapy, 'Lower back physiotherapy', 'ORTHO', 8, 45],
             [TreatmentType::Physiotherapy, 'Shoulder rehabilitation', 'ORTHO', 10, 45],
@@ -673,17 +676,25 @@ final class HistoryDemoSeeder extends Seeder
             // Start somewhere in the window; the last few plans have not started (they wait in the queue).
             $queued = $i >= 13;
             $first = $queued ? null : fake()->numberBetween(0, max(0, $todayIndex - 6));
+            // Who, where and what it costs, by kind of treatment.
+            [$therapist, $room, $service] = match ($type) {
+                TreatmentType::Physiotherapy, TreatmentType::Rehabilitation => [$physio, $rooms['PT-1'] ?? null, $services['PT-SESSION'] ?? null],
+                TreatmentType::WoundCare => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-DRESS'] ?? null],
+                TreatmentType::Injection => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-INJ'] ?? null],
+                TreatmentType::RespiratoryTherapy => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-NEB'] ?? null],
+                TreatmentType::Laser => [$doctor->id, null, $services['PROC-LASER'] ?? null],
+                default => [$nurse, $rooms['TR-1'] ?? null, null],
+            };
             $plan = Treatment::query()->create([
                 'patient_id' => $pool->random()->id, 'doctor_id' => $doctor->id, 'type' => $type, 'title' => $title,
                 'priority' => fake()->randomElement([TreatmentPriority::Medium, TreatmentPriority::Medium, TreatmentPriority::High, TreatmentPriority::Urgent]),
-                'planned_sessions' => $planned, 'session_duration_minutes' => $minutes, 'billable_service_id' => $session,
+                'planned_sessions' => $planned, 'session_duration_minutes' => $minutes, 'billable_service_id' => $service,
                 'status' => GenericStatus::Pending, 'start_date' => $first === null ? null : $workdays[$first],
                 'diagnosis' => $queued ? null : fake()->randomElement(['Mechanical pain, no neurological deficit', 'Reduced range of movement', 'Chronic wound, slow healing', 'Recurrent wheeze']),
             ]);
             if ($first === null) {
                 continue;
             }
-            $therapist = $therapists[$i % 2];
             $time = sprintf('%02d:00', 8 + ($i % 5));
             $held = 0;
             $number = 1;
@@ -700,8 +711,8 @@ final class HistoryDemoSeeder extends Seeder
                     'patient_id' => $plan->patient_id, 'provider_id' => $therapist, 'type' => AppointmentType::TreatmentSession,
                     'treatment_id' => $plan->id, 'session_number' => $number, 'scheduled_date' => $day,
                     'start_time' => $time.':00', 'end_time' => CarbonImmutable::parse($day->toDateString().' '.$time)->addMinutes($minutes)->format('H:i:s'),
-                    'room_id' => $type === TreatmentType::Physiotherapy || $type === TreatmentType::Rehabilitation ? $gym : null,
-                    'billable_service_id' => $session, 'status' => $status, 'is_attended' => $status === AppointmentStatus::Completed,
+                    'room_id' => $room,
+                    'billable_service_id' => $service, 'status' => $status, 'is_attended' => $status === AppointmentStatus::Completed,
                     'source' => AppointmentSource::Phone, 'reason' => $title,
                     'checked_in_at' => $status === AppointmentStatus::Completed ? $from->subMinutes(5) : null,
                     'started_at' => $status === AppointmentStatus::Completed ? $from : null,

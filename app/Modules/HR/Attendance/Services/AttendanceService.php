@@ -57,7 +57,7 @@ final class AttendanceService implements AttendanceServiceInterface
 
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator
     {
-        $base = OwnershipScope::apply(Attendance::query()->with(['employee.person', 'employee.department']), 'attendance', Auth::user());
+        $base = OwnershipScope::apply(Attendance::query()->with(['employee.person', 'employee.department', 'employee.shift']), 'attendance', Auth::user());
 
         return $this->listQuery->paginate($base, $query);
     }
@@ -90,7 +90,7 @@ final class AttendanceService implements AttendanceServiceInterface
             ])->save();
             DB::afterCommit(fn () => $this->tellShift($employee, $row, 'checked_in'));
 
-            return $row->load('employee.person');
+            return $row->load(['employee.person', 'employee.shift']);
         });
     }
 
@@ -114,7 +114,7 @@ final class AttendanceService implements AttendanceServiceInterface
             ])->save();
             DB::afterCommit(fn () => $this->tellShift($employee, $row, 'checked_out'));
 
-            return $row->load('employee.person');
+            return $row->load(['employee.person', 'employee.shift']);
         });
     }
 
@@ -145,7 +145,7 @@ final class AttendanceService implements AttendanceServiceInterface
             }
             $row->fill(['source' => AttendanceSource::Manual, 'notes' => $data->reason, 'overtime_approved' => false, 'needs_review' => false])->save();
 
-            return $row->load('employee.person');
+            return $row->load(['employee.person', 'employee.shift']);
         });
     }
 
@@ -162,7 +162,7 @@ final class AttendanceService implements AttendanceServiceInterface
             }
             $row->forceFill(['overtime_approved' => true])->save();
 
-            return $row->load('employee.person');
+            return $row->load(['employee.person', 'employee.shift']);
         });
     }
 
