@@ -16,6 +16,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 interface ShiftServiceInterface
 {
+    /** @return LengthAwarePaginator<int, Shift>|CursorPaginator<int, Shift> */
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     /** A shift with its employees (name, photo, job title, department). */

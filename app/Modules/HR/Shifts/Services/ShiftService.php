@@ -52,7 +52,7 @@ final class ShiftService extends BaseEntityService implements ShiftServiceInterf
     {
         return DB::transaction(function () use ($shift, $data): Shift {
             $shift->fill($data->values)->save();
-            $this->syncHours($shift, $shift->employees()->pluck('id')->all());
+            $this->syncHours($shift, $shift->employees()->pluck('id')->map(fn (mixed $id): string => (string) $id)->all());
 
             return $this->findShift($shift->id);
         });
@@ -66,7 +66,7 @@ final class ShiftService extends BaseEntityService implements ShiftServiceInterf
     public function assign(Shift $shift, array $employeeIds): Shift
     {
         $ids = array_values(array_unique($employeeIds));
-        $found = Employee::query()->whereIn('id', $ids)->where('status', '!=', EmployeeStatus::Terminated)->pluck('id')->all();
+        $found = Employee::query()->whereIn('id', $ids)->where('status', '!=', EmployeeStatus::Terminated)->pluck('id')->map(fn (mixed $id): string => (string) $id)->all();
         if (count($found) !== count($ids)) {
             throw ValidationException::withMessages(['employee_ids' => [__('errors.SHIFT_UNKNOWN_EMPLOYEE')]]);
         }
@@ -105,7 +105,7 @@ final class ShiftService extends BaseEntityService implements ShiftServiceInterf
     /**
      * The employees' working hours follow their shift (the schedule screens and payroll read them).
      *
-     * @param  list<string>  $employeeIds
+     * @param  array<int, string>  $employeeIds
      */
     private function syncHours(Shift $shift, array $employeeIds): void
     {

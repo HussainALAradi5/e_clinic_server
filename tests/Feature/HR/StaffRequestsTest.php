@@ -2,6 +2,7 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
+use App\Modules\Accounting\Journal\Models\JournalEntry;
 use App\Modules\HR\Attendance\Models\Attendance;
 use App\Modules\HR\Employees\Models\Employee;
 use App\Modules\Identity\Notifications\Models\Notification as AppNotification;
@@ -26,11 +27,11 @@ beforeEach(function () {
     $this->seed(FiscalYearSeeder::class);
 });
 
-/** Nurse (1,000 BHD, 08:00–16:00), or HR with 2FA confirmed. */
+/** Nurse (1,000 BHD, 08:00–16:00), or HR / an accountant with 2FA confirmed. */
 function requestStaff(RoleName $role = RoleName::Nurse, UserType $type = UserType::MedicalStaff): Employee
 {
     $employee = FrontDesk::employee($type, $role);
-    if ($role === RoleName::HrManager) {
+    if (in_array($role, [RoleName::HrManager, RoleName::Accountant], true)) {
         User::query()->whereKey($employee->id)->update(['two_factor_secret' => encrypt((new Google2FA)->generateSecretKey(32)), 'two_factor_confirmed_at' => now()]);
     }
 
@@ -174,4 +175,10 @@ it('deducts late minutes HR did not excuse and pays overtime at the amount kept 
     // Only the 30 unexcused minutes: 0.5 h × (1000 / 30 / 8) = 2.083; overtime as kept on the day.
     expect($lines['lateness']['amount']['amount'])->toBe('2.083')
         ->and($lines['overtime']['amount']['amount'])->toBe('6.000');
+
+    // Approving posts the accrual: lateness is earned pay not paid, like an absence, so it lowers the salary expense.
+    requestAs(requestStaff(RoleName::Accountant, UserType::Accountant));
+    $this->postJson("/api/v1/hr/payroll-runs/{$run}/approve")->assertOk()->assertJsonPath('data.status', 'approved');
+    $accrual = JournalEntry::query()->findOrFail($this->getJson("/api/v1/hr/payroll-runs/{$run}")->json('data.accrual_journal_entry_id'));
+    expect($accrual->total_debit)->toBe($accrual->total_credit);
 });

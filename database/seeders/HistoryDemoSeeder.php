@@ -687,7 +687,6 @@ final class HistoryDemoSeeder extends Seeder
                 TreatmentType::Injection => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-IM'] ?? null],
                 TreatmentType::RespiratoryTherapy => [$nurse, $rooms['TR-1'] ?? null, $services['PROC-NEB'] ?? null],
                 TreatmentType::Laser => [$doctor->id, null, $services['PROC-LASER'] ?? null],
-                default => [$nurse, $rooms['TR-1'] ?? null, null],
             };
             $plan = Treatment::query()->create([
                 'patient_id' => $pool->random()->id, 'doctor_id' => $doctor->id, 'type' => $type, 'title' => $title,

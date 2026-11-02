@@ -17,6 +17,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 interface SettingServiceInterface
 {
+    /** @return LengthAwarePaginator<int, Setting>|CursorPaginator<int, Setting> */
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function find(SettingKey $key): Setting;

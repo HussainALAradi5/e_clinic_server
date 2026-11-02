@@ -35,6 +35,7 @@ final class SickLeaveService
 
     public function __construct(private readonly ApplyListQuery $listQuery, private readonly ClinicClock $clock) {}
 
+    /** @return LengthAwarePaginator<int, SickLeave>|CursorPaginator<int, SickLeave> */
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator
     {
         return $this->listQuery->paginate($this->query(), $query);

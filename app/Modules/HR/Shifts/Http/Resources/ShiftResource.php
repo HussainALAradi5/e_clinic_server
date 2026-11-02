@@ -40,7 +40,7 @@ final class ShiftResource extends JsonResource
                 'full_name' => $e->person->full_name,
                 'avatar_url' => Avatar::url($e->person),
                 'job_title' => $e->job_title,
-                'department' => $e->department?->name,
+                'department' => $e->department->name,
             ])->values()->all()),
             'is_archived' => $this->is_archived,
             'is_deleted' => $this->is_deleted,

@@ -383,8 +383,12 @@ final class AttendanceService implements AttendanceServiceInterface
      */
     private function tellShift(Employee $employee, Attendance $row, string $moment): void
     {
+        $stamp = $moment === 'checked_in' ? $row->check_in_at : $row->check_out_at;
+        if ($stamp === null) {
+            return;
+        }
         $shift = $employee->shift;
-        $at = $this->clock->toClinic($moment === 'checked_in' ? $row->check_in_at : $row->check_out_at);
+        $at = $this->clock->toClinic($stamp);
         $end = $this->clock->combine($row->date, $shift?->expectedEnd() ?? substr($employee->work_end_time, 0, 5));
         $early = $moment === 'checked_out' && $row->overtime_minutes === 0
             ? ($shift?->type === ShiftType::Flexible ? max(0, $shift->required_minutes - $row->worked_minutes) : $this->minutes($at, $end))

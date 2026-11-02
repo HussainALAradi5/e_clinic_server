@@ -10,7 +10,7 @@ use App\Shared\Support\MoneyHelper;
 use Brick\Money\Money;
 
 /**
- * What a payslip's deductions actually take from its gross pay, in order — absences and unpaid leave, then social
+ * What a payslip's deductions actually take from its gross pay, in order — absences, unexcused lateness and unpaid leave, then social
  * insurance, then other deductions — so the net is never negative; the part that does not fit is carried forward.
  * The salary accrual is posted from these amounts (expense = gross − absences = net + insurance + other).
  */
@@ -53,7 +53,7 @@ final readonly class AppliedDeductions
         foreach ($items as $item) {
             $key = match ($item->type) {
                 PayslipItemType::Basic, PayslipItemType::Allowance, PayslipItemType::Overtime => 'gross',
-                PayslipItemType::Absence, PayslipItemType::UnpaidLeave => 'absences',
+                PayslipItemType::Absence, PayslipItemType::Lateness, PayslipItemType::UnpaidLeave => 'absences',
                 PayslipItemType::SocialInsurance => 'insurance',
                 PayslipItemType::Deduction, PayslipItemType::Adjustment => 'other',
             };

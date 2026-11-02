@@ -18,7 +18,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 interface StaffRequestServiceInterface
 {
-    /** Own requests, or everyone's with `staff_requests.read_all`. */
+    /**
+     * Own requests, or everyone's with `staff_requests.read_all`.
+     *
+     * @return LengthAwarePaginator<int, StaffRequest>|CursorPaginator<int, StaffRequest>
+     */
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function find(string $id): StaffRequest;
