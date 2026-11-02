@@ -10,10 +10,10 @@ use App\Enums\Identity\UserStatus;
 use App\Events\Appointments\TreatmentAttendanceAlert;
 use App\Events\Appointments\TreatmentCompleted;
 use App\Events\Appointments\TreatmentCreated;
+use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Models\Appointments\Treatment;
 use App\Models\Identity\Person;
 use App\Models\Identity\User;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Collection;
 

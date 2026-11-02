@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Pharmacy;
 
+use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Models\Identity\Person;
 use App\Models\Pharmacy\Medication;
 use App\Models\Pharmacy\MedicationBatch;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
 use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\Recipients;
 use Illuminate\Support\Facades\Config;

@@ -1,8 +1,8 @@
 <?php
 
-use App\Notifications\Identity\Channels\InAppChannel;
-use App\Notifications\Identity\Channels\LogChannel;
-use App\Notifications\Identity\Channels\MailChannel;
+use App\Channels\Identity\InAppChannel;
+use App\Channels\Identity\LogChannel;
+use App\Channels\Identity\MailChannel;
 
 return [
 

@@ -7,8 +7,8 @@ namespace App\Listeners\Appointments;
 use App\Events\Appointments\AppointmentBooked;
 use App\Events\Appointments\AppointmentCancelled;
 use App\Events\Appointments\AppointmentRescheduled;
+use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Models\Appointments\Appointment;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 use Illuminate\Support\Facades\Config;
 

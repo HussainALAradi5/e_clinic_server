@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Listeners\Appointments;
 
 use App\Events\Appointments\ClinicalOrderCompleted;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
+use App\Interfaces\Identity\NotificationServiceInterface;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
 /**

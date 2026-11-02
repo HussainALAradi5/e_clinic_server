@@ -4,14 +4,14 @@ use App\Enums\HR\EmployeeStatus;
 use App\Interfaces\Appointments\AppointmentServiceInterface;
 use App\Interfaces\HR\AttendanceServiceInterface;
 use App\Interfaces\HR\LeaveServiceInterface;
+use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Interfaces\Pharmacy\InventoryServiceInterface;
 use App\Models\HR\Employee;
+use App\Models\Identity\BackgroundTask;
+use App\Models\Identity\DeviceToken;
+use App\Models\Identity\Notification;
 use App\Models\Identity\UploadSession;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
-use App\Notifications\Identity\Models\DeviceToken;
-use App\Notifications\Identity\Models\Notification;
 use App\Services\Pharmacy\StockAlertNotifier;
-use App\Tasks\Identity\Models\BackgroundTask;
 use App\Utilities\Shared\ClinicClock;
 use Illuminate\Support\Facades\Schedule;
 

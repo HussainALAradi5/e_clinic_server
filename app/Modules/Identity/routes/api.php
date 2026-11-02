@@ -3,13 +3,13 @@
 use App\Http\Controllers\Identity\AttachmentController;
 use App\Http\Controllers\Identity\AuditLogController;
 use App\Http\Controllers\Identity\AuthController;
+use App\Http\Controllers\Identity\BackgroundTaskController;
 use App\Http\Controllers\Identity\CodeController;
 use App\Http\Controllers\Identity\ListViewController;
+use App\Http\Controllers\Identity\NotificationController;
 use App\Http\Controllers\Identity\ProfilePhotoController;
 use App\Http\Controllers\Identity\RoleController;
 use App\Http\Controllers\Identity\UserController;
-use App\Notifications\Identity\Http\Controllers\NotificationController;
-use App\Tasks\Identity\Http\Controllers\BackgroundTaskController;
 use Illuminate\Support\Facades\Route;
 
 /*

@@ -3,8 +3,8 @@
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
 use App\Models\HR\Employee;
+use App\Models\Identity\Notification as AppNotification;
 use App\Models\Identity\User;
-use App\Notifications\Identity\Models\Notification as AppNotification;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;

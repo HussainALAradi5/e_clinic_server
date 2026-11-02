@@ -5,12 +5,12 @@ use App\Models\Appointments\ClinicalOrder;
 use App\Models\Appointments\Patient;
 use App\Models\Appointments\PatientConsent;
 use App\Models\Communication\Message;
+use App\Models\Communication\SupportTicket;
 use App\Models\HR\LeaveRequest;
 use App\Models\Identity\Person;
 use App\Models\Pharmacy\Medication;
 use App\Models\Pharmacy\MedicationBatch;
 use App\Models\Transactions\Expense;
-use App\Utilities\Communication\Models\SupportTicket;
 
 return [
 

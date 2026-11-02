@@ -6,9 +6,9 @@ namespace App\Listeners\HR;
 
 use App\Enums\HR\PayrollStatus;
 use App\Events\HR\PayrollStatusChanged;
+use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Models\HR\Payslip;
 use App\Models\Identity\Person;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
 use App\Utilities\Shared\MoneyHelper;
 use App\Utilities\Shared\Recipients;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;

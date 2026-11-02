@@ -5,11 +5,11 @@ use App\Enums\Identity\TaskCancelReason;
 use App\Enums\Identity\TaskType;
 use App\Enums\Shared\GenericStatus;
 use App\Exceptions\Shared\ConcurrencyConflictException;
+use App\Interfaces\Identity\BackgroundTaskServiceInterface;
 use App\Models\Identity\AuditLog;
+use App\Models\Identity\BackgroundTask;
+use App\Models\Identity\Notification;
 use App\Models\Identity\User;
-use App\Notifications\Identity\Models\Notification;
-use App\Tasks\Identity\Contracts\BackgroundTaskServiceInterface;
-use App\Tasks\Identity\Models\BackgroundTask;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 

@@ -2,8 +2,8 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
+use App\Models\Identity\Notification;
 use App\Models\Identity\User;
-use App\Notifications\Identity\Models\Notification;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;

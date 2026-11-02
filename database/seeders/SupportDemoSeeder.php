@@ -6,8 +6,8 @@ use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Communication\TicketCategory;
 use App\Enums\Communication\TicketConfirmation;
 use App\Enums\Shared\GenericStatus;
+use App\Models\Communication\SupportTicket;
 use App\Models\Identity\Person;
-use App\Utilities\Communication\Models\SupportTicket;
 use App\Utilities\Shared\ClinicClock;
 use Illuminate\Database\Seeder;
 

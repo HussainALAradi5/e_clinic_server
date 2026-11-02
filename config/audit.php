@@ -19,6 +19,7 @@ use App\Models\Appointments\Specialty;
 use App\Models\Appointments\Treatment;
 use App\Models\Communication\Conversation;
 use App\Models\Communication\Message;
+use App\Models\Communication\SupportTicket;
 use App\Models\HR\Attendance;
 use App\Models\HR\Department;
 use App\Models\HR\Employee;
@@ -31,6 +32,8 @@ use App\Models\HR\Setting;
 use App\Models\HR\Shift;
 use App\Models\HR\StaffRequest;
 use App\Models\Identity\Attachment;
+use App\Models\Identity\BackgroundTask;
+use App\Models\Identity\Notification;
 use App\Models\Identity\Person;
 use App\Models\Identity\Role;
 use App\Models\Identity\User;
@@ -48,9 +51,6 @@ use App\Models\Reference\Company;
 use App\Models\Reference\Country;
 use App\Models\Transactions\CashSession;
 use App\Models\Transactions\Expense;
-use App\Notifications\Identity\Models\Notification;
-use App\Tasks\Identity\Models\BackgroundTask;
-use App\Utilities\Communication\Models\SupportTicket;
 
 return [
 

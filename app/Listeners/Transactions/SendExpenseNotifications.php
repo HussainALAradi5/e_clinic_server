@@ -6,8 +6,8 @@ namespace App\Listeners\Transactions;
 
 use App\Enums\Shared\ApprovalStatus;
 use App\Events\Transactions\ExpenseStatusChanged;
+use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Models\Identity\Person;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
 use App\Utilities\Shared\MoneyHelper;
 use App\Utilities\Shared\Recipients;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Listeners\Appointments;
 
 use App\Events\Appointments\EmergencyAccessGranted;
+use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Models\Identity\Person;
-use App\Notifications\Identity\Contracts\NotificationServiceInterface;
 use App\Utilities\Shared\Recipients;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 
