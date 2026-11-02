@@ -92,7 +92,8 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
                 throw new TicketResolutionRequiredException;
             }
             $locked->status = $to;
-            if ($to === GenericStatus::InProgress && $locked->assigned_to === null) {
+            // Whoever starts or solves a ticket nobody took has taken it.
+            if (in_array($to, [GenericStatus::InProgress, GenericStatus::Completed], true) && $locked->assigned_to === null) {
                 $locked->assigned_to = $admin->id;
             }
             if ($to === GenericStatus::Completed) {

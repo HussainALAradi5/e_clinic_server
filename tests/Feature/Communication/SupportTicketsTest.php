@@ -13,6 +13,19 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
+it('makes whoever solves a ticket nobody took its assignee', function () {
+    $nurse = User::factory()->state(['user_type' => UserType::MedicalStaff])->withRole(RoleName::Nurse->value)->create();
+    $admin = User::factory()->state(['user_type' => UserType::Admin])->withRole(RoleName::Admin->value)->withTwoFactor()->create();
+    Sanctum::actingAs($nurse);
+    $ticket = $this->postJson('/api/v1/support/tickets', [
+        'subject' => 'Printer jams', 'description' => 'The exam room printer jams on every certificate.', 'category' => 'equipment',
+    ])->assertCreated()->json('data');
+
+    Sanctum::actingAs($admin);
+    $this->patchJson("/api/v1/support/tickets/{$ticket['id']}/status", ['status' => 'completed', 'resolution' => 'Set the paper guide to A5.', 'version' => 1])
+        ->assertOk()->assertJsonPath('data.status', 'completed')->assertJsonPath('data.assignee.id', $admin->id)->assertJsonPath('data.resolver.id', $admin->id);
+});
+
 it('lets staff open and follow their own tickets while only admins move and resolve them, with notifications', function () {
     $nurse = User::factory()->state(['user_type' => UserType::MedicalStaff])->withRole(RoleName::Nurse->value)->create();
     $colleague = User::factory()->state(['user_type' => UserType::Doctor])->withRole(RoleName::Doctor->value)->create();
