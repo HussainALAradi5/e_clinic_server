@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\Identity\RoleName;
-use App\Modules\Identity\Roles\Models\Permission;
-use App\Modules\Identity\Roles\Models\Role;
+use App\Models\Identity\Permission;
+use App\Models\Identity\Role;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Config;

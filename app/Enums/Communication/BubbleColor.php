@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums\Communication;
 
-use App\Shared\Contracts\HasLabel;
-use App\Shared\Traits\EnumHelpers;
+use App\Interfaces\Shared\HasLabel;
+use App\Traits\Shared\EnumHelpers;
 
 /** Colours a user may pick for their own and others' chat bubbles (group leaders always show in amber). */
 enum BubbleColor: string implements HasLabel

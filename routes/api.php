@@ -1,7 +1,7 @@
 <?php
 
-use App\Shared\Http\Controllers\FileController;
-use App\Shared\Http\Controllers\MetaController;
+use App\Http\Controllers\Shared\FileController;
+use App\Http\Controllers\Shared\MetaController;
 use Illuminate\Support\Facades\Route;
 
 /*

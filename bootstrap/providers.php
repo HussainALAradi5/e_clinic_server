@@ -10,7 +10,7 @@ use App\Modules\Pharmacy\PharmacyServiceProvider;
 use App\Modules\Reference\ReferenceDataServiceProvider;
 use App\Modules\Transactions\TransactionsServiceProvider;
 use App\Providers\AppServiceProvider;
-use App\Shared\SharedServiceProvider;
+use App\Providers\SharedServiceProvider;
 
 return [
     AppServiceProvider::class,

@@ -1,13 +1,13 @@
 <?php
 
-use App\Shared\Exceptions\ApiExceptionRenderer;
-use App\Shared\Http\Middleware\AssignRequestId;
-use App\Shared\Http\Middleware\CheckAccess;
-use App\Shared\Http\Middleware\EnsureIdempotency;
-use App\Shared\Http\Middleware\EnsurePatient;
-use App\Shared\Http\Middleware\EnsureStaff;
-use App\Shared\Http\Middleware\EnsureTwoFactor;
-use App\Shared\Http\Middleware\SecurityHeaders;
+use App\Exceptions\Shared\ApiExceptionRenderer;
+use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\CheckAccess;
+use App\Http\Middleware\EnsureIdempotency;
+use App\Http\Middleware\EnsurePatient;
+use App\Http\Middleware\EnsureStaff;
+use App\Http\Middleware\EnsureTwoFactor;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         apiPrefix: 'api/v1',
     )
+    // Listeners are registered by each module's service provider; discovery in app/Listeners would add them twice.
+    ->withEvents(discover: false)
     // Socket channel sign-in uses the API token: POST /api/v1/broadcasting/auth.
     ->withBroadcasting(__DIR__.'/../routes/channels.php', ['prefix' => 'api/v1', 'middleware' => ['auth:sanctum']])
     ->withMiddleware(function (Middleware $middleware): void {

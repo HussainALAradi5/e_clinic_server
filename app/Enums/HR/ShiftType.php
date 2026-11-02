@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums\HR;
 
-use App\Shared\Contracts\HasLabel;
-use App\Shared\Traits\EnumHelpers;
+use App\Interfaces\Shared\HasLabel;
+use App\Traits\Shared\EnumHelpers;
 
 /**
  * How a shift counts time: fixed hours (late after the start, overtime after the end), or flexible (arrive by the

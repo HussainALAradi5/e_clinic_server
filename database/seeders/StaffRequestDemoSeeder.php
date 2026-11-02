@@ -6,12 +6,12 @@ namespace Database\Seeders;
 
 use App\Enums\HR\SettingKey;
 use App\Enums\HR\StaffRequestType;
-use App\Modules\HR\Attendance\Models\Attendance;
-use App\Modules\HR\Requests\Contracts\StaffRequestServiceInterface;
-use App\Modules\HR\Requests\Models\StaffRequest;
-use App\Modules\HR\Settings\Contracts\SettingServiceInterface;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Support\ClinicClock;
+use App\Interfaces\HR\SettingServiceInterface;
+use App\Interfaces\HR\StaffRequestServiceInterface;
+use App\Models\HR\Attendance;
+use App\Models\HR\StaffRequest;
+use App\Models\Identity\User;
+use App\Utilities\Shared\ClinicClock;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;

@@ -1,11 +1,11 @@
 <?php
 
-use App\Modules\Payments\Catalog\Http\Controllers\BillableServiceController;
-use App\Modules\Payments\Claims\Http\Controllers\InsuranceClaimController;
-use App\Modules\Payments\Invoices\Http\Controllers\InvoiceController;
-use App\Modules\Payments\Payments\Http\Controllers\PaymentController;
-use App\Modules\Payments\Refunds\Http\Controllers\RefundController;
-use App\Shared\Http\Middleware\EnsureIdempotency;
+use App\Http\Controllers\Payments\BillableServiceController;
+use App\Http\Controllers\Payments\InsuranceClaimController;
+use App\Http\Controllers\Payments\InvoiceController;
+use App\Http\Controllers\Payments\PaymentController;
+use App\Http\Controllers\Payments\RefundController;
+use App\Http\Middleware\EnsureIdempotency;
 use Illuminate\Support\Facades\Route;
 
 /*

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Modules\Identity\Roles\Models\Permission;
-use App\Modules\Identity\Roles\Models\Role;
-use App\Shared\Database\Constraints;
+use App\Models\Identity\Permission;
+use App\Models\Identity\Role;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

@@ -1,9 +1,9 @@
 <?php
 
-use App\Shared\Enums\DateRangePreset;
-use App\Shared\Enums\DayOfWeek;
-use App\Shared\Enums\GenericStatus;
-use App\Shared\Enums\PaymentMethod;
+use App\Enums\Shared\DateRangePreset;
+use App\Enums\Shared\DayOfWeek;
+use App\Enums\Shared\GenericStatus;
+use App\Enums\Shared\PaymentMethod;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\Rules\Enum;
 

@@ -1,17 +1,17 @@
 <?php
 
-use App\Modules\Appointments\Appointments\Models\Appointment;
-use App\Modules\Appointments\Orders\Models\ClinicalOrder;
-use App\Modules\Appointments\Records\Models\PatientConsent;
-use App\Modules\Appointments\SickLeaves\Models\SickLeave;
-use App\Modules\Identity\Attachments\Models\Attachment;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Payments\Invoices\Models\Invoice;
-use App\Modules\Payments\Payments\Models\Payment;
-use App\Modules\Pharmacy\Dispensing\Models\Dispensation;
-use App\Modules\Pharmacy\Inventory\Models\MedicationBatch;
-use App\Modules\Pharmacy\Prescriptions\Models\Prescription;
-use App\Modules\Transactions\CashSessions\Models\CashSession;
+use App\Models\Appointments\Appointment;
+use App\Models\Appointments\ClinicalOrder;
+use App\Models\Appointments\PatientConsent;
+use App\Models\Appointments\SickLeave;
+use App\Models\Identity\Attachment;
+use App\Models\Identity\Person;
+use App\Models\Payments\Invoice;
+use App\Models\Payments\Payment;
+use App\Models\Pharmacy\Dispensation;
+use App\Models\Pharmacy\MedicationBatch;
+use App\Models\Pharmacy\Prescription;
+use App\Models\Transactions\CashSession;
 
 return [
 

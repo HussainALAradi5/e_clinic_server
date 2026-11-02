@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Enums\Appointments;
 
 use App\Enums\Payments\ServiceCategory;
-use App\Shared\Contracts\HasLabel;
-use App\Shared\Traits\EnumHelpers;
+use App\Interfaces\Shared\HasLabel;
+use App\Traits\Shared\EnumHelpers;
 
 /**
  * Diagnostic order or referral (one model for imaging, lab tests, ECG and referrals).

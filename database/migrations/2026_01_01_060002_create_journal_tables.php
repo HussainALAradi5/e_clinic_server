@@ -2,7 +2,7 @@
 
 use App\Enums\Accounting\JournalEntryStatus;
 use App\Enums\Accounting\JournalEntryType;
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

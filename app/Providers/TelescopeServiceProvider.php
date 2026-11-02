@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\Identity\RoleName;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Identity\User;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Telescope\IncomingEntry;
 use Laravel\Telescope\Telescope;

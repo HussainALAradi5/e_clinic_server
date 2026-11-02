@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Enums\Identity\RoleName;
-use App\Modules\Identity\Roles\Models\Permission;
-use App\Modules\Identity\Roles\Models\Role;
+use App\Models\Identity\Permission;
+use App\Models\Identity\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Config;
 use Spatie\Permission\PermissionRegistrar;

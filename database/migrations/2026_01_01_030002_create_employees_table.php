@@ -4,7 +4,7 @@ use App\Enums\HR\EmployeeStatus;
 use App\Enums\HR\EmploymentType;
 use App\Enums\HR\SalaryComponentType;
 use App\Enums\HR\TerminationReason;
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

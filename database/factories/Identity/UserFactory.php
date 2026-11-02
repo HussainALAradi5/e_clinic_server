@@ -6,8 +6,8 @@ namespace Database\Factories\Identity;
 
 use App\Enums\Identity\UserStatus;
 use App\Enums\Identity\UserType;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Identity\Person;
+use App\Models\Identity\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use PragmaRX\Google2FA\Google2FA;

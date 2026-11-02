@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums\Identity;
 
-use App\Shared\Contracts\HasLabel;
-use App\Shared\Traits\EnumHelpers;
+use App\Interfaces\Shared\HasLabel;
+use App\Traits\Shared\EnumHelpers;
 
 /**
  * Discriminator on users.user_type: which subtype record exists with the same id. Rights come only from roles.

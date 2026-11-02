@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\Payments\PaymentStatus;
-use App\Shared\Database\Constraints;
-use App\Shared\Enums\Currency;
-use App\Shared\Enums\PaymentMethod;
+use App\Enums\Shared\Currency;
+use App\Enums\Shared\PaymentMethod;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

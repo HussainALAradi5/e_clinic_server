@@ -8,8 +8,8 @@ use App\Enums\Identity;
 use App\Enums\Payments;
 use App\Enums\Pharmacy;
 use App\Enums\Reference;
+use App\Enums\Shared;
 use App\Enums\Transactions;
-use App\Shared\Enums;
 
 return [
 
@@ -124,18 +124,18 @@ return [
         Communication\ParticipantRole::class,
         Communication\TicketCategory::class,
         Communication\TicketConfirmation::class,
-        Enums\GenericStatus::class,
-        Enums\ApprovalStatus::class,
-        Enums\SortDirection::class,
-        Enums\Currency::class,
-        Enums\Gender::class,
-        Enums\DayOfWeek::class,
-        Enums\PaymentMethod::class,
-        Enums\DateRangePreset::class,
-        Enums\FilterOperator::class,
-        Enums\LogicalOperator::class,
-        Enums\FilterFieldType::class,
-        Enums\ExportFormat::class,
+        Shared\GenericStatus::class,
+        Shared\ApprovalStatus::class,
+        Shared\SortDirection::class,
+        Shared\Currency::class,
+        Shared\Gender::class,
+        Shared\DayOfWeek::class,
+        Shared\PaymentMethod::class,
+        Shared\DateRangePreset::class,
+        Shared\FilterOperator::class,
+        Shared\LogicalOperator::class,
+        Shared\FilterFieldType::class,
+        Shared\ExportFormat::class,
         Identity\UserType::class,
         Identity\UserStatus::class,
         Identity\RoleName::class,

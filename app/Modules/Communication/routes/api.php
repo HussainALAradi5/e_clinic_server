@@ -1,8 +1,8 @@
 <?php
 
-use App\Modules\Communication\Chat\Http\Controllers\ChatController;
-use App\Modules\Communication\Support\Http\Controllers\SupportTicketController;
-use App\Shared\Http\Middleware\EnsureStaff;
+use App\Http\Controllers\Communication\ChatController;
+use App\Http\Middleware\EnsureStaff;
+use App\Utilities\Communication\Http\Controllers\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
 /*

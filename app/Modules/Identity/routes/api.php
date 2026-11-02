@@ -1,15 +1,15 @@
 <?php
 
-use App\Modules\Identity\Attachments\Http\Controllers\AttachmentController;
-use App\Modules\Identity\Audit\Http\Controllers\AuditLogController;
-use App\Modules\Identity\Auth\Http\Controllers\AuthController;
-use App\Modules\Identity\Codes\Http\Controllers\CodeController;
-use App\Modules\Identity\Notifications\Http\Controllers\NotificationController;
-use App\Modules\Identity\Roles\Http\Controllers\RoleController;
-use App\Modules\Identity\Tasks\Http\Controllers\BackgroundTaskController;
-use App\Modules\Identity\Users\Http\Controllers\ProfilePhotoController;
-use App\Modules\Identity\Users\Http\Controllers\UserController;
-use App\Modules\Identity\Views\Http\Controllers\ListViewController;
+use App\Http\Controllers\Identity\AttachmentController;
+use App\Http\Controllers\Identity\AuditLogController;
+use App\Http\Controllers\Identity\AuthController;
+use App\Http\Controllers\Identity\CodeController;
+use App\Http\Controllers\Identity\ListViewController;
+use App\Http\Controllers\Identity\ProfilePhotoController;
+use App\Http\Controllers\Identity\RoleController;
+use App\Http\Controllers\Identity\UserController;
+use App\Notifications\Identity\Http\Controllers\NotificationController;
+use App\Tasks\Identity\Http\Controllers\BackgroundTaskController;
 use Illuminate\Support\Facades\Route;
 
 /*

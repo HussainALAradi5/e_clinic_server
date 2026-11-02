@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Modules\HR\Leaves\Models\LeaveType;
+use App\Models\HR\LeaveType;
 use Illuminate\Database\Seeder;
 
 /**

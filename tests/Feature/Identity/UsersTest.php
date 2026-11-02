@@ -1,18 +1,18 @@
 <?php
 
+use App\Dtos\Identity\CreateUserData;
+use App\Dtos\Identity\PersonData;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserStatus;
 use App\Enums\Identity\UserType;
-use App\Modules\Identity\Auth\Notifications\PasswordResetCodeNotification;
-use App\Modules\Identity\Auth\Notifications\ResetPasswordNotification;
-use App\Modules\Identity\Users\Contracts\UserServiceInterface;
-use App\Modules\Identity\Users\Data\CreateUserData;
-use App\Modules\Identity\Users\Data\PersonData;
-use App\Modules\Identity\Users\Exceptions\DuplicatePersonException;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Enums\Gender;
-use App\Shared\Support\BlindIndex;
+use App\Enums\Shared\Gender;
+use App\Exceptions\Identity\DuplicatePersonException;
+use App\Interfaces\Identity\UserServiceInterface;
+use App\Models\Identity\Person;
+use App\Models\Identity\User;
+use App\Notifications\Identity\PasswordResetCodeNotification;
+use App\Notifications\Identity\ResetPasswordNotification;
+use App\Utilities\Shared\BlindIndex;
 use Carbon\CarbonImmutable;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Notification;

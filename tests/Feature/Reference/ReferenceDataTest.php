@@ -1,8 +1,8 @@
 <?php
 
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Reference\Companies\Models\Company;
-use App\Modules\Reference\Countries\Models\Country;
+use App\Models\Identity\Person;
+use App\Models\Reference\Company;
+use App\Models\Reference\Country;
 use Database\Seeders\CountrySeeder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

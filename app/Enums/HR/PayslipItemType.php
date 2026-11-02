@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums\HR;
 
-use App\Shared\Contracts\HasLabel;
-use App\Shared\Traits\EnumHelpers;
+use App\Interfaces\Shared\HasLabel;
+use App\Traits\Shared\EnumHelpers;
 
 /**
  * Payslip line; the amount is always positive, the type says whether it adds to or deducts from the pay.

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories\Identity;
 
-use App\Modules\Identity\Users\Models\Person;
-use App\Shared\Enums\Gender;
+use App\Enums\Shared\Gender;
+use App\Models\Identity\Person;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

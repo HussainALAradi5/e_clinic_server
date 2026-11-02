@@ -1,8 +1,8 @@
 <?php
 
-use App\Modules\Transactions\CashSessions\Http\Controllers\CashSessionController;
-use App\Modules\Transactions\Expenses\Http\Controllers\ExpenseController;
-use App\Shared\Http\Middleware\EnsureIdempotency;
+use App\Http\Controllers\Transactions\CashSessionController;
+use App\Http\Controllers\Transactions\ExpenseController;
+use App\Http\Middleware\EnsureIdempotency;
 use Illuminate\Support\Facades\Route;
 
 /*

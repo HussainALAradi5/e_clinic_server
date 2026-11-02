@@ -1,20 +1,20 @@
 <?php
 
-use App\Modules\Appointments\Appointments\Http\Controllers\AppointmentController;
-use App\Modules\Appointments\Doctors\Http\Controllers\DoctorController;
-use App\Modules\Appointments\Doctors\Http\Controllers\SpecialtyController;
-use App\Modules\Appointments\Orders\Http\Controllers\ClinicalOrderController;
-use App\Modules\Appointments\Patients\Http\Controllers\PatientController;
-use App\Modules\Appointments\Portal\Http\Controllers\PortalController;
-use App\Modules\Appointments\Records\Http\Controllers\ConsentController;
-use App\Modules\Appointments\Records\Http\Controllers\MedicalRecordController;
-use App\Modules\Appointments\Rooms\Http\Controllers\RoomController;
-use App\Modules\Appointments\Schedules\Http\Controllers\ScheduleController;
-use App\Modules\Appointments\SickLeaves\Http\Controllers\SickLeaveController;
-use App\Modules\Appointments\Treatments\Http\Controllers\TreatmentController;
-use App\Shared\Http\Middleware\EnsureIdempotency;
-use App\Shared\Http\Middleware\EnsurePatient;
-use App\Shared\Http\Middleware\EnsureStaff;
+use App\Http\Controllers\Appointments\AppointmentController;
+use App\Http\Controllers\Appointments\ClinicalOrderController;
+use App\Http\Controllers\Appointments\ConsentController;
+use App\Http\Controllers\Appointments\DoctorController;
+use App\Http\Controllers\Appointments\MedicalRecordController;
+use App\Http\Controllers\Appointments\PatientController;
+use App\Http\Controllers\Appointments\PortalController;
+use App\Http\Controllers\Appointments\RoomController;
+use App\Http\Controllers\Appointments\ScheduleController;
+use App\Http\Controllers\Appointments\SickLeaveController;
+use App\Http\Controllers\Appointments\SpecialtyController;
+use App\Http\Controllers\Appointments\TreatmentController;
+use App\Http\Middleware\EnsureIdempotency;
+use App\Http\Middleware\EnsurePatient;
+use App\Http\Middleware\EnsureStaff;
 use Illuminate\Support\Facades\Route;
 
 /*

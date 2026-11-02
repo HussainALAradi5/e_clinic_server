@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Modules\Identity\Roles\Models\Permission;
-use App\Modules\Identity\Roles\Models\Role;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Support\CacheKeys;
+use App\Models\Identity\Permission;
+use App\Models\Identity\Role;
+use App\Models\Identity\User;
+use App\Utilities\Shared\CacheKeys;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;

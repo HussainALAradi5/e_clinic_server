@@ -1,8 +1,8 @@
 <?php
 
-use App\Modules\Reference\Addresses\Http\Controllers\AddressController;
-use App\Modules\Reference\Companies\Http\Controllers\CompanyController;
-use App\Modules\Reference\Countries\Http\Controllers\CountryController;
+use App\Http\Controllers\Reference\AddressController;
+use App\Http\Controllers\Reference\CompanyController;
+use App\Http\Controllers\Reference\CountryController;
 use Illuminate\Support\Facades\Route;
 
 /*

@@ -1,6 +1,6 @@
 <?php
 
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;

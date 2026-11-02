@@ -2,7 +2,7 @@
 
 use App\Enums\HR\PayrollStatus;
 use App\Enums\HR\PayslipItemType;
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

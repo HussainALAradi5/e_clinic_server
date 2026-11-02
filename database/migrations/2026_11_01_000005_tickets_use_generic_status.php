@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\Appointments\TreatmentPriority;
-use App\Shared\Database\Constraints;
-use App\Shared\Enums\GenericStatus;
+use App\Enums\Shared\GenericStatus;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 

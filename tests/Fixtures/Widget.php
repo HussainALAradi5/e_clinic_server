@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Fixtures;
 
-use App\Shared\Casts\MoneyCast;
-use App\Shared\Contracts\HasStateMachine;
-use App\Shared\Contracts\OwnedByUser;
-use App\Shared\Enums\FilterFieldType;
-use App\Shared\Enums\GenericStatus;
-use App\Shared\Models\BaseModel;
-use App\Shared\Query\FilterOptions;
-use App\Shared\Query\ListQueryConfig;
-use App\Shared\Traits\HasGenericStatus;
-use App\Shared\Traits\HasListQuery;
-use App\Shared\Traits\HasVersion;
+use App\Casts\MoneyCast;
+use App\Enums\Shared\FilterFieldType;
+use App\Enums\Shared\GenericStatus;
+use App\Interfaces\Shared\HasStateMachine;
+use App\Interfaces\Shared\OwnedByUser;
+use App\Models\Base\BaseModel;
+use App\Traits\Shared\HasGenericStatus;
+use App\Traits\Shared\HasListQuery;
+use App\Traits\Shared\HasVersion;
+use App\Utilities\Query\FilterOptions;
+use App\Utilities\Query\ListQueryConfig;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Schema\Blueprint;

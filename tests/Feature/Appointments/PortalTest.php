@@ -1,14 +1,14 @@
 <?php
 
+use App\Dtos\Accounting\FiscalYearData;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Accounting\Fiscal\Contracts\FiscalPeriodServiceInterface;
-use App\Modules\Accounting\Fiscal\Data\FiscalYearData;
-use App\Modules\Appointments\Doctors\Models\Doctor;
-use App\Modules\Appointments\Orders\Models\ClinicalOrder;
-use App\Modules\Appointments\Patients\Models\Patient;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Enums\GenericStatus;
+use App\Enums\Shared\GenericStatus;
+use App\Interfaces\Accounting\FiscalPeriodServiceInterface;
+use App\Models\Appointments\ClinicalOrder;
+use App\Models\Appointments\Doctor;
+use App\Models\Appointments\Patient;
+use App\Models\Identity\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\CountrySeeder;

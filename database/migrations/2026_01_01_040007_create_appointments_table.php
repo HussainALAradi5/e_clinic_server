@@ -4,7 +4,7 @@ use App\Enums\Appointments\AppointmentSource;
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Appointments\AppointmentType;
 use App\Enums\Appointments\CancelledBy;
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

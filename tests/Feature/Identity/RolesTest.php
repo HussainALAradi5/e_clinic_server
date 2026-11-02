@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\Identity\RoleName;
-use App\Modules\Identity\Roles\Models\Role;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Identity\Role;
+use App\Models\Identity\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Laravel\Sanctum\Sanctum;
 

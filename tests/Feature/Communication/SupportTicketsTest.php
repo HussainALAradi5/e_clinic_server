@@ -2,7 +2,7 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Identity\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;

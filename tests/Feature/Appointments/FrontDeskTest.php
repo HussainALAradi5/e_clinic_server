@@ -3,10 +3,10 @@
 use App\Enums\Appointments\RoomType;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Appointments\Appointments\Contracts\AppointmentServiceInterface;
-use App\Modules\Appointments\Appointments\Models\Appointment;
-use App\Modules\Appointments\Doctors\Models\Doctor;
-use App\Modules\Identity\Users\Models\User;
+use App\Interfaces\Appointments\AppointmentServiceInterface;
+use App\Models\Appointments\Appointment;
+use App\Models\Appointments\Doctor;
+use App\Models\Identity\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Dtos\Identity\CreateUserData;
+use App\Dtos\Identity\PersonData;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Identity\Users\Contracts\UserServiceInterface;
-use App\Modules\Identity\Users\Data\CreateUserData;
-use App\Modules\Identity\Users\Data\PersonData;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Enums\Gender;
+use App\Enums\Shared\Gender;
+use App\Interfaces\Identity\UserServiceInterface;
+use App\Models\Identity\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Config;

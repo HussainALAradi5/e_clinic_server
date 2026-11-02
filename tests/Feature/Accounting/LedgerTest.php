@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\Identity\RoleName;
-use App\Modules\Accounting\Accounts\Models\Account;
-use App\Modules\Accounting\Fiscal\Models\FiscalPeriod;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Accounting\Account;
+use App\Models\Accounting\FiscalPeriod;
+use App\Models\Identity\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\CountrySeeder;

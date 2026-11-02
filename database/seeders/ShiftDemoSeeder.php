@@ -6,8 +6,8 @@ namespace Database\Seeders;
 
 use App\Enums\HR\EmployeeStatus;
 use App\Enums\HR\ShiftType;
-use App\Modules\HR\Employees\Models\Employee;
-use App\Modules\HR\Shifts\Models\Shift;
+use App\Models\HR\Employee;
+use App\Models\HR\Shift;
 use Illuminate\Database\Seeder;
 
 /**

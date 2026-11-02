@@ -3,13 +3,13 @@
 use App\Enums\Identity\AuditAction;
 use App\Enums\Identity\TaskCancelReason;
 use App\Enums\Identity\TaskType;
-use App\Modules\Identity\Audit\Models\AuditLog;
-use App\Modules\Identity\Notifications\Models\Notification;
-use App\Modules\Identity\Tasks\Contracts\BackgroundTaskServiceInterface;
-use App\Modules\Identity\Tasks\Models\BackgroundTask;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Enums\GenericStatus;
-use App\Shared\Exceptions\ConcurrencyConflictException;
+use App\Enums\Shared\GenericStatus;
+use App\Exceptions\Shared\ConcurrencyConflictException;
+use App\Models\Identity\AuditLog;
+use App\Models\Identity\User;
+use App\Notifications\Identity\Models\Notification;
+use App\Tasks\Identity\Contracts\BackgroundTaskServiceInterface;
+use App\Tasks\Identity\Models\BackgroundTask;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 

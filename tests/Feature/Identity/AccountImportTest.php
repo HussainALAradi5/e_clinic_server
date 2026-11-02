@@ -2,10 +2,10 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Identity\Auth\Notifications\ResetPasswordNotification;
-use App\Modules\Identity\Roles\Models\Role;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Transfer\Xlsx\XlsxWriter;
+use App\Models\Identity\Role;
+use App\Models\Identity\User;
+use App\Notifications\Identity\ResetPasswordNotification;
+use App\Utilities\Transfer\Xlsx\XlsxWriter;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;

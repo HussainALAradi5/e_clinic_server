@@ -1,9 +1,9 @@
 <?php
 
-use App\Modules\Accounting\Accounts\Http\Controllers\AccountController;
-use App\Modules\Accounting\Fiscal\Http\Controllers\FiscalPeriodController;
-use App\Modules\Accounting\Journal\Http\Controllers\JournalEntryController;
-use App\Modules\Accounting\Reports\Http\Controllers\FinancialReportController;
+use App\Http\Controllers\Accounting\AccountController;
+use App\Http\Controllers\Accounting\FinancialReportController;
+use App\Http\Controllers\Accounting\FiscalPeriodController;
+use App\Http\Controllers\Accounting\JournalEntryController;
 use Illuminate\Support\Facades\Route;
 
 /*

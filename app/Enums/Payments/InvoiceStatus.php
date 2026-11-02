@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums\Payments;
 
-use App\Shared\Contracts\HasLabel;
-use App\Shared\Traits\EnumHelpers;
+use App\Interfaces\Shared\HasLabel;
+use App\Traits\Shared\EnumHelpers;
 
 /**
  * Invoice lifecycle (draft collects charges; issued gets a number and posts revenue).

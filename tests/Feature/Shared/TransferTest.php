@@ -2,11 +2,11 @@
 
 use App\Enums\Identity\UserType;
 use App\Enums\Reference\CompanyType;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Identity\Users\Models\User;
-use App\Modules\Reference\Companies\Models\Company;
-use App\Shared\Transfer\Xlsx\XlsxReader;
-use App\Shared\Transfer\Xlsx\XlsxWriter;
+use App\Models\Identity\Person;
+use App\Models\Identity\User;
+use App\Models\Reference\Company;
+use App\Utilities\Transfer\Xlsx\XlsxReader;
+use App\Utilities\Transfer\Xlsx\XlsxWriter;
 use Database\Seeders\CountrySeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;

@@ -2,8 +2,8 @@
 
 use App\Enums\Payments\DiscountType;
 use App\Enums\Payments\InvoiceStatus;
-use App\Shared\Database\Constraints;
-use App\Shared\Enums\Currency;
+use App\Enums\Shared\Currency;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

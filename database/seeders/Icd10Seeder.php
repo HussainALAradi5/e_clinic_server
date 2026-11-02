@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Modules\Appointments\Records\Services\Icd10Importer;
+use App\Services\Appointments\Icd10Importer;
 use Illuminate\Database\Seeder;
 
 /**

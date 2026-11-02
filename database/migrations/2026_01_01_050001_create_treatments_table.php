@@ -2,8 +2,8 @@
 
 use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Appointments\TreatmentType;
-use App\Shared\Database\Constraints;
-use App\Shared\Enums\GenericStatus;
+use App\Enums\Shared\GenericStatus;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

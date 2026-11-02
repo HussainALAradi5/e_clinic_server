@@ -2,11 +2,11 @@
 
 use App\Enums\Identity\NotificationChannel;
 use App\Enums\Identity\NotificationStatus;
-use App\Modules\Identity\Notifications\Contracts\NotificationServiceInterface;
-use App\Modules\Identity\Notifications\Models\DeviceToken;
-use App\Modules\Identity\Notifications\Models\Notification;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Identity\Person;
+use App\Models\Identity\User;
+use App\Notifications\Identity\Contracts\NotificationServiceInterface;
+use App\Notifications\Identity\Models\DeviceToken;
+use App\Notifications\Identity\Models\Notification;
 use Carbon\CarbonImmutable;
 use Laravel\Sanctum\Sanctum;
 

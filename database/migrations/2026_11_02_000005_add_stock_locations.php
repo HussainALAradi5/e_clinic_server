@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\Pharmacy\StockLocation;
 use App\Enums\Pharmacy\StockMovementType;
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

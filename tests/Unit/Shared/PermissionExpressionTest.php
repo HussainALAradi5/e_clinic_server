@@ -1,6 +1,6 @@
 <?php
 
-use App\Shared\Access\PermissionExpression;
+use App\Utilities\Access\PermissionExpression;
 use Tests\Fixtures\FakeUser;
 use Tests\Fixtures\Widget;
 

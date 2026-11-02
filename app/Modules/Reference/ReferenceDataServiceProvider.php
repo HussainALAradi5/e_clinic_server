@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Modules\Reference;
 
-use App\Modules\Reference\Addresses\Contracts\AddressServiceInterface;
-use App\Modules\Reference\Addresses\Services\AddressService;
-use App\Modules\Reference\Companies\Contracts\CompanyServiceInterface;
-use App\Modules\Reference\Companies\Http\Resources\CompanyResource;
-use App\Modules\Reference\Companies\Imports\CompanyImport;
-use App\Modules\Reference\Companies\Models\Company;
-use App\Modules\Reference\Companies\Services\CompanyService;
-use App\Modules\Reference\Countries\Contracts\CountryServiceInterface;
-use App\Modules\Reference\Countries\Http\Resources\CountryResource;
-use App\Modules\Reference\Countries\Models\Country;
-use App\Modules\Reference\Countries\Services\CountryService;
-use App\Shared\Access\PermissionExpression;
-use App\Shared\Bulk\BulkActionRegistry;
+use App\Http\Resources\Reference\CompanyResource;
+use App\Http\Resources\Reference\CountryResource;
+use App\Imports\Reference\CompanyImport;
+use App\Interfaces\Reference\AddressServiceInterface;
+use App\Interfaces\Reference\CompanyServiceInterface;
+use App\Interfaces\Reference\CountryServiceInterface;
+use App\Models\Reference\Company;
+use App\Models\Reference\Country;
+use App\Services\Bulk\BulkActionRegistry;
+use App\Services\Reference\AddressService;
+use App\Services\Reference\CompanyService;
+use App\Services\Reference\CountryService;
+use App\Utilities\Access\PermissionExpression;
 use Illuminate\Support\ServiceProvider;
 
 /**

@@ -1,7 +1,7 @@
 <?php
 
-use App\Modules\Identity\Roles\Models\Permission;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Identity\Permission;
+use App\Models\Identity\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;

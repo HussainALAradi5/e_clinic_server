@@ -1,9 +1,9 @@
 <?php
 
-use App\Shared\Bulk\BulkActionRegistry;
-use App\Shared\Enums\ExportFormat;
-use App\Shared\Exceptions\ConflictException;
-use App\Shared\Query\FilterOptions;
+use App\Enums\Shared\ExportFormat;
+use App\Exceptions\Shared\ConflictException;
+use App\Services\Bulk\BulkActionRegistry;
+use App\Utilities\Query\FilterOptions;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Route;
 use Tests\Fixtures\Widget;

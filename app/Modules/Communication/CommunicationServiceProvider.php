@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Communication;
 
-use App\Modules\Communication\Chat\Contracts\ChatServiceInterface;
-use App\Modules\Communication\Chat\Services\ChatService;
-use App\Modules\Communication\Support\Contracts\SupportTicketServiceInterface;
-use App\Modules\Communication\Support\Events\TicketChanged;
-use App\Modules\Communication\Support\Http\Resources\TicketResource;
-use App\Modules\Communication\Support\Listeners\SendTicketNotifications;
-use App\Modules\Communication\Support\Models\SupportTicket;
-use App\Modules\Communication\Support\Services\SupportTicketService;
-use App\Shared\Bulk\BulkActionRegistry;
+use App\Interfaces\Communication\ChatServiceInterface;
+use App\Services\Bulk\BulkActionRegistry;
+use App\Services\Communication\ChatService;
+use App\Utilities\Communication\Contracts\SupportTicketServiceInterface;
+use App\Utilities\Communication\Events\TicketChanged;
+use App\Utilities\Communication\Http\Resources\TicketResource;
+use App\Utilities\Communication\Listeners\SendTicketNotifications;
+use App\Utilities\Communication\Models\SupportTicket;
+use App\Utilities\Communication\Services\SupportTicketService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;

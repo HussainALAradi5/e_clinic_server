@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\Appointments\RoomType;
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 
 /**

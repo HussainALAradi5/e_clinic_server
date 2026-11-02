@@ -2,11 +2,11 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Communication\Chat\Events\MessageReacted;
-use App\Modules\Communication\Chat\Events\MessageSent;
-use App\Modules\Communication\Chat\Models\Message;
-use App\Modules\Identity\Notifications\Models\Notification;
-use App\Modules\Identity\Users\Models\User;
+use App\Events\Communication\MessageReacted;
+use App\Events\Communication\MessageSent;
+use App\Models\Communication\Message;
+use App\Models\Identity\User;
+use App\Notifications\Identity\Models\Notification;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;

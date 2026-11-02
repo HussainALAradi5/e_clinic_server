@@ -1,8 +1,8 @@
 <?php
 
-use App\Modules\Identity\Attachments\Models\Attachment;
-use App\Modules\Identity\Codes\Contracts\CodeServiceInterface;
-use App\Modules\Identity\Users\Models\Person;
+use App\Interfaces\Identity\CodeServiceInterface;
+use App\Models\Identity\Attachment;
+use App\Models\Identity\Person;
 
 const CODE_RIGHTS = ['codes.read_all', 'codes.generate', 'codes.scan', 'people.read_all'];
 

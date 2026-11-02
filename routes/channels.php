@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\Identity\UserType;
-use App\Modules\Communication\Chat\Models\ConversationParticipant;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Communication\ConversationParticipant;
+use App\Models\Identity\User;
 use Illuminate\Support\Facades\Broadcast;
 
 /*

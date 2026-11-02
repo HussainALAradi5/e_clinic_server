@@ -6,8 +6,8 @@ namespace Database\Seeders;
 
 use App\Enums\Accounting\AccountMappingKey;
 use App\Enums\Accounting\AccountType;
-use App\Modules\Accounting\Accounts\Models\Account;
-use App\Modules\Accounting\Accounts\Models\AccountMapping;
+use App\Models\Accounting\Account;
+use App\Models\Accounting\AccountMapping;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Config;
 

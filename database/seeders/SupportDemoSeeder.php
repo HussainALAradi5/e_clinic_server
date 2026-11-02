@@ -5,10 +5,10 @@ namespace Database\Seeders;
 use App\Enums\Appointments\TreatmentPriority;
 use App\Enums\Communication\TicketCategory;
 use App\Enums\Communication\TicketConfirmation;
-use App\Modules\Communication\Support\Models\SupportTicket;
-use App\Modules\Identity\Users\Models\Person;
-use App\Shared\Enums\GenericStatus;
-use App\Shared\Support\ClinicClock;
+use App\Enums\Shared\GenericStatus;
+use App\Models\Identity\Person;
+use App\Utilities\Communication\Models\SupportTicket;
+use App\Utilities\Shared\ClinicClock;
 use Illuminate\Database\Seeder;
 
 /**

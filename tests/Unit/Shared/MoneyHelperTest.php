@@ -1,6 +1,6 @@
 <?php
 
-use App\Shared\Support\MoneyHelper;
+use App\Utilities\Shared\MoneyHelper;
 
 it('builds BHD money with 3 decimals and serialises it for the API', function () {
     $money = MoneyHelper::of('25.5');

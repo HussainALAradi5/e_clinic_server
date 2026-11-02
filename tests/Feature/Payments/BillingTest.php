@@ -1,17 +1,17 @@
 <?php
 
+use App\Dtos\Accounting\FiscalYearData;
 use App\Enums\Identity\RoleName;
 use App\Enums\Reference\CompanyType;
-use App\Modules\Accounting\Fiscal\Contracts\FiscalPeriodServiceInterface;
-use App\Modules\Accounting\Fiscal\Data\FiscalYearData;
-use App\Modules\Accounting\Journal\Models\JournalEntry;
-use App\Modules\Appointments\Doctors\Models\Doctor;
-use App\Modules\Appointments\Patients\Models\Patient;
-use App\Modules\Appointments\Records\Models\Icd10Code;
-use App\Modules\Appointments\Records\Models\MedicalRecord;
-use App\Modules\Appointments\Records\Models\RecordDiagnosis;
-use App\Modules\Identity\Users\Models\User;
-use App\Modules\Reference\Companies\Models\Company;
+use App\Interfaces\Accounting\FiscalPeriodServiceInterface;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Appointments\Doctor;
+use App\Models\Appointments\Icd10Code;
+use App\Models\Appointments\MedicalRecord;
+use App\Models\Appointments\Patient;
+use App\Models\Appointments\RecordDiagnosis;
+use App\Models\Identity\User;
+use App\Models\Reference\Company;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\CountrySeeder;

@@ -2,9 +2,9 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Communication\Chat\Events\ConversationRead;
-use App\Modules\Communication\Chat\Events\MessageSent;
-use App\Modules\Identity\Users\Models\User;
+use App\Events\Communication\ConversationRead;
+use App\Events\Communication\MessageSent;
+use App\Models\Identity\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;

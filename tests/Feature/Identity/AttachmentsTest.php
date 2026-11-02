@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\Identity\FileScanStatus;
-use App\Modules\Identity\Attachments\Models\Attachment;
-use App\Modules\Identity\Users\Models\Person;
+use App\Models\Identity\Attachment;
+use App\Models\Identity\Person;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 

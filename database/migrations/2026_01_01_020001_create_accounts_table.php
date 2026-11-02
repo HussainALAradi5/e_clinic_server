@@ -3,7 +3,7 @@
 use App\Enums\Accounting\AccountMappingKey;
 use App\Enums\Accounting\AccountType;
 use App\Enums\Accounting\BalanceSide;
-use App\Shared\Database\Constraints;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

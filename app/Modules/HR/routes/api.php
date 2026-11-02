@@ -1,13 +1,13 @@
 <?php
 
-use App\Modules\HR\Attendance\Http\Controllers\AttendanceController;
-use App\Modules\HR\Departments\Http\Controllers\DepartmentController;
-use App\Modules\HR\Employees\Http\Controllers\EmployeeController;
-use App\Modules\HR\Leaves\Http\Controllers\LeaveController;
-use App\Modules\HR\Payroll\Http\Controllers\PayrollController;
-use App\Modules\HR\Requests\Http\Controllers\StaffRequestController;
-use App\Modules\HR\Settings\Http\Controllers\SettingController;
-use App\Modules\HR\Shifts\Http\Controllers\ShiftController;
+use App\Http\Controllers\HR\AttendanceController;
+use App\Http\Controllers\HR\DepartmentController;
+use App\Http\Controllers\HR\EmployeeController;
+use App\Http\Controllers\HR\LeaveController;
+use App\Http\Controllers\HR\PayrollController;
+use App\Http\Controllers\HR\SettingController;
+use App\Http\Controllers\HR\ShiftController;
+use App\Http\Controllers\HR\StaffRequestController;
 use Illuminate\Support\Facades\Route;
 
 /*

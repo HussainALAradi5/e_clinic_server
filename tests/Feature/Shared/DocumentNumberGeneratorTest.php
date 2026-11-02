@@ -1,6 +1,6 @@
 <?php
 
-use App\Shared\Support\DocumentNumberGenerator;
+use App\Utilities\Shared\DocumentNumberGenerator;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 

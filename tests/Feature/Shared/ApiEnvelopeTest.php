@@ -1,8 +1,8 @@
 <?php
 
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Exceptions\InvalidStateTransitionException;
-use App\Shared\Http\Concerns\ApiResponse;
+use App\Exceptions\Shared\InvalidStateTransitionException;
+use App\Http\Concerns\ApiResponse;
+use App\Models\Identity\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;

@@ -1,10 +1,10 @@
 <?php
 
-use App\Modules\Pharmacy\Dispensing\Http\Controllers\DispensingController;
-use App\Modules\Pharmacy\Inventory\Http\Controllers\InventoryController;
-use App\Modules\Pharmacy\Medications\Http\Controllers\MedicationController;
-use App\Modules\Pharmacy\Prescriptions\Http\Controllers\PrescriptionController;
-use App\Shared\Http\Middleware\EnsureIdempotency;
+use App\Http\Controllers\Pharmacy\DispensingController;
+use App\Http\Controllers\Pharmacy\InventoryController;
+use App\Http\Controllers\Pharmacy\MedicationController;
+use App\Http\Controllers\Pharmacy\PrescriptionController;
+use App\Http\Middleware\EnsureIdempotency;
 use Illuminate\Support\Facades\Route;
 
 /*

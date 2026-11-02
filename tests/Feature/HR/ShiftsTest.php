@@ -2,9 +2,9 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\HR\Employees\Models\Employee;
-use App\Modules\Identity\Notifications\Models\Notification as AppNotification;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\HR\Employee;
+use App\Models\Identity\User;
+use App\Notifications\Identity\Models\Notification as AppNotification;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;

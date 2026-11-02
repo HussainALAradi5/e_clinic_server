@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Modules\Reference\Countries\Models\Country;
-use App\Modules\Reference\Countries\Services\CountryService;
+use App\Models\Reference\Country;
+use App\Services\Reference\CountryService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 

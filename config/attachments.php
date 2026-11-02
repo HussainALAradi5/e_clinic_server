@@ -1,16 +1,16 @@
 <?php
 
-use App\Modules\Appointments\Appointments\Models\Appointment;
-use App\Modules\Appointments\Orders\Models\ClinicalOrder;
-use App\Modules\Appointments\Patients\Models\Patient;
-use App\Modules\Appointments\Records\Models\PatientConsent;
-use App\Modules\Communication\Chat\Models\Message;
-use App\Modules\Communication\Support\Models\SupportTicket;
-use App\Modules\HR\Leaves\Models\LeaveRequest;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Pharmacy\Inventory\Models\MedicationBatch;
-use App\Modules\Pharmacy\Medications\Models\Medication;
-use App\Modules\Transactions\Expenses\Models\Expense;
+use App\Models\Appointments\Appointment;
+use App\Models\Appointments\ClinicalOrder;
+use App\Models\Appointments\Patient;
+use App\Models\Appointments\PatientConsent;
+use App\Models\Communication\Message;
+use App\Models\HR\LeaveRequest;
+use App\Models\Identity\Person;
+use App\Models\Pharmacy\Medication;
+use App\Models\Pharmacy\MedicationBatch;
+use App\Models\Transactions\Expense;
+use App\Utilities\Communication\Models\SupportTicket;
 
 return [
 

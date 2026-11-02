@@ -1,9 +1,9 @@
 <?php
 
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Enums\GenericStatus;
-use App\Shared\Exceptions\ConcurrencyConflictException;
-use App\Shared\Exceptions\InvalidStateTransitionException;
+use App\Enums\Shared\GenericStatus;
+use App\Exceptions\Shared\ConcurrencyConflictException;
+use App\Exceptions\Shared\InvalidStateTransitionException;
+use App\Models\Identity\User;
 use Brick\Money\Money;
 use Illuminate\Support\Str;
 use Tests\Fixtures\Widget;

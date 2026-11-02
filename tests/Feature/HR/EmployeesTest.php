@@ -2,11 +2,11 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserStatus;
-use App\Modules\HR\Departments\Models\Department;
-use App\Modules\HR\Employees\Models\Employee;
-use App\Modules\Identity\Auth\Notifications\ResetPasswordNotification;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\HR\Department;
+use App\Models\HR\Employee;
+use App\Models\Identity\Person;
+use App\Models\Identity\User;
+use App\Notifications\Identity\ResetPasswordNotification;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Notification;

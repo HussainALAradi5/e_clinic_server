@@ -1,18 +1,18 @@
 <?php
 
 use App\Enums\HR\EmployeeStatus;
-use App\Modules\Appointments\Appointments\Contracts\AppointmentServiceInterface;
-use App\Modules\HR\Attendance\Contracts\AttendanceServiceInterface;
-use App\Modules\HR\Employees\Models\Employee;
-use App\Modules\HR\Leaves\Contracts\LeaveServiceInterface;
-use App\Modules\Identity\Attachments\Models\UploadSession;
-use App\Modules\Identity\Notifications\Contracts\NotificationServiceInterface;
-use App\Modules\Identity\Notifications\Models\DeviceToken;
-use App\Modules\Identity\Notifications\Models\Notification;
-use App\Modules\Identity\Tasks\Models\BackgroundTask;
-use App\Modules\Pharmacy\Inventory\Contracts\InventoryServiceInterface;
-use App\Modules\Pharmacy\Inventory\Services\StockAlertNotifier;
-use App\Shared\Support\ClinicClock;
+use App\Interfaces\Appointments\AppointmentServiceInterface;
+use App\Interfaces\HR\AttendanceServiceInterface;
+use App\Interfaces\HR\LeaveServiceInterface;
+use App\Interfaces\Pharmacy\InventoryServiceInterface;
+use App\Models\HR\Employee;
+use App\Models\Identity\UploadSession;
+use App\Notifications\Identity\Contracts\NotificationServiceInterface;
+use App\Notifications\Identity\Models\DeviceToken;
+use App\Notifications\Identity\Models\Notification;
+use App\Services\Pharmacy\StockAlertNotifier;
+use App\Tasks\Identity\Models\BackgroundTask;
+use App\Utilities\Shared\ClinicClock;
 use Illuminate\Support\Facades\Schedule;
 
 /*

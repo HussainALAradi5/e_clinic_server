@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Modules\Accounting\Fiscal\Contracts\FiscalPeriodServiceInterface;
-use App\Modules\Accounting\Fiscal\Data\FiscalYearData;
-use App\Modules\Accounting\Fiscal\Models\FiscalYear;
-use App\Shared\Support\ClinicClock;
+use App\Dtos\Accounting\FiscalYearData;
+use App\Interfaces\Accounting\FiscalPeriodServiceInterface;
+use App\Models\Accounting\FiscalYear;
+use App\Utilities\Shared\ClinicClock;
 use Illuminate\Database\Seeder;
 
 /**

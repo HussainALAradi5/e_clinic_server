@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use App\Enums\Identity\RoleName;
-use App\Modules\Accounting\Accounts\Models\Account;
-use App\Modules\HR\Employees\Models\Employee;
-use App\Modules\Identity\Roles\Models\Permission;
-use App\Modules\Identity\Roles\Models\Role;
-use App\Modules\Identity\Users\Models\User;
-use App\Shared\Support\CacheKeys;
+use App\Models\Accounting\Account;
+use App\Models\HR\Employee;
+use App\Models\Identity\Permission;
+use App\Models\Identity\Role;
+use App\Models\Identity\User;
+use App\Utilities\Shared\CacheKeys;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\LeaveTypeSeeder;
 use Illuminate\Database\Migrations\Migration;

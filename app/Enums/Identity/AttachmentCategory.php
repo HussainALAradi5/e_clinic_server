@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums\Identity;
 
-use App\Shared\Contracts\HasLabel;
-use App\Shared\Traits\EnumHelpers;
+use App\Interfaces\Shared\HasLabel;
+use App\Traits\Shared\EnumHelpers;
 
 /**
  * What an uploaded file is; each category has its own MIME types and size limit (config/attachments.php).

@@ -1,6 +1,6 @@
 <?php
 
-use App\Modules\Accounting\Accounts\Models\Account;
+use App\Models\Accounting\Account;
 use Database\Seeders\ChartOfAccountsSeeder;
 
 beforeEach(function () {

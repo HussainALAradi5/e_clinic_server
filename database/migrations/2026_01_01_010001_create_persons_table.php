@@ -1,7 +1,7 @@
 <?php
 
-use App\Shared\Database\Constraints;
-use App\Shared\Enums\Gender;
+use App\Enums\Shared\Gender;
+use App\Utilities\Database\Constraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Schema\Blueprint;

@@ -1,52 +1,56 @@
 <?php
 
-use App\Modules\Accounting\Accounts\Models\Account;
-use App\Modules\Accounting\Accounts\Models\AccountMapping;
-use App\Modules\Appointments\Appointments\Models\Appointment;
-use App\Modules\Appointments\Doctors\Models\Doctor;
-use App\Modules\Appointments\Doctors\Models\Specialty;
-use App\Modules\Appointments\Orders\Models\ClinicalOrder;
-use App\Modules\Appointments\Patients\Models\Patient;
-use App\Modules\Appointments\Records\Models\MedicalRecord;
-use App\Modules\Appointments\Records\Models\PatientConsent;
-use App\Modules\Appointments\Rooms\Models\Room;
-use App\Modules\Appointments\Schedules\Models\ProviderSchedule;
-use App\Modules\Appointments\Schedules\Models\ScheduleException;
-use App\Modules\Appointments\SickLeaves\Models\SickLeave;
-use App\Modules\Appointments\Treatments\Models\Treatment;
-use App\Modules\Communication\Chat\Models\Conversation;
-use App\Modules\Communication\Chat\Models\Message;
-use App\Modules\Communication\Support\Models\SupportTicket;
-use App\Modules\HR\Attendance\Models\Attendance;
-use App\Modules\HR\Departments\Models\Department;
-use App\Modules\HR\Employees\Models\Employee;
-use App\Modules\HR\Employees\Models\EmployeeSalaryComponent;
-use App\Modules\HR\Leaves\Models\LeaveRequest;
-use App\Modules\HR\Leaves\Models\LeaveType;
-use App\Modules\HR\Payroll\Models\PayrollRun;
-use App\Modules\HR\Payroll\Models\Payslip;
-use App\Modules\HR\Requests\Models\StaffRequest;
-use App\Modules\HR\Settings\Models\Setting;
-use App\Modules\Identity\Attachments\Models\Attachment;
-use App\Modules\Identity\Notifications\Models\Notification;
-use App\Modules\Identity\Roles\Models\Role;
-use App\Modules\Identity\Tasks\Models\BackgroundTask;
-use App\Modules\Identity\Users\Models\Person;
-use App\Modules\Identity\Users\Models\User;
-use App\Modules\Payments\Catalog\Models\BillableService;
-use App\Modules\Payments\Claims\Models\InsuranceClaim;
-use App\Modules\Payments\Invoices\Models\Invoice;
-use App\Modules\Payments\Payments\Models\Payment;
-use App\Modules\Payments\Refunds\Models\Refund;
-use App\Modules\Pharmacy\Dispensing\Models\Dispensation;
-use App\Modules\Pharmacy\Inventory\Models\MedicationBatch;
-use App\Modules\Pharmacy\Medications\Models\Medication;
-use App\Modules\Pharmacy\Prescriptions\Models\Prescription;
-use App\Modules\Reference\Addresses\Models\Address;
-use App\Modules\Reference\Companies\Models\Company;
-use App\Modules\Reference\Countries\Models\Country;
-use App\Modules\Transactions\CashSessions\Models\CashSession;
-use App\Modules\Transactions\Expenses\Models\Expense;
+use App\Models\Accounting\Account;
+use App\Models\Accounting\AccountMapping;
+use App\Models\Accounting\FiscalPeriod;
+use App\Models\Accounting\FiscalYear;
+use App\Models\Accounting\JournalEntry;
+use App\Models\Appointments\Appointment;
+use App\Models\Appointments\ClinicalOrder;
+use App\Models\Appointments\Doctor;
+use App\Models\Appointments\MedicalRecord;
+use App\Models\Appointments\Patient;
+use App\Models\Appointments\PatientConsent;
+use App\Models\Appointments\ProviderSchedule;
+use App\Models\Appointments\Room;
+use App\Models\Appointments\ScheduleException;
+use App\Models\Appointments\SickLeave;
+use App\Models\Appointments\Specialty;
+use App\Models\Appointments\Treatment;
+use App\Models\Communication\Conversation;
+use App\Models\Communication\Message;
+use App\Models\HR\Attendance;
+use App\Models\HR\Department;
+use App\Models\HR\Employee;
+use App\Models\HR\EmployeeSalaryComponent;
+use App\Models\HR\LeaveRequest;
+use App\Models\HR\LeaveType;
+use App\Models\HR\PayrollRun;
+use App\Models\HR\Payslip;
+use App\Models\HR\Setting;
+use App\Models\HR\Shift;
+use App\Models\HR\StaffRequest;
+use App\Models\Identity\Attachment;
+use App\Models\Identity\Person;
+use App\Models\Identity\Role;
+use App\Models\Identity\User;
+use App\Models\Payments\BillableService;
+use App\Models\Payments\InsuranceClaim;
+use App\Models\Payments\Invoice;
+use App\Models\Payments\Payment;
+use App\Models\Payments\Refund;
+use App\Models\Pharmacy\Dispensation;
+use App\Models\Pharmacy\Medication;
+use App\Models\Pharmacy\MedicationBatch;
+use App\Models\Pharmacy\Prescription;
+use App\Models\Reference\Address;
+use App\Models\Reference\Company;
+use App\Models\Reference\Country;
+use App\Models\Transactions\CashSession;
+use App\Models\Transactions\Expense;
+use App\Notifications\Identity\Models\Notification;
+use App\Tasks\Identity\Models\BackgroundTask;
+use App\Utilities\Communication\Models\SupportTicket;
 
 return [
 
@@ -84,6 +88,9 @@ return [
         'company' => Company::class,
         'account' => Account::class,
         'account_mapping' => AccountMapping::class,
+        'fiscal_year' => FiscalYear::class,
+        'fiscal_period' => FiscalPeriod::class,
+        'journal_entry' => JournalEntry::class,
         'department' => Department::class,
         'employee' => Employee::class,
         'salary_component' => EmployeeSalaryComponent::class,
@@ -94,6 +101,7 @@ return [
         'staff_request' => StaffRequest::class,
         'setting' => Setting::class,
         'payslip' => Payslip::class,
+        'shift' => Shift::class,
         'billable_service' => BillableService::class,
         'patient' => Patient::class,
         'specialty' => Specialty::class,

@@ -2,11 +2,11 @@
 
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
-use App\Modules\Accounting\Journal\Models\JournalEntry;
-use App\Modules\HR\Attendance\Models\Attendance;
-use App\Modules\HR\Employees\Models\Employee;
-use App\Modules\Identity\Notifications\Models\Notification as AppNotification;
-use App\Modules\Identity\Users\Models\User;
+use App\Models\Accounting\JournalEntry;
+use App\Models\HR\Attendance;
+use App\Models\HR\Employee;
+use App\Models\Identity\User;
+use App\Notifications\Identity\Models\Notification as AppNotification;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\CountrySeeder;

@@ -1,13 +1,13 @@
 <?php
 
-use App\Shared\Enums\FilterFieldType;
-use App\Shared\Enums\FilterOperator;
-use App\Shared\Enums\LogicalOperator;
-use App\Shared\Enums\SortDirection;
-use App\Shared\Query\ApplyListQuery;
-use App\Shared\Query\FilterCondition;
-use App\Shared\Query\ListQuery;
-use App\Shared\Query\ListQueryConfig;
+use App\Enums\Shared\FilterFieldType;
+use App\Enums\Shared\FilterOperator;
+use App\Enums\Shared\LogicalOperator;
+use App\Enums\Shared\SortDirection;
+use App\Utilities\Query\ApplyListQuery;
+use App\Utilities\Query\FilterCondition;
+use App\Utilities\Query\ListQuery;
+use App\Utilities\Query\ListQueryConfig;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Validation\ValidationException;
 use Tests\Fixtures\Widget;

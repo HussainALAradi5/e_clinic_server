@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Exceptions\Identity;
+
+use App\Exceptions\Shared\BusinessValidationException;
+
+/**
+ * The current password supplied is wrong.
+ */
+final class CurrentPasswordMismatchException extends BusinessValidationException
+{
+    protected string $errorCode = 'AUTH_CURRENT_PASSWORD_WRONG';
+}
