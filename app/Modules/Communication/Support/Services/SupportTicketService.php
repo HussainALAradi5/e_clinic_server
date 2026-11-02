@@ -171,6 +171,7 @@ final class SupportTicketService extends BaseEntityService implements SupportTic
         $fresh = SupportTicket::query()->with(self::RELATIONS)->findOrFail($ticket->id);
         TicketChanged::dispatch($fresh, $change, $actor->id);
         // The live update must never fail the request (the socket server may be down).
-        rescue(fn () => broadcast(new TicketBroadcast($fresh, $change, $actor->id)), report: true);
+        // event(), not broadcast(): broadcast() sends when its result is destroyed, which is after rescue() returned.
+        rescue(fn () => event(new TicketBroadcast($fresh, $change, $actor->id)), report: true);
     }
 }

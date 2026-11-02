@@ -235,3 +235,22 @@ it('soft-deletes chats: gone for members, never removed, listed, readable and re
     $this->postJson('/api/v1/chat/conversations', ['type' => 'direct', 'user_id' => $omar->id])->assertCreated()
         ->assertJsonPath('data.id', $direct)->assertJsonPath('data.deleted_at', null);
 });
+
+it('still sends, reacts and reads when the real-time server is down', function () {
+    // A closed port: every broadcast fails (as on a host without Reverb); the chat must not.
+    config([
+        'broadcasting.default' => 'reverb',
+        'broadcasting.connections.reverb.key' => 'k', 'broadcasting.connections.reverb.secret' => 's', 'broadcasting.connections.reverb.app_id' => 'a',
+        'broadcasting.connections.reverb.options' => ['host' => '127.0.0.1', 'port' => 1, 'scheme' => 'http', 'useTLS' => false],
+    ]);
+    // The real dispatcher back (beforeEach fakes the chat events), so the broadcasts really try to go out.
+    Event::swap(Event::getFacadeRoot()->dispatcher);
+    $omar = extrasUser();
+    $sara = extrasUser();
+    $group = extrasGroup($this, $omar, $sara);
+    $sent = $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'Anyone there?'])->assertCreated()->json('data.id');
+
+    Sanctum::actingAs($sara);
+    $this->postJson("/api/v1/chat/conversations/{$group}/messages/{$sent}/reactions", ['emoji' => '👍'])->assertOk();
+    $this->postJson("/api/v1/chat/conversations/{$group}/read")->assertNoContent();
+});

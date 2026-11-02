@@ -289,7 +289,8 @@ final class ChatService implements ChatServiceInterface
             return $message;
         });
         $this->withSenderRoles($conversation, $message->newCollection([$message->load(self::MESSAGE_RELATIONS)]));
-        rescue(fn () => broadcast(new MessageSent($message, $members)), report: true);
+        // event(), not broadcast(): broadcast() sends when its result is destroyed, which is after rescue() returned.
+        rescue(fn () => event(new MessageSent($message, $members)), report: true);
         $this->notify('chat.mention', $mentions, $conversation, $me, ['excerpt' => mb_strimwidth((string) $data->body, 0, 80, '…')]);
 
         return $message;
@@ -308,7 +309,7 @@ final class ChatService implements ChatServiceInterface
         }
 
         $this->withSenderRoles($conversation, $message->newCollection([$message->load(self::MESSAGE_RELATIONS)]));
-        rescue(fn () => broadcast(new MessageReacted($message)), report: true);
+        rescue(fn () => event(new MessageReacted($message)), report: true);
 
         return $message;
     }
@@ -330,7 +331,7 @@ final class ChatService implements ChatServiceInterface
     {
         $now = $this->clock->now();
         $conversation->participantFor($me->id)?->update(['last_read_at' => $now]);
-        rescue(fn () => broadcast(new ConversationRead($conversation->id, $me->id, $now)), report: true);
+        rescue(fn () => event(new ConversationRead($conversation->id, $me->id, $now)), report: true);
     }
 
     public function unreadTotal(User $me): int
@@ -475,6 +476,6 @@ final class ChatService implements ChatServiceInterface
      */
     private function announce(string $conversationId, array $userIds): void
     {
-        rescue(fn () => broadcast(new ConversationChanged($conversationId, array_values(array_unique($userIds)))), report: true);
+        rescue(fn () => event(new ConversationChanged($conversationId, array_values(array_unique($userIds)))), report: true);
     }
 }

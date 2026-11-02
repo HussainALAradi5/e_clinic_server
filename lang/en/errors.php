@@ -13,7 +13,7 @@ return [
     'UNKNOWN_RESOURCE' => 'Unknown resource.',
     'VALIDATION_FAILED' => 'Some fields are invalid.',
     'TOO_MANY_REQUESTS' => 'Too many requests. Please try again shortly.',
-    'SERVER_ERROR' => 'Something went wrong. Please try again or contact support with the request id.',
+    'SERVER_ERROR' => 'Something went wrong on our side. Please try again in a moment.',
     'CONCURRENT_MODIFICATION' => 'This record was changed by someone else. Reload it and try again.',
     'INVALID_STATE_TRANSITION' => 'This action is not allowed in the current status.',
     'IDEMPOTENCY_KEY_REQUIRED' => 'An Idempotency-Key header is required for this request.',
