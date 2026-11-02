@@ -189,6 +189,20 @@ return [
             'body' => 'Your :type from :from to :to was not approved: :notes',
         ],
     ],
+    'staff_request' => [
+        'requested' => [
+            'subject' => ':type to review: :employee',
+            'body' => ':employee asks for :type on :date (:minutes), request :code.',
+        ],
+        'approved' => [
+            'subject' => 'Request approved: :type on :date',
+            'body' => 'Your :type request for :date (:minutes) is approved. :reason',
+        ],
+        'rejected' => [
+            'subject' => 'Request not approved: :type on :date',
+            'body' => 'Your :type request for :date (:minutes) was not approved: :reason',
+        ],
+    ],
     'payroll' => [
         'calculated' => [
             'subject' => 'Payroll to approve: :month',

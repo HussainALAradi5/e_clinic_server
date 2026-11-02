@@ -38,8 +38,14 @@ interface AttendanceServiceInterface
     /** HR creates or corrects a day (reason required); not in a month with an approved payroll. */
     public function recordManual(ManualAttendanceData $data): Attendance;
 
-    /** A manager approves overtime for payroll — never their own. */
+    /** A manager approves overtime for payroll — never their own; its amount is priced and kept on the day. */
     public function approveOvertime(Attendance $attendance): Attendance;
+
+    /** A manager excuses a late arrival (not deducted from pay) — never their own. */
+    public function excuseLate(Attendance $attendance): Attendance;
+
+    /** Refuses changes to a day of a month in an approved payroll (`ATTENDANCE_LOCKED`). */
+    public function assertEditable(Attendance $attendance): void;
 
     /** Totals for payroll: worked, absent, leave days (paid / unpaid), late minutes, approved overtime. */
     public function monthlySummary(Employee $employee, int $year, int $month): AttendanceSummaryData;

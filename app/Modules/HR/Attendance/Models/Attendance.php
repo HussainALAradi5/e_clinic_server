@@ -7,12 +7,14 @@ namespace App\Modules\HR\Attendance\Models;
 use App\Enums\HR\AttendanceSource;
 use App\Enums\HR\AttendanceStatus;
 use App\Modules\HR\Employees\Models\Employee;
+use App\Shared\Casts\MoneyCast;
 use App\Shared\Contracts\Auditable;
 use App\Shared\Contracts\OwnedByUser;
 use App\Shared\Query\ListQueryConfig;
 use App\Shared\Traits\Auditable as AuditsChanges;
 use App\Shared\Traits\Blameable;
 use App\Shared\Traits\HasListQuery;
+use Brick\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,6 +35,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $late_minutes
  * @property int $overtime_minutes
  * @property bool $overtime_approved
+ * @property ?Money $overtime_amount
+ * @property bool $late_excused
  * @property AttendanceStatus $status
  * @property AttendanceSource $source
  * @property ?string $check_in_ip
@@ -54,7 +58,7 @@ class Attendance extends Model implements Auditable, OwnedByUser
 
     protected $guarded = ['id', 'is_locked'];
 
-    protected $attributes = ['worked_minutes' => 0, 'late_minutes' => 0, 'overtime_minutes' => 0, 'overtime_approved' => false, 'needs_review' => false, 'is_locked' => false];
+    protected $attributes = ['worked_minutes' => 0, 'late_minutes' => 0, 'overtime_minutes' => 0, 'overtime_approved' => false, 'late_excused' => false, 'needs_review' => false, 'is_locked' => false];
 
     public static function listQueryConfig(): ListQueryConfig
     {
@@ -65,6 +69,7 @@ class Attendance extends Model implements Auditable, OwnedByUser
             ->filterable('status', ['eq', 'in', 'nin'], enum: AttendanceStatus::class)
             ->filterable('source', ['eq'], enum: AttendanceSource::class)
             ->filterable('overtime_approved', ['eq'], type: 'boolean')
+            ->filterable('late_excused', ['eq'], type: 'boolean')
             ->filterable('needs_review', ['eq'], type: 'boolean')
             ->filterable('overtime_minutes', ['gt', 'gte'], type: 'number')
             ->filterable('late_minutes', ['gt', 'gte'], type: 'number')
@@ -122,6 +127,8 @@ class Attendance extends Model implements Auditable, OwnedByUser
             'late_minutes' => 'integer',
             'overtime_minutes' => 'integer',
             'overtime_approved' => 'boolean',
+            'overtime_amount' => MoneyCast::class,
+            'late_excused' => 'boolean',
             'status' => AttendanceStatus::class,
             'source' => AttendanceSource::class,
             'needs_review' => 'boolean',

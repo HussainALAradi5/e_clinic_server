@@ -19,6 +19,7 @@ enum PayslipItemType: string implements HasLabel
     case Overtime = 'overtime';
     case Deduction = 'deduction';
     case Absence = 'absence';
+    case Lateness = 'lateness';
     case UnpaidLeave = 'unpaid_leave';
     case SocialInsurance = 'social_insurance';
     case Adjustment = 'adjustment';

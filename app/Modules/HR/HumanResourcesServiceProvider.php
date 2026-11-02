@@ -31,6 +31,14 @@ use App\Modules\HR\Payroll\Listeners\SendPayrollNotifications;
 use App\Modules\HR\Payroll\Models\PayrollRun;
 use App\Modules\HR\Payroll\Models\Payslip;
 use App\Modules\HR\Payroll\Services\PayrollService;
+use App\Modules\HR\Requests\Contracts\StaffRequestServiceInterface;
+use App\Modules\HR\Requests\Events\StaffRequestChanged;
+use App\Modules\HR\Requests\Http\Resources\StaffRequestResource;
+use App\Modules\HR\Requests\Listeners\SendStaffRequestNotifications;
+use App\Modules\HR\Requests\Models\StaffRequest;
+use App\Modules\HR\Requests\Services\StaffRequestService;
+use App\Modules\HR\Settings\Contracts\SettingServiceInterface;
+use App\Modules\HR\Settings\Services\SettingService;
 use App\Modules\HR\Shifts\Contracts\ShiftServiceInterface;
 use App\Modules\HR\Shifts\Http\Resources\ShiftResource;
 use App\Modules\HR\Shifts\Models\Shift;
@@ -56,6 +64,8 @@ final class HumanResourcesServiceProvider extends ServiceProvider
         AttendanceServiceInterface::class => AttendanceService::class,
         LeaveServiceInterface::class => LeaveService::class,
         PayrollServiceInterface::class => PayrollService::class,
+        SettingServiceInterface::class => SettingService::class,
+        StaffRequestServiceInterface::class => StaffRequestService::class,
     ];
 
     public function boot(BulkActionRegistry $bulk): void
@@ -63,6 +73,7 @@ final class HumanResourcesServiceProvider extends ServiceProvider
         Event::listen(EmployeeHired::class, OpenLeaveBalances::class);
         Event::listen(LeaveStatusChanged::class, SendLeaveNotifications::class);
         Event::listen(PayrollStatusChanged::class, SendPayrollNotifications::class);
+        Event::listen(StaffRequestChanged::class, SendStaffRequestNotifications::class);
 
         $bulk->register('departments', Department::class, Department::listQueryConfig(), DepartmentService::class)
             ->exportable(DepartmentResource::class, fn (Builder $q) => $q->with(['parent', 'manager.user.person'])->withCount('employees'), values: [
@@ -86,6 +97,16 @@ final class HumanResourcesServiceProvider extends ServiceProvider
             ->exportable(LeaveRequestResource::class, fn (Builder $q) => $q->with(LeaveService::RELATIONS), values: [
                 'employee' => $employee,
                 'leave_type' => fn (Model $r): string => $r instanceof LeaveRequest ? $r->leaveType->name : '',
+            ]);
+
+        $bulk->register('staff_requests', StaffRequest::class, StaffRequest::listQueryConfig(), genericActions: false)
+            ->action('approve', 'staff_requests.write&staff_requests.review', [StaffRequestServiceInterface::class, 'approve'])
+            ->action('reject', 'staff_requests.write&staff_requests.review', [StaffRequestServiceInterface::class, 'reject'], needsReason: true)
+            ->exportable(StaffRequestResource::class, fn (Builder $q) => $q->with(StaffRequestService::RELATIONS), values: [
+                'employee' => $employee,
+                'type' => fn (Model $r): string => $r instanceof StaffRequest ? $r->type->label() : '',
+                'date' => fn (Model $r): string => $r instanceof StaffRequest ? $r->attendance->date->toDateString() : '',
+                'minutes' => fn (Model $r): string => $r instanceof StaffRequest ? (string) $r->minutes() : '',
             ]);
 
         $bulk->register('payroll_runs', PayrollRun::class, PayrollRun::listQueryConfig(), genericActions: false)

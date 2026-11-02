@@ -177,6 +177,11 @@ return [
     // HR
     'ATTENDANCE_ALREADY_CHECKED_IN' => 'You already checked in today at :time.',
     'ATTENDANCE_NOT_CHECKED_IN' => 'There is no open check-in today to check out from.',
+    'STAFF_REQUEST_DISABLED' => 'HR has switched this kind of request off.',
+    'STAFF_REQUEST_EXISTS' => 'This day already has a request of this kind.',
+    'STAFF_REQUEST_NOTHING_TO_ASK' => 'There is nothing to ask about for this day (no late minutes or overtime, or already settled).',
+    'STAFF_REQUEST_NOT_YOURS' => 'Only the employee who sent the request can withdraw it.',
+    'OVERTIME_NEEDS_REQUEST' => 'Overtime requests are on: approve the employee\'s overtime request under Requests.',
     'ATTENDANCE_LOCKED' => 'Attendance of :month is in an approved payroll and can no longer be changed.',
     'ATTENDANCE_NETWORK_NOT_ALLOWED' => 'Check in and out at the clinic: on the clinic network, or in the app with your location on.',
     'LEAVE_ATTACHMENT_REQUIRED' => ':type needs a supporting document (e.g. a medical certificate) before it can be sent.',

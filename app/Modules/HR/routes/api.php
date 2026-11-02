@@ -5,6 +5,8 @@ use App\Modules\HR\Departments\Http\Controllers\DepartmentController;
 use App\Modules\HR\Employees\Http\Controllers\EmployeeController;
 use App\Modules\HR\Leaves\Http\Controllers\LeaveController;
 use App\Modules\HR\Payroll\Http\Controllers\PayrollController;
+use App\Modules\HR\Requests\Http\Controllers\StaffRequestController;
+use App\Modules\HR\Settings\Http\Controllers\SettingController;
 use App\Modules\HR\Shifts\Http\Controllers\ShiftController;
 use Illuminate\Support\Facades\Route;
 
@@ -110,6 +112,34 @@ Route::middleware('auth:sanctum')->prefix('hr')->name('hr.')->group(function ():
     });
     Route::bulkActions('leaves', 'leaves')->middleware('access:leaves.write&leaves.approve');
     Route::dataTransfer('leaves', 'leaves');
+
+    // Staff requests about attendance days: excuse a late arrival, pay overtime (HR reviews with a reason)
+    Route::prefix('requests')->name('requests.')->controller(StaffRequestController::class)->group(function (): void {
+        Route::middleware(['access:staff_requests.read_all|staff_requests.read_own', 'throttle:read'])->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::get('askable', 'askable')->middleware('access:staff_requests.create')->name('askable');
+            Route::get('{staffRequest}', 'show')->whereUuid('staffRequest')->name('show');
+        });
+        Route::middleware('throttle:write')->group(function (): void {
+            Route::post('/', 'store')->middleware('access:staff_requests.create')->name('store');
+            Route::patch('{staffRequest}/cancel', 'cancel')->whereUuid('staffRequest')->middleware('access:staff_requests.write')->name('cancel');
+        });
+        Route::middleware('throttle:sensitive')->group(function (): void {
+            Route::patch('{staffRequest}/approve', 'approve')->whereUuid('staffRequest')->middleware('access:staff_requests.write&staff_requests.review')->name('approve');
+            Route::patch('{staffRequest}/reject', 'reject')->whereUuid('staffRequest')->middleware('access:staff_requests.write&staff_requests.review')->name('reject');
+        });
+    });
+    Route::bulkActions('staff_requests', 'requests')->middleware('access:staff_requests.write&staff_requests.review');
+    Route::dataTransfer('staff_requests', 'requests');
+
+    // HR switches: late excuse requests, overtime requests and the overtime pay per hour
+    Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function (): void {
+        Route::middleware(['access:settings.read_all', 'throttle:read'])->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::get('{key}', 'show')->name('show');
+        });
+        Route::put('{key}', 'update')->middleware(['access:settings.write', 'throttle:sensitive'])->name('update');
+    });
 
     // Payroll (runs behind 2FA; staff read their own payslips)
     Route::controller(PayrollController::class)->group(function (): void {

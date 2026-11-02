@@ -22,6 +22,7 @@ use App\Modules\HR\Employees\Exceptions\EmployeeTerminatedException;
 use App\Modules\HR\Employees\Models\Employee;
 use App\Modules\HR\Leaves\Models\LeaveRequest;
 use App\Modules\HR\Payroll\Models\PayrollRun;
+use App\Modules\HR\Support\AttendancePay;
 use App\Modules\HR\Support\WorkCalendar;
 use App\Modules\Identity\Notifications\Contracts\NotificationServiceInterface;
 use App\Shared\Access\OwnershipScope;
@@ -31,6 +32,7 @@ use App\Shared\Exceptions\SelfApprovalException;
 use App\Shared\Query\ApplyListQuery;
 use App\Shared\Query\ListQuery;
 use App\Shared\Support\ClinicClock;
+use App\Shared\Support\MoneyHelper;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -53,6 +55,7 @@ final class AttendanceService implements AttendanceServiceInterface
         private readonly ClinicClock $clock,
         private readonly WorkCalendar $calendar,
         private readonly NotificationServiceInterface $notifications,
+        private readonly AttendancePay $pay,
     ) {}
 
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator
@@ -143,7 +146,7 @@ final class AttendanceService implements AttendanceServiceInterface
                     'status' => $data->status ?? AttendanceStatus::Absent,
                 ]);
             }
-            $row->fill(['source' => AttendanceSource::Manual, 'notes' => $data->reason, 'overtime_approved' => false, 'needs_review' => false])->save();
+            $row->fill(['source' => AttendanceSource::Manual, 'notes' => $data->reason, 'overtime_approved' => false, 'overtime_amount' => null, 'late_excused' => false, 'needs_review' => false])->save();
 
             return $row->load(['employee.person', 'employee.shift']);
         });
@@ -160,10 +163,32 @@ final class AttendanceService implements AttendanceServiceInterface
             if (! $row->hasPendingOvertime()) {
                 throw new InvalidStateTransitionException(context: ['from' => $row->overtime_approved ? 'approved' : 'none', 'to' => 'approved']);
             }
-            $row->forceFill(['overtime_approved' => true])->save();
+            $row->forceFill(['overtime_approved' => true, 'overtime_amount' => $this->pay->overtime($row->loadMissing('employee')->employee, $row->overtime_minutes)])->save();
 
             return $row->load(['employee.person', 'employee.shift']);
         });
+    }
+
+    public function excuseLate(Attendance $attendance): Attendance
+    {
+        return DB::transaction(function () use ($attendance): Attendance {
+            $row = Attendance::query()->lockForUpdate()->findOrFail($attendance->id);
+            if ($row->employee_id === Auth::id()) {
+                throw new SelfApprovalException;
+            }
+            $this->assertUnlocked($row->date, $row);
+            if ($row->late_minutes === 0 || $row->late_excused) {
+                throw new InvalidStateTransitionException(context: ['from' => $row->late_excused ? 'excused' : 'on_time', 'to' => 'excused']);
+            }
+            $row->forceFill(['late_excused' => true])->save();
+
+            return $row->load(['employee.person', 'employee.shift']);
+        });
+    }
+
+    public function assertEditable(Attendance $attendance): void
+    {
+        $this->assertUnlocked($attendance->date, $attendance);
     }
 
     public function monthlySummary(Employee $employee, int $year, int $month): AttendanceSummaryData
@@ -176,6 +201,7 @@ final class AttendanceService implements AttendanceServiceInterface
         $count = fn (AttendanceStatus ...$statuses): BigDecimal => BigDecimal::of($rows->filter(fn (Attendance $a): bool => in_array($a->status, $statuses, true))->count());
         $halfDays = $count(AttendanceStatus::HalfDay)->multipliedBy($half);
         [$paidLeave, $unpaidLeave] = $this->leaveDays($employee, $from, $to);
+        $approved = $rows->where('overtime_approved', true)->where('overtime_minutes', '>', 0);
 
         return new AttendanceSummaryData(
             workingDays: count($this->calendar->workingDays($employee, $from, $to)),
@@ -184,8 +210,11 @@ final class AttendanceService implements AttendanceServiceInterface
             paidLeaveDays: (string) $paidLeave->toScale(1),
             unpaidLeaveDays: (string) $unpaidLeave->toScale(1),
             lateMinutes: (int) $rows->sum('late_minutes'),
-            approvedOvertimeMinutes: (int) $rows->where('overtime_approved', true)->sum('overtime_minutes'),
+            approvedOvertimeMinutes: (int) $approved->sum('overtime_minutes'),
             pendingOvertimeMinutes: (int) $rows->where('overtime_approved', false)->sum('overtime_minutes'),
+            unexcusedLateMinutes: (int) $rows->where('late_excused', false)->sum('late_minutes'),
+            // Priced when approved; days approved before amounts were kept are priced now.
+            approvedOvertimeAmount: MoneyHelper::sum(MoneyHelper::zero(), ...$approved->map(fn (Attendance $a) => $a->overtime_amount ?? $this->pay->overtime($employee, $a->overtime_minutes))->all()),
         );
     }
 

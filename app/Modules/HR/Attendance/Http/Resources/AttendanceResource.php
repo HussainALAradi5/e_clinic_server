@@ -6,6 +6,7 @@ namespace App\Modules\HR\Attendance\Http\Resources;
 
 use App\Modules\HR\Attendance\Models\Attendance;
 use App\Shared\Http\Resources\Summary;
+use App\Shared\Support\MoneyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,6 +38,8 @@ final class AttendanceResource extends JsonResource
             'late_minutes' => $this->late_minutes,
             'overtime_minutes' => $this->overtime_minutes,
             'overtime_approved' => $this->overtime_approved,
+            'overtime_amount' => $this->overtime_amount === null ? null : MoneyHelper::toApi($this->overtime_amount),
+            'late_excused' => $this->late_excused,
             'status' => $this->status->value,
             'source' => $this->source->value,
             'notes' => $this->notes,

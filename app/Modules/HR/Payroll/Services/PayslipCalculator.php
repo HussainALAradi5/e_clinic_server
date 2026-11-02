@@ -6,11 +6,14 @@ namespace App\Modules\HR\Payroll\Services;
 
 use App\Enums\HR\PayslipItemType;
 use App\Enums\HR\SalaryComponentType;
+use App\Enums\HR\SettingKey;
 use App\Modules\HR\Attendance\Contracts\AttendanceServiceInterface;
 use App\Modules\HR\Employees\Models\Employee;
 use App\Modules\HR\Employees\Models\EmployeeSalaryComponent;
 use App\Modules\HR\Payroll\Data\AppliedDeductions;
 use App\Modules\HR\Payroll\Data\PayslipLine;
+use App\Modules\HR\Settings\Contracts\SettingServiceInterface;
+use App\Modules\HR\Support\AttendancePay;
 use App\Shared\Support\MoneyHelper;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -20,12 +23,16 @@ use Illuminate\Support\Facades\Config;
 
 /**
  * One employee's month: basic (pro-rated by calendar days for joiners and leavers), allowances, approved overtime,
- * then absences, unpaid leave, social insurance (by nationality), other deductions and last month's carried shortfall.
+ * then absences, unexcused late arrivals (when HR uses late excuses), unpaid leave, social insurance (by nationality), other deductions and last month's carried shortfall.
  * Money stays exact (BigDecimal, half-up to fils).
  */
 final class PayslipCalculator
 {
-    public function __construct(private readonly AttendanceServiceInterface $attendance) {}
+    public function __construct(
+        private readonly AttendanceServiceInterface $attendance,
+        private readonly SettingServiceInterface $settings,
+        private readonly AttendancePay $pay,
+    ) {}
 
     /**
      * Payslip columns and lines, or null when the employee did not work for the clinic that month.
@@ -61,10 +68,15 @@ final class PayslipCalculator
                 $other[] = new PayslipLine(PayslipItemType::Deduction, $component->name, $amount);
             }
         }
+        // Each approved day keeps the amount it was priced at (HR rate per hour, or hourly wage × multiplier).
         $overtimeHours = BigDecimal::of($summary->approvedOvertimeMinutes)->dividedBy(60, 6, RoundingMode::HALF_UP);
-        $hourly = $daily->dividedBy(Config::integer('hr.payroll.hours_per_day'), 6, RoundingMode::HALF_UP);
-        $overtime = $this->money($hourly->multipliedBy(Config::string('hr.payroll.overtime_multiplier'))->multipliedBy($overtimeHours));
+        $overtime = $summary->approvedOvertimeAmount;
         $lines[] = new PayslipLine(PayslipItemType::Overtime, __('Overtime (:hours h)', ['hours' => (string) $overtimeHours->toScale(2, RoundingMode::HALF_UP)]), $overtime);
+
+        // With late excuses on, late minutes HR did not excuse are deducted at the hourly wage.
+        if ($this->settings->enabled(SettingKey::LateExcuse) && $summary->unexcusedLateMinutes > 0) {
+            $lines[] = new PayslipLine(PayslipItemType::Lateness, __('Late arrival (:minutes min)', ['minutes' => $summary->unexcusedLateMinutes]), $this->pay->lateness($employee, $summary->unexcusedLateMinutes));
+        }
 
         $absence = $this->money($daily->multipliedBy($summary->absentDays));
         $unpaid = $this->money($daily->multipliedBy($summary->unpaidLeaveDays));
@@ -81,7 +93,7 @@ final class PayslipCalculator
 
         $sum = fn (PayslipItemType ...$types): Money => MoneyHelper::sum(...array_map(fn (PayslipLine $l): Money => $l->amount, array_filter($lines, fn (PayslipLine $l): bool => in_array($l->type, $types, true))));
         $gross = $sum(PayslipItemType::Basic, PayslipItemType::Allowance, PayslipItemType::Overtime);
-        $applied = AppliedDeductions::of($gross, $sum(PayslipItemType::Absence, PayslipItemType::UnpaidLeave), $sum(PayslipItemType::SocialInsurance), $sum(PayslipItemType::Deduction, PayslipItemType::Adjustment));
+        $applied = AppliedDeductions::of($gross, $sum(PayslipItemType::Absence, PayslipItemType::Lateness, PayslipItemType::UnpaidLeave), $sum(PayslipItemType::SocialInsurance), $sum(PayslipItemType::Deduction, PayslipItemType::Adjustment));
 
         return [
             'values' => [

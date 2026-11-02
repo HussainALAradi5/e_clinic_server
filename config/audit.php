@@ -25,6 +25,8 @@ use App\Modules\HR\Leaves\Models\LeaveRequest;
 use App\Modules\HR\Leaves\Models\LeaveType;
 use App\Modules\HR\Payroll\Models\PayrollRun;
 use App\Modules\HR\Payroll\Models\Payslip;
+use App\Modules\HR\Requests\Models\StaffRequest;
+use App\Modules\HR\Settings\Models\Setting;
 use App\Modules\Identity\Attachments\Models\Attachment;
 use App\Modules\Identity\Notifications\Models\Notification;
 use App\Modules\Identity\Roles\Models\Role;
@@ -89,6 +91,8 @@ return [
         'leave_type' => LeaveType::class,
         'leave_request' => LeaveRequest::class,
         'payroll_run' => PayrollRun::class,
+        'staff_request' => StaffRequest::class,
+        'setting' => Setting::class,
         'payslip' => Payslip::class,
         'billable_service' => BillableService::class,
         'patient' => Patient::class,

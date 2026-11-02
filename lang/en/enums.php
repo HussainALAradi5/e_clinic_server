@@ -14,6 +14,12 @@ return [
     'BubbleColor' => ['blue' => 'Blue', 'green' => 'Green', 'teal' => 'Teal', 'purple' => 'Purple', 'rose' => 'Rose', 'slate' => 'Slate'],
     'TicketConfirmation' => ['awaiting' => 'Awaiting confirmation', 'confirmed' => 'Confirmed fixed', 'declined' => 'Declined — not fixed'],
     'TicketCategory' => ['technical' => 'Technical problem', 'access' => 'Access & accounts', 'equipment' => 'Equipment', 'data' => 'Wrong data', 'other' => 'Other'],
+    'StaffRequestType' => ['late_excuse' => 'Late excuse', 'overtime' => 'Overtime'],
+    'SettingKey' => ['late_excuse' => 'Late excuse requests', 'overtime' => 'Overtime requests'],
+    'SettingKeyHelp' => [
+        'late_excuse' => 'Late arrivals are deducted from pay unless the employee sends an excuse and HR accepts it. Off: lateness is only recorded.',
+        'overtime' => 'Overtime is paid only after the employee sends a request and HR approves it, at the pay per hour below (empty: hourly wage × 1.25). Off: HR approves overtime directly.',
+    ],
     'ApprovalStatus' => ['draft' => 'Draft', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled'],
     'SortDirection' => ['asc' => 'Ascending', 'desc' => 'Descending'],
     'Currency' => ['BHD' => 'Bahraini Dinar', 'USD' => 'US Dollar', 'SAR' => 'Saudi Riyal'],

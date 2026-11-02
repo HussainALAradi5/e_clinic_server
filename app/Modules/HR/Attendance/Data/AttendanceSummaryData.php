@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\HR\Attendance\Data;
 
+use App\Shared\Support\MoneyHelper;
+use Brick\Money\Money;
+
 /**
  * One employee's month as payroll needs it (days within their employment only).
  */
@@ -18,10 +21,12 @@ final readonly class AttendanceSummaryData
         public int $lateMinutes,
         public int $approvedOvertimeMinutes,
         public int $pendingOvertimeMinutes,
+        public int $unexcusedLateMinutes,
+        public Money $approvedOvertimeAmount,
     ) {}
 
     /**
-     * @return array<string, int|string>
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
@@ -34,6 +39,8 @@ final readonly class AttendanceSummaryData
             'late_minutes' => $this->lateMinutes,
             'approved_overtime_minutes' => $this->approvedOvertimeMinutes,
             'pending_overtime_minutes' => $this->pendingOvertimeMinutes,
+            'unexcused_late_minutes' => $this->unexcusedLateMinutes,
+            'approved_overtime_amount' => MoneyHelper::toApi($this->approvedOvertimeAmount),
         ];
     }
 }

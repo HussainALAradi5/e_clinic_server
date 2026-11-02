@@ -168,6 +168,8 @@ return [
         HR\AttendanceSource::class,
         HR\PayrollStatus::class,
         HR\PayslipItemType::class,
+        HR\StaffRequestType::class,
+        HR\SettingKey::class,
         Payments\ServiceCategory::class,
         Payments\InvoiceStatus::class,
         Payments\PaymentStatus::class,

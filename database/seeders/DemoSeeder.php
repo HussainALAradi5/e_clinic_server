@@ -149,6 +149,8 @@ final class DemoSeeder extends Seeder
         $this->call(PharmacyDemoSeeder::class);
         $this->call(HrDemoSeeder::class);
         $this->call(ShiftDemoSeeder::class);
+        // Late excuse and overtime requests (switched on), waiting, approved and rejected.
+        $this->call(StaffRequestDemoSeeder::class);
         // Ten weeks of visits, results, prescriptions, payments and expenses, plus three weeks of bookings ahead.
         $this->call(HistoryDemoSeeder::class);
         // Staff chat: groups with leaders, one-to-one chats, files, a voice note, mentions and reactions.

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\HR\Attendance\Http\Controllers;
 
+use App\Enums\HR\SettingKey;
 use App\Modules\HR\Attendance\Contracts\AttendanceServiceInterface;
+use App\Modules\HR\Attendance\Exceptions\OvertimeNeedsRequestException;
 use App\Modules\HR\Attendance\Http\Requests\ClockRequest;
 use App\Modules\HR\Attendance\Http\Requests\ManualAttendanceRequest;
 use App\Modules\HR\Attendance\Http\Resources\AttendanceResource;
 use App\Modules\HR\Attendance\Models\Attendance;
+use App\Modules\HR\Settings\Contracts\SettingServiceInterface;
 use App\Modules\HR\Support\StaffMember;
 use App\Shared\Access\OwnershipScope;
 use App\Shared\Http\Concerns\ApiResponse;
@@ -64,8 +67,12 @@ final class AttendanceController
         return $this->ok(new AttendanceResource($this->attendance->recordManual($request->toData())));
     }
 
-    public function approveOvertime(string $attendance): JsonResponse
+    public function approveOvertime(string $attendance, SettingServiceInterface $settings): JsonResponse
     {
+        // With overtime requests on, overtime is approved through the employee's request (one way to approve it).
+        if ($settings->enabled(SettingKey::Overtime)) {
+            throw new OvertimeNeedsRequestException;
+        }
         $row = OwnershipScope::apply(Attendance::query(), 'attendance', Auth::user())->findOrFail($attendance);
 
         return $this->ok(new AttendanceResource($this->attendance->approveOvertime($row)));
