@@ -55,6 +55,8 @@ it('maps framework exceptions to stable codes', function () {
         ->assertJsonPath('error_code', 'VALIDATION_FAILED')
         ->assertJsonStructure(['errors' => ['name']]);
     $this->getJson('/api/v1/_test/auth')->assertStatus(401)->assertJsonPath('error_code', 'UNAUTHENTICATED');
+    // A plain browser call (no Accept: json) is not redirected to a login page that does not exist.
+    $this->get('/api/v1/_test/auth')->assertStatus(401)->assertJsonPath('error_code', 'UNAUTHENTICATED');
     $this->getJson('/api/v1/_test/missing')->assertStatus(404)->assertJsonPath('error_code', 'NOT_FOUND');
 });
 

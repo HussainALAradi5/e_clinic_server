@@ -24,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withBroadcasting(__DIR__.'/../routes/channels.php', ['prefix' => 'api/v1', 'middleware' => ['auth:sanctum']])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignRequestId::class);
+        // An API without a login page: signed-out calls get 401 JSON, never a redirect (even without Accept: json).
+        $middleware->redirectGuestsTo(fn (): ?string => null);
         $middleware->api(append: [SecurityHeaders::class]);
         $middleware->alias([
             CheckAccess::ALIAS => CheckAccess::class,
