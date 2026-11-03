@@ -98,9 +98,10 @@ final class WebPushService implements WebPushServiceInterface
     }
 
     /**
-     * What the browser shows: title, text, and the inbox to open on a tap. `tag` keeps one entry per message.
+     * What the browser shows: title, text, and the inbox to open on a tap. `tag` keeps one entry per message;
+     * `template` lets the client pick the kind's colour and sound.
      *
-     * @return array{title: string, body: string, url: string, tag: string}
+     * @return array{title: string, body: string, url: string, tag: string, template: string}
      */
     private function payload(Notification $notification): array
     {
@@ -112,6 +113,7 @@ final class WebPushService implements WebPushServiceInterface
             'body' => $notification->body,
             'url' => (string) ($urls[$patient ? 'patient' : 'staff'] ?? '/'),
             'tag' => $notification->id,
+            'template' => $notification->template,
         ];
     }
 }
