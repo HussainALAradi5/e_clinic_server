@@ -98,6 +98,7 @@ class Appointment extends BaseModel implements Chargeable, OwnedByUser
             ->column('code', 'Code')
             ->column('scheduled_date', 'Date')
             ->column('start_time', 'Time')
+            ->column('timing', 'When')
             ->column('patient', 'Patient')
             ->column('provider', 'Doctor / therapist')
             ->column('type', 'Type')
