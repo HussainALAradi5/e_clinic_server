@@ -23,8 +23,8 @@ return [
     /* Slot length when neither the schedule block nor the doctor sets one. */
     'default_slot_minutes' => 15,
 
-    /* Reminder sent this many hours before the start. */
-    'reminder_hours_before' => 24,
+    /* Reminders sent this many hours before the start: three days ahead and the day before. */
+    'reminder_hours_before' => [72, 24],
 
     /* Treatment plans. */
     'treatments' => [

@@ -47,7 +47,7 @@ final class NotificationService implements NotificationServiceInterface
     public function send(string $template, Person $to, ?Model $related = null, array $data = [], ?CarbonImmutable $at = null, ?array $channels = null): Collection
     {
         $at ??= $this->clock->now();
-        $channels ??= array_map(NotificationChannel::from(...), (array) Config::get("notifications.templates.{$template}.channels", [NotificationChannel::InApp->value]));
+        $channels ??= array_map(NotificationChannel::from(...), $this->defaultChannels($template));
         $ignoresOptOut = in_array($template, (array) Config::get('notifications.security_templates', []), true);
         $locale = in_array($to->language, ['en', 'ar'], true) ? $to->language : 'en';
         $user = $to->user;
@@ -256,6 +256,19 @@ final class NotificationService implements NotificationServiceInterface
                 ? $this->appOf($user)->value
                 : false,
         };
+    }
+
+    /**
+     * The template's channels from config. Template names contain dots (`appointment.booked`), so they are read
+     * from the templates array, not with a dotted config key (which would split the name).
+     *
+     * @return list<string>
+     */
+    private function defaultChannels(string $template): array
+    {
+        $templates = (array) Config::get('notifications.templates', []);
+
+        return array_values((array) ($templates[$template]['channels'] ?? [NotificationChannel::InApp->value]));
     }
 
     private function appOf(User $user): MobileApp

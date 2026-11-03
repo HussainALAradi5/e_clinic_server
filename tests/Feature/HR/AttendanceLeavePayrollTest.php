@@ -271,7 +271,8 @@ it('calculates, approves (posting the accrual) and pays a month of salaries, wit
     $this->postJson("/api/v1/hr/payroll-runs/{$run}/mark-paid", ['reference' => 'WPS-2026-10'])->assertOk()
         ->assertJsonPath('data.status', 'paid')->assertJsonPath('data.payment_reference', 'WPS-2026-10');
     $this->postJson("/api/v1/hr/payroll-runs/{$run}/cancel", ['reason' => 'Too late'])->assertStatus(409);
-    expect(AppNotification::query()->where('template', 'payroll.payslip_ready')->count())->toBe(3);
+    expect(AppNotification::query()->where('template', 'payroll.payslip_ready')->where('channel', 'in_app')->count())->toBe(3)
+        ->and(AppNotification::query()->where('template', 'payroll.payslip_ready')->where('channel', 'email')->count())->toBe(3);
 });
 
 it('cancels an approved run by reversing its accrual, and carries a shortfall to the next month', function () {

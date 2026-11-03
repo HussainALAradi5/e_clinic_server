@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Config;
 
 /**
  * Patient messages of the booking lifecycle (minimum PHI: date, time, provider). A booking also queues its
- * reminder; cancelling or moving it cancels the queued reminder. Runs after commit (a rolled-back booking sends nothing).
+ * reminders (three days and one day before, those still ahead); cancelling or moving it cancels the queued reminder. Runs after commit (a rolled-back booking sends nothing).
  */
 final class SendAppointmentNotifications implements ShouldHandleEventsAfterCommit
 {
@@ -36,9 +36,11 @@ final class SendAppointmentNotifications implements ShouldHandleEventsAfterCommi
         $template = $appointment->rescheduled_from_id !== null ? 'appointment.rescheduled' : 'appointment.booked';
         $this->notifications->send($template, $appointment->patient->person, $appointment, $this->data($appointment));
 
-        $remindAt = $appointment->startsAt()->subHours(Config::integer('appointments.reminder_hours_before'));
-        if ($remindAt->isFuture()) {
-            $this->notifications->send('appointment.reminder', $appointment->patient->person, $appointment, $this->data($appointment), $remindAt);
+        foreach ((array) Config::get('appointments.reminder_hours_before', [24]) as $hours) {
+            $remindAt = $appointment->startsAt()->subHours((int) $hours);
+            if ($remindAt->isFuture()) {
+                $this->notifications->send('appointment.reminder', $appointment->patient->person, $appointment, $this->data($appointment), $remindAt);
+            }
         }
     }
 

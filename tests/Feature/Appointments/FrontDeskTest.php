@@ -3,13 +3,16 @@
 use App\Enums\Appointments\RoomType;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
+use App\Events\Appointments\AppointmentBooked;
 use App\Interfaces\Appointments\AppointmentServiceInterface;
+use App\Listeners\Appointments\SendAppointmentNotifications;
 use App\Models\Appointments\Appointment;
 use App\Models\Appointments\Doctor;
 use App\Models\Identity\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
@@ -196,4 +199,26 @@ it('shows people by role: a doctor their own patients and staff, HR staff only, 
 
     Sanctum::actingAs(User::factory()->state(['id' => $mine->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
     expect($seen())->toBe([$mine->id]);
+});
+
+it('queues reminders three days and one day before a visit, only those still ahead', function () {
+    receptionist();
+    $doctor = FrontDesk::doctor();
+    $patient = FrontDesk::patient();
+    $patient->person->update(['phone' => '+97336550001']);
+    // The listener runs after commit; the test's own transaction never commits, so it is called here.
+    $notify = fn (string $id) => app(SendAppointmentNotifications::class)->handle(new AppointmentBooked(Appointment::query()->findOrFail($id)));
+    $reminders = fn (string $id) => DB::table('notifications')->where('related_id', $id)->where('template', 'appointment.reminder')
+        ->where('channel', 'sms')->orderBy('scheduled_for')->pluck('scheduled_for')
+        ->map(fn ($at) => CarbonImmutable::parse($at)->format('Y-m-d H:i'))->all();
+
+    // Thursday 5 Nov at 09:00: both reminders are ahead.
+    $later = book(booking($doctor, $patient->id, ['scheduled_date' => '2026-11-05']))->assertCreated()->json('data.id');
+    $notify($later);
+    expect($reminders($later))->toBe(['2026-11-02 09:00', '2026-11-04 09:00']);
+
+    // Tomorrow at 10:00: three days before is already past, only the day-before one is queued.
+    $soon = book(booking($doctor, $patient->id, ['scheduled_date' => '2026-11-02', 'start_time' => '10:00']))->assertCreated()->json('data.id');
+    $notify($soon);
+    expect($reminders($soon))->toBe(['2026-11-01 10:00']);
 });
