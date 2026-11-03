@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Appointments;
 
 use App\Models\Appointments\Appointment;
+use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\MoneyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -55,6 +56,7 @@ final class AppointmentResource extends JsonResource
                 'price' => MoneyHelper::toApi($this->billableService->price),
             ]),
             'status' => $this->status->value,
+            'timing' => $this->timing(app(ClinicClock::class)->today())->value,
             'allowed_transitions' => array_map(fn ($s): string => $s->value, $this->status::transitions()[$this->status->value]),
             'is_attended' => $this->is_attended,
             'source' => $this->source->value,

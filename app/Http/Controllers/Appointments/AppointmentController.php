@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Appointments;
 use App\Dtos\Appointments\CalendarQueryData;
 use App\Dtos\Appointments\SlotData;
 use App\Enums\Appointments\AppointmentType;
+use App\Enums\Appointments\VisitTiming;
 use App\Http\Concerns\ApiResponse;
 use App\Http\Requests\Appointments\BookAppointmentRequest;
 use App\Http\Requests\Appointments\CancelAppointmentRequest;
@@ -31,9 +32,11 @@ final class AppointmentController
 
     public function index(Request $request): JsonResponse
     {
+        $request->validate(['timing' => ['nullable', Rule::enum(VisitTiming::class)]]);
         $query = ListQuery::fromRequest($request, Appointment::listQueryConfig());
+        $timing = $request->filled('timing') ? VisitTiming::from($request->string('timing')->toString()) : null;
 
-        return $this->paginated(AppointmentResource::collection($this->appointments->list($query)), $query);
+        return $this->paginated(AppointmentResource::collection($this->appointments->list($query, $timing)), $query);
     }
 
     public function calendar(Request $request): JsonResponse

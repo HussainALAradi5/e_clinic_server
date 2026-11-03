@@ -14,6 +14,7 @@ use App\Dtos\Appointments\WorkingWindow;
 use App\Enums\Appointments\AppointmentSource;
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Appointments\AppointmentType;
+use App\Enums\Appointments\VisitTiming;
 use App\Enums\HR\EmployeeStatus;
 use App\Enums\Identity\UserType;
 use App\Events\Appointments\AppointmentBooked;
@@ -71,9 +72,14 @@ final class AppointmentService implements AppointmentServiceInterface
         private readonly ConsentServiceInterface $consents,
     ) {}
 
-    public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator
+    public function list(ListQuery $query, ?VisitTiming $timing = null): LengthAwarePaginator|CursorPaginator
     {
-        return $this->listQuery->paginate($this->appointments(), $query);
+        $appointments = $this->appointments();
+        if ($timing !== null) {
+            $appointments->timing($timing, $this->clock->today());
+        }
+
+        return $this->listQuery->paginate($appointments, $query);
     }
 
     public function calendar(CalendarQueryData $query): Collection

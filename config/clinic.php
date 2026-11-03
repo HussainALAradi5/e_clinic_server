@@ -183,6 +183,7 @@ return [
         Appointments\AppointmentType::class,
         Appointments\AppointmentStatus::class,
         Appointments\AppointmentSource::class,
+        Appointments\VisitTiming::class,
         Appointments\CancelledBy::class,
         Appointments\TreatmentType::class,
         Appointments\TreatmentPriority::class,

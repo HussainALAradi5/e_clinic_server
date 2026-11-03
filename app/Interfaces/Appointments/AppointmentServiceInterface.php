@@ -11,6 +11,7 @@ use App\Dtos\Appointments\CompleteAppointmentData;
 use App\Dtos\Appointments\RescheduleData;
 use App\Dtos\Appointments\SlotData;
 use App\Enums\Appointments\AppointmentType;
+use App\Enums\Appointments\VisitTiming;
 use App\Models\Appointments\Appointment;
 use App\Models\HR\Employee;
 use App\Models\Identity\AuditLog;
@@ -27,7 +28,7 @@ interface AppointmentServiceInterface
      *
      * @return LengthAwarePaginator<int, Appointment>|CursorPaginator<int, Appointment>
      */
-    public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator;
+    public function list(ListQuery $query, ?VisitTiming $timing = null): LengthAwarePaginator|CursorPaginator;
 
     /**
      * Bookings of providers / rooms in a range (≤ 31 days), cancelled and rescheduled ones left out.

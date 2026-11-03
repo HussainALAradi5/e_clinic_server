@@ -9,6 +9,7 @@ use App\Enums\Appointments\AppointmentSource;
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Appointments\AppointmentType;
 use App\Enums\Appointments\CancelledBy;
+use App\Enums\Appointments\VisitTiming;
 use App\Interfaces\Shared\Chargeable;
 use App\Interfaces\Shared\OwnedByUser;
 use App\Models\Base\BaseModel;
@@ -137,6 +138,38 @@ class Appointment extends BaseModel implements Chargeable, OwnedByUser
             ->whereIn('status', AppointmentStatus::slotHoldingValues())
             ->where('start_time', '<', $end)
             ->where('end_time', '>', $start);
+    }
+
+    /** Coming, today, past or missed (a no-show), seen from [today] (clinic date). */
+    public function timing(CarbonImmutable $today): VisitTiming
+    {
+        $date = $this->scheduled_date->toDateString();
+
+        return match (true) {
+            $this->status === AppointmentStatus::NoShow => VisitTiming::Missed,
+            $date === $today->toDateString() => VisitTiming::Today,
+            $date > $today->toDateString() => VisitTiming::Coming,
+            default => VisitTiming::Past,
+        };
+    }
+
+    /**
+     * Bookings of one [timing], seen from [today] (clinic date); the same rule as timing().
+     *
+     * @param  Builder<Appointment>  $query
+     * @return Builder<Appointment>
+     */
+    public function scopeTiming(Builder $query, VisitTiming $timing, CarbonImmutable $today): Builder
+    {
+        $date = $today->toDateString();
+        $noShow = AppointmentStatus::NoShow->value;
+
+        return match ($timing) {
+            VisitTiming::Missed => $query->where('status', $noShow),
+            VisitTiming::Today => $query->whereDate('scheduled_date', $date)->where('status', '!=', $noShow),
+            VisitTiming::Coming => $query->whereDate('scheduled_date', '>', $date)->where('status', '!=', $noShow),
+            VisitTiming::Past => $query->whereDate('scheduled_date', '<', $date)->where('status', '!=', $noShow),
+        };
     }
 
     public function chargePatientId(): string

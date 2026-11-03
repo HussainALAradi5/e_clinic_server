@@ -222,3 +222,25 @@ it('queues reminders three days and one day before a visit, only those still ahe
     $notify($soon);
     expect($reminders($soon))->toBe(['2026-11-01 10:00']);
 });
+
+it('tells coming, today, past and missed visits apart, and filters by them', function () {
+    receptionist();
+    $doctor = FrontDesk::doctor();
+    $patient = FrontDesk::patient();
+    $today = book(booking($doctor, $patient->id, ['scheduled_date' => '2026-11-01', 'start_time' => '10:00']))->json('data.id');
+    $coming = book(booking($doctor, $patient->id, ['scheduled_date' => '2026-11-03']))->json('data.id');
+    $past = book(booking($doctor, $patient->id, ['scheduled_date' => '2026-11-04']))->json('data.id');
+    $missed = book(booking($doctor, $patient->id, ['scheduled_date' => '2026-11-05']))->json('data.id');
+    // Two of them move into the past (one done, one the patient never came to).
+    Appointment::query()->whereKey($past)->update(['scheduled_date' => '2026-10-20', 'status' => 'completed']);
+    Appointment::query()->whereKey($missed)->update(['scheduled_date' => '2026-10-21', 'status' => 'no_show']);
+
+    $this->getJson("/api/v1/appointments/{$coming}")->assertOk()->assertJsonPath('data.timing', 'coming');
+    $ids = fn (string $timing) => collect($this->getJson("/api/v1/appointments?timing={$timing}")->assertOk()->json('data'))->pluck('id')->all();
+    expect($ids('today'))->toBe([$today])
+        ->and($ids('coming'))->toBe([$coming])
+        ->and($ids('past'))->toBe([$past])
+        ->and($ids('missed'))->toBe([$missed]);
+    $this->getJson('/api/v1/appointments')->assertOk()->assertJsonCount(4, 'data');
+    $this->getJson('/api/v1/appointments?timing=later')->assertStatus(422);
+});
