@@ -12,7 +12,7 @@ use Illuminate\Support\Arr;
  */
 final readonly class PatientData
 {
-    private const FIELDS = ['blood_group', 'allergies', 'chronic_conditions', 'family_history', 'surgical_history', 'emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation', 'insurance_company_id', 'insurance_policy_number', 'insurance_expiry_date', 'insurance_coverage_percent', 'notes'];
+    private const FIELDS = ['blood_group', 'allergies', 'chronic_conditions', 'family_history', 'surgical_history', 'emergency_contacts', 'insurance_company_id', 'insurance_policy_number', 'insurance_expiry_date', 'insurance_coverage_percent', 'notes'];
 
     /**
      * @param  array<string, mixed>  $values
@@ -30,6 +30,9 @@ final readonly class PatientData
     public static function fromArray(array $input): self
     {
         $values = array_map(fn (mixed $v): mixed => $v === '' ? null : $v, Arr::only($input, self::FIELDS));
+        if (array_key_exists('emergency_contacts', $values)) {
+            $values['emergency_contacts'] = EmergencyContactData::normalise($values['emergency_contacts']);
+        }
         if (isset($values['insurance_coverage_percent'])) {
             $values['insurance_coverage_percent'] = (string) $values['insurance_coverage_percent'];
         }

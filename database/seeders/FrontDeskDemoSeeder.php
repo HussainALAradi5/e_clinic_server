@@ -270,9 +270,12 @@ final class FrontDeskDemoSeeder extends Seeder
                 'blood_group' => $groups[$i % count($groups)],
                 'allergies' => $i % 5 === 0 ? 'Penicillin' : null,
                 'chronic_conditions' => $i % 7 === 0 ? 'Type 2 diabetes' : null,
-                'emergency_contact_name' => fake()->name(),
-                'emergency_contact_phone' => '+9733'.fake()->numerify('#######'),
-                'emergency_contact_relation' => fake()->randomElement(['Spouse', 'Parent', 'Sibling', 'Child']),
+                // One to three emergency contacts.
+                'emergency_contacts' => array_map(fn (): array => [
+                    'name' => fake()->name(),
+                    'relation' => fake()->randomElement(['Spouse', 'Parent', 'Sibling', 'Child']),
+                    'phone' => '+9733'.fake()->numerify('#######'),
+                ], range(1, 1 + $i % 3)),
                 'insurance_company_id' => $insurers !== [] && $i % 3 === 0 ? $insurers[$i % count($insurers)] : null,
                 'insurance_policy_number' => $i % 3 === 0 ? 'POL-'.fake()->numerify('######') : null,
                 'insurance_expiry_date' => $i % 3 === 0 ? CarbonImmutable::today()->addMonths(8) : null,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Appointments;
 
+use App\Dtos\Appointments\EmergencyContactData;
 use App\Dtos\Appointments\PatientData;
 use App\Dtos\Identity\PersonData;
 use App\Dtos\Reference\AddressData;
@@ -12,13 +13,13 @@ use Illuminate\Validation\Rule;
 
 /**
  * PUT /portal/profile — what a patient may change about themselves: how to reach them (phone, email, address,
- * language, channels) and their emergency contact. Name, birth date, ID and insurance stay with the front desk.
+ * language, channels) and their emergency contacts (up to three). Name, birth date, ID and insurance stay with the front desk.
  */
 final class PortalProfileRequest extends FormRequest
 {
     private const PERSON = ['phone', 'email', 'language', 'notification_opt_out', 'address'];
 
-    private const PATIENT = ['emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relation'];
+    private const PATIENT = ['emergency_contacts'];
 
     /**
      * @return array<string, mixed>
@@ -34,9 +35,7 @@ final class PortalProfileRequest extends FormRequest
             'notification_opt_out' => ['nullable', 'array'],
             'notification_opt_out.*' => ['string', Rule::in(['email', 'sms', 'whatsapp', 'push'])],
             ...AddressData::rules('address'),
-            'emergency_contact_name' => ['nullable', 'string', 'max:150'],
-            'emergency_contact_phone' => ['nullable', 'string', 'max:20', 'phone:INTERNATIONAL,BH'],
-            'emergency_contact_relation' => ['nullable', 'string', 'max:50'],
+            ...EmergencyContactData::rules(),
         ];
     }
 

@@ -130,10 +130,10 @@ it('lets patients update how to reach them and shows released results (with thei
     $profile = $this->getJson('/api/v1/portal/profile')->assertOk()->assertJsonMissingPath('data.notes')->json('data');
     $this->putJson('/api/v1/portal/profile', [
         'version' => $profile['version'], 'person_version' => $profile['person']['version'],
-        'phone' => '+97333112233', 'emergency_contact_name' => 'Sara Yousif', 'emergency_contact_phone' => '+97336001122',
+        'phone' => '+97333112233', 'emergency_contacts' => [['name' => 'Sara Yousif', 'relation' => 'Sister', 'phone' => '+97336001122'], ['phone' => '+97339002233']],
         'first_name' => 'Changed',
     ])->assertOk()
-        ->assertJsonPath('data.phone', '+97333112233')->assertJsonPath('data.emergency_contact_name', 'Sara Yousif')
+        ->assertJsonPath('data.phone', '+97333112233')->assertJsonPath('data.emergency_contacts.0.name', 'Sara Yousif')->assertJsonPath('data.emergency_contacts.1.name', null)
         ->assertJsonPath('data.person.first_name', $profile['person']['first_name']);
 
     $this->getJson("/api/v1/clinical-orders/{$result->id}")->assertOk()
@@ -150,4 +150,21 @@ it('lets patients update how to reach them and shows released results (with thei
     portalPost("/api/v1/billing/invoices/{$draft}/issue", [])->assertOk();
     portalSignIn($patient->id);
     $this->getJson('/api/v1/billing/invoices')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.status', 'issued');
+});
+
+it('keeps at most three emergency contacts, each with a valid phone; empty clears them', function () {
+    $patient = FrontDesk::patient();
+    Sanctum::actingAs(User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
+    $profile = fn () => $this->getJson('/api/v1/portal/profile')->assertOk()->json('data');
+    $save = fn (array $contacts) => $this->putJson('/api/v1/portal/profile', [
+        'version' => $profile()['version'], 'person_version' => $profile()['person']['version'], 'emergency_contacts' => $contacts,
+    ]);
+    $contact = fn (string $phone) => ['name' => 'Contact', 'phone' => $phone];
+
+    $save([$contact('+97336000001'), $contact('+97336000002'), $contact('+97336000003')])->assertOk()->assertJsonCount(3, 'data.emergency_contacts');
+    $save([$contact('+97336000001'), $contact('+97336000002'), $contact('+97336000003'), $contact('+97336000004')])
+        ->assertUnprocessable()->assertJsonValidationErrors('emergency_contacts');
+    $save([['name' => 'No phone']])->assertUnprocessable()->assertJsonValidationErrors('emergency_contacts.0.phone');
+    $save([$contact('12')])->assertUnprocessable()->assertJsonValidationErrors('emergency_contacts.0.phone');
+    $save([])->assertOk()->assertJsonCount(0, 'data.emergency_contacts');
 });

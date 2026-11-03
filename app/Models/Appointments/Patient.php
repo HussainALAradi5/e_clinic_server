@@ -34,9 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $chronic_conditions
  * @property ?string $family_history
  * @property ?string $surgical_history
- * @property ?string $emergency_contact_name
- * @property ?string $emergency_contact_phone
- * @property ?string $emergency_contact_relation
+ * @property ?list<array{name: ?string, relation: ?string, phone: string}> $emergency_contacts
  * @property ?string $insurance_company_id
  * @property ?string $insurance_policy_number
  * @property ?CarbonImmutable $insurance_expiry_date
@@ -151,6 +149,7 @@ class Patient extends Model implements Auditable, OwnedByUser
             'chronic_conditions' => 'encrypted',
             'family_history' => 'encrypted',
             'surgical_history' => 'encrypted',
+            'emergency_contacts' => 'encrypted:array',
             'insurance_expiry_date' => 'immutable_date',
             'insurance_coverage_percent' => 'decimal:2',
             'created_at' => 'immutable_datetime',

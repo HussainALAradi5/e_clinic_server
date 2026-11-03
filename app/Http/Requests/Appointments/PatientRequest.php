@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Appointments;
 
+use App\Dtos\Appointments\EmergencyContactData;
 use App\Dtos\Appointments\PatientData;
 use App\Enums\Appointments\BloodGroup;
 use App\Http\Requests\Identity\PersonRules;
@@ -28,9 +29,7 @@ final class PatientRequest extends FormRequest
             'chronic_conditions' => $history,
             'family_history' => $history,
             'surgical_history' => $history,
-            'emergency_contact_name' => ['nullable', 'string', 'max:150'],
-            'emergency_contact_phone' => ['nullable', 'string', 'max:20', 'phone:INTERNATIONAL,BH'],
-            'emergency_contact_relation' => ['nullable', 'string', 'max:50'],
+            ...EmergencyContactData::rules(),
             'insurance_company_id' => ['nullable', 'uuid'],
             'insurance_policy_number' => ['nullable', 'string', 'max:100'],
             'insurance_expiry_date' => ['nullable', 'date'],

@@ -250,9 +250,12 @@ final class TeamDemoSeeder extends Seeder
                 'blood_group' => $groups[$i % count($groups)],
                 'allergies' => [null, null, null, 'Penicillin', null, 'Peanuts', null, 'Sulfa drugs', null, null, 'Latex'][$i % 11],
                 'chronic_conditions' => [null, null, 'Hypertension', null, 'Type 2 diabetes', null, 'Asthma', null, null, 'Hypothyroidism'][$i % 10],
-                'emergency_contact_name' => fake()->name(),
-                'emergency_contact_phone' => '+9733'.fake()->numerify('#######'),
-                'emergency_contact_relation' => fake()->randomElement(['Spouse', 'Parent', 'Sibling', 'Child', 'Friend']),
+                // One to three emergency contacts.
+                'emergency_contacts' => array_map(fn (): array => [
+                    'name' => fake()->name(),
+                    'relation' => fake()->randomElement(['Spouse', 'Parent', 'Sibling', 'Child', 'Friend']),
+                    'phone' => '+9733'.fake()->numerify('#######'),
+                ], range(1, 1 + $i % 3)),
                 'insurance_company_id' => $insured ? $insurers[$i % count($insurers)] : null,
                 'insurance_policy_number' => $insured ? 'POL-'.fake()->numerify('#######') : null,
                 // A few policies have expired: the desk warns before billing the insurer.

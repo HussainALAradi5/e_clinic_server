@@ -68,8 +68,13 @@ final class PatientImport implements ImportDefinition
             }
         }
 
+        $contact = filled($row['emergency_contact_phone'] ?? null)
+            ? [['name' => $row['emergency_contact_name'] ?? null, 'relation' => $row['emergency_contact_relation'] ?? null, 'phone' => $row['emergency_contact_phone']]]
+            : [];
+
         return $this->patients->create(PatientData::fromArray([
             ...Arr::only($row, self::PATIENT_FIELDS),
+            'emergency_contacts' => $contact,
             'insurance_company_id' => $insurerId,
             'person' => Arr::except($row, self::PATIENT_FIELDS),
         ]));
