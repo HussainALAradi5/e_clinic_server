@@ -28,6 +28,20 @@ return [
         'in_app' => InAppChannel::class,
     ],
 
+    /*
+    | Web Push (browser notifications, no third party): VAPID keys of this server (`php artisan webpush:keys`).
+    | Every in-app message is also pushed to the person's browsers unless they turned `push` off.
+    | On Windows, PHP needs OPENSSL_CONF pointing at its openssl.cnf to make the encryption keys.
+    */
+    'webpush' => [
+        'public_key' => env('WEBPUSH_PUBLIC_KEY'),
+        'private_key' => env('WEBPUSH_PRIVATE_KEY'),
+        'subject' => env('WEBPUSH_SUBJECT', 'mailto:it@eclinic.bh'),
+        'ttl_seconds' => 86400,
+        /* Page a tap opens, by kind of account (the web client's inboxes). */
+        'inbox_urls' => ['patient' => '/portal/notifications', 'staff' => '/notifications'],
+    ],
+
     /* Log channel of the `log` driver (null = default). */
     'log_channel' => env('NOTIFICATIONS_LOG_CHANNEL'),
 

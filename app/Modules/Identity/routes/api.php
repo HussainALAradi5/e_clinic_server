@@ -10,6 +10,7 @@ use App\Http\Controllers\Identity\NotificationController;
 use App\Http\Controllers\Identity\ProfilePhotoController;
 use App\Http\Controllers\Identity\RoleController;
 use App\Http\Controllers\Identity\UserController;
+use App\Http\Controllers\Identity\WebPushController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -153,6 +154,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::patch('{notification}/read', 'markRead')->whereUuid('notification')->middleware('throttle:write')->name('read');
         Route::post('devices', 'registerDevice')->middleware('throttle:write')->name('devices.store');
         Route::delete('devices/{token}', 'unregisterDevice')->where('token', '[^/]{1,255}')->middleware('throttle:write')->name('devices.destroy');
+        // Phone and browser notifications: the on / off switch and this browser's Web Push subscription
+        Route::controller(WebPushController::class)->group(function (): void {
+            Route::get('settings', 'settings')->middleware('throttle:read')->name('settings');
+            Route::put('settings', 'updateSettings')->middleware('throttle:write')->name('settings.update');
+            Route::post('web-push', 'subscribe')->middleware('throttle:write')->name('web-push.store');
+            Route::delete('web-push', 'unsubscribe')->middleware('throttle:write')->name('web-push.destroy');
+        });
 
         Route::middleware(['access:notifications.read_all|notifications.read_own', 'throttle:read'])->group(function (): void {
             Route::get('/', 'index')->name('index');

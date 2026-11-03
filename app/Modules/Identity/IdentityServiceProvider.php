@@ -31,6 +31,7 @@ use App\Interfaces\Identity\ListViewServiceInterface;
 use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Interfaces\Identity\RoleServiceInterface;
 use App\Interfaces\Identity\UserServiceInterface;
+use App\Interfaces\Identity\WebPushServiceInterface;
 use App\Interfaces\Shared\AuditRecorder;
 use App\Interfaces\Shared\TaskDispatcher;
 use App\Listeners\Identity\ForgetDevicesOnLogoutAll;
@@ -59,6 +60,7 @@ use App\Services\Identity\ListViewService;
 use App\Services\Identity\NotificationService;
 use App\Services\Identity\RoleService;
 use App\Services\Identity\UserService;
+use App\Services\Identity\WebPushService;
 use App\Tasks\Bulk\BulkActionTaskHandler;
 use App\Tasks\Identity\AttachmentsZipTaskHandler;
 use App\Tasks\Transfer\ListExportTaskHandler;
@@ -92,6 +94,7 @@ final class IdentityServiceProvider extends ServiceProvider
         AttachmentServiceInterface::class => AttachmentService::class,
         CodeServiceInterface::class => CodeService::class,
         NotificationServiceInterface::class => NotificationService::class,
+        WebPushServiceInterface::class => WebPushService::class,
         ListViewServiceInterface::class => ListViewService::class,
         TaskHandlerRegistry::class => TaskHandlerRegistry::class,
     ];

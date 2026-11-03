@@ -10,6 +10,7 @@ use App\Models\HR\Employee;
 use App\Models\Identity\BackgroundTask;
 use App\Models\Identity\DeviceToken;
 use App\Models\Identity\Notification;
+use App\Models\Identity\PushSubscription;
 use App\Models\Identity\UploadSession;
 use App\Services\Pharmacy\StockAlertNotifier;
 use App\Utilities\Shared\ClinicClock;
@@ -28,8 +29,8 @@ Schedule::call(fn () => app(NotificationServiceInterface::class)->dispatchDue())
 // Background tasks: delete expired result files.
 Schedule::command('tasks:purge-results')->dailyAt('02:10');
 
-// Retention: finished tasks (90 d), notifications (in-app 6 m / 2 y), stale device tokens (60 d), upload sessions.
-Schedule::command('model:prune', ['--model' => [BackgroundTask::class, Notification::class, DeviceToken::class, UploadSession::class]])
+// Retention: finished tasks (90 d), notifications (in-app 6 m / 2 y), stale device tokens and browsers (60 d), uploads.
+Schedule::command('model:prune', ['--model' => [BackgroundTask::class, Notification::class, DeviceToken::class, PushSubscription::class, UploadSession::class]])
     ->dailyAt('02:30');
 
 // Appointments: confirmed bookings not checked in 15 minutes after the start become no-shows.
