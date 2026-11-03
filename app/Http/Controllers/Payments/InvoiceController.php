@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Payments;
 
+use App\Enums\Payments\InvoicePaymentState;
+use App\Enums\Shared\PaymentMethod;
 use App\Http\Concerns\ApiResponse;
 use App\Http\Requests\Payments\InvoiceRequest;
 use App\Http\Resources\Payments\InvoiceResource;
@@ -12,6 +14,7 @@ use App\Models\Payments\Invoice;
 use App\Utilities\Query\ListQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 final class InvoiceController
 {
@@ -21,9 +24,15 @@ final class InvoiceController
 
     public function index(Request $request): JsonResponse
     {
+        $request->validate([
+            'payment_state' => ['nullable', Rule::enum(InvoicePaymentState::class)],
+            'method' => ['nullable', Rule::enum(PaymentMethod::class)],
+        ]);
         $query = ListQuery::fromRequest($request, Invoice::listQueryConfig());
+        $state = $request->filled('payment_state') ? InvoicePaymentState::from($request->string('payment_state')->toString()) : null;
+        $method = $request->filled('method') ? PaymentMethod::from($request->string('method')->toString()) : null;
 
-        return $this->paginated(InvoiceResource::collection($this->invoices->list($query)), $query);
+        return $this->paginated(InvoiceResource::collection($this->invoices->list($query, $state, $method)), $query);
     }
 
     public function outstanding(Request $request): JsonResponse

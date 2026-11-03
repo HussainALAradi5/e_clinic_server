@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Models\Payments;
 
 use App\Casts\MoneyCast;
+use App\Enums\Payments\InvoicePaymentState;
 use App\Enums\Payments\InvoiceStatus;
+use App\Enums\Payments\PaymentStatus;
+use App\Enums\Shared\PaymentMethod;
 use App\Interfaces\Shared\OwnedByUser;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Appointments\Patient;
@@ -90,10 +93,76 @@ class Invoice extends BaseModel implements OwnedByUser
             ->column('issue_date', 'Issued')
             ->column('total', 'Total')
             ->column('balance_due', 'Balance')
+            ->column('payment_state', 'Payment')
+            ->column('payment_methods', 'Paid by')
             ->column('status', 'Status')
             ->column('code', 'Code')
             ->dateFields('issue_date', 'created_at', 'due_date')
             ->defaultSort('-created_at');
+    }
+
+    /** Draft, unpaid, overdue (unpaid after its due date), partially paid, paid, refunded or cancelled. */
+    public function paymentState(CarbonImmutable $today): InvoicePaymentState
+    {
+        return match ($this->status) {
+            InvoiceStatus::Draft => InvoicePaymentState::Draft,
+            InvoiceStatus::Cancelled => InvoicePaymentState::Cancelled,
+            InvoiceStatus::PartiallyPaid => InvoicePaymentState::PartiallyPaid,
+            InvoiceStatus::Paid => $this->refunded_amount->isPositive() ? InvoicePaymentState::Refunded : InvoicePaymentState::Paid,
+            InvoiceStatus::Issued => $this->due_date !== null && $this->due_date->lt($today->startOfDay())
+                ? InvoicePaymentState::Overdue
+                : InvoicePaymentState::Unpaid,
+        };
+    }
+
+    /**
+     * Invoices in one payment [state], seen from [today]; the same rule as paymentState().
+     *
+     * @param  Builder<Invoice>  $query
+     * @return Builder<Invoice>
+     */
+    public function scopePaymentState(Builder $query, InvoicePaymentState $state, CarbonImmutable $today): Builder
+    {
+        $date = $today->toDateString();
+
+        return match ($state) {
+            InvoicePaymentState::Draft => $query->where('status', InvoiceStatus::Draft->value),
+            InvoicePaymentState::Cancelled => $query->where('status', InvoiceStatus::Cancelled->value),
+            InvoicePaymentState::PartiallyPaid => $query->where('status', InvoiceStatus::PartiallyPaid->value),
+            InvoicePaymentState::Paid => $query->where('status', InvoiceStatus::Paid->value)->where('refunded_amount', 0),
+            InvoicePaymentState::Refunded => $query->where('status', InvoiceStatus::Paid->value)->where('refunded_amount', '>', 0),
+            InvoicePaymentState::Overdue => $query->where('status', InvoiceStatus::Issued->value)->whereDate('due_date', '<', $date),
+            InvoicePaymentState::Unpaid => $query->where('status', InvoiceStatus::Issued->value)
+                ->where(fn (Builder $q) => $q->whereNull('due_date')->orWhereDate('due_date', '>=', $date)),
+        };
+    }
+
+    /**
+     * Invoices with a completed payment by [method] (cash, card …).
+     *
+     * @param  Builder<Invoice>  $query
+     * @return Builder<Invoice>
+     */
+    public function scopePaidBy(Builder $query, PaymentMethod $method): Builder
+    {
+        return $query->whereHas('payments', fn (Builder $q) => $q->where('method', $method->value)->where('status', PaymentStatus::Completed->value));
+    }
+
+    /**
+     * How it was paid: the methods of its completed payments (needs `payments` loaded).
+     *
+     * @return list<PaymentMethod>
+     */
+    public function paymentMethods(): array
+    {
+        $methods = [];
+        foreach ($this->payments as $payment) {
+            if ($payment->status === PaymentStatus::Completed && ! in_array($payment->method, $methods, true)) {
+                $methods[] = $payment->method;
+            }
+        }
+
+        return $methods;
     }
 
     public function isDraft(): bool

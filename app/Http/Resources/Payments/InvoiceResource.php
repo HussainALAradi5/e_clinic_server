@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Payments;
 
+use App\Enums\Shared\PaymentMethod;
 use App\Http\Resources\Shared\Summary;
 use App\Models\Payments\InsuranceClaim;
 use App\Models\Payments\Invoice;
+use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\MoneyHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -45,6 +47,8 @@ final class InvoiceResource extends JsonResource
             'refunded_amount' => MoneyHelper::toApi($this->refunded_amount),
             'balance_due' => MoneyHelper::toApi($this->balance_due),
             'status' => $this->status->value,
+            'payment_state' => $this->paymentState(app(ClinicClock::class)->today())->value,
+            'payment_methods' => $this->whenLoaded('payments', fn (): array => array_map(fn (PaymentMethod $m): string => $m->value, $this->paymentMethods())),
             'notes' => $this->notes,
             'issued_at' => $this->issued_at?->toIso8601String(),
             'issued_by' => $this->whenLoaded('issuer', fn (): ?array => Summary::user($this->issuer)),

@@ -11,9 +11,11 @@ use App\Dtos\Payments\InvoiceItemData;
 use App\Enums\Accounting\AccountMappingKey;
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Payments\DiscountType;
+use App\Enums\Payments\InvoicePaymentState;
 use App\Enums\Payments\InvoiceStatus;
 use App\Enums\Shared\ApprovalStatus;
 use App\Enums\Shared\GenericStatus;
+use App\Enums\Shared\PaymentMethod;
 use App\Events\Payments\InvoiceCancelled;
 use App\Events\Payments\InvoiceIssued;
 use App\Exceptions\Payments\AlreadyChargedException;
@@ -61,7 +63,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class InvoiceService extends BaseEntityService implements InvoiceServiceInterface
 {
-    public const RELATIONS = ['patient.person', 'patient.insurer'];
+    public const RELATIONS = ['patient.person', 'patient.insurer', 'payments'];
 
     public const DETAIL = [
         ...self::RELATIONS,
@@ -77,6 +79,19 @@ final class InvoiceService extends BaseEntityService implements InvoiceServiceIn
         private readonly ClinicClock $clock,
     ) {
         parent::__construct($listQuery);
+    }
+
+    public function list(ListQuery $query, ?InvoicePaymentState $state = null, ?PaymentMethod $method = null): LengthAwarePaginator|CursorPaginator
+    {
+        $builder = $this->query();
+        if ($state !== null) {
+            $builder->paymentState($state, $this->clock->today());
+        }
+        if ($method !== null) {
+            $builder->paidBy($method);
+        }
+
+        return $this->listQuery->paginate($builder, $query);
     }
 
     public function outstanding(ListQuery $query): LengthAwarePaginator|CursorPaginator

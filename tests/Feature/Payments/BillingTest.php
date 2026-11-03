@@ -291,3 +291,34 @@ it('claims the insurer share of an invoice, records the approval as a payment an
     keyed('/api/v1/billing/insurance-claims/remittances', ['claim_ids' => [$claim['id']], 'date' => '2026-11-01', 'reference' => 'BNK-1', 'amount' => '10.000'])
         ->assertOk()->assertJsonPath('data.0.remitted_at', '2026-11-01');
 });
+
+it('shows how an invoice stands with its payments and filters by state and by how it was paid', function () {
+    $invoice = issuedInvoice();
+    actAs(staff(RoleName::Cashier));
+    $this->postJson('/api/v1/finance/cash-sessions', ['opening_float' => '20.000'])->assertCreated();
+    $states = fn (string $query) => collect($this->getJson("/api/v1/billing/invoices?{$query}")->assertOk()->json('data'))->pluck('id')->all();
+
+    $this->getJson("/api/v1/billing/invoices/{$invoice['id']}")->assertJsonPath('data.payment_state', 'unpaid');
+    expect($states('payment_state=unpaid'))->toBe([$invoice['id']]);
+
+    keyed('/api/v1/billing/payments', ['invoice_id' => $invoice['id'], 'amount' => '10.000', 'method' => 'cash'])->assertCreated();
+    $this->getJson("/api/v1/billing/invoices/{$invoice['id']}")->assertJsonPath('data.payment_state', 'partially_paid');
+    expect($states('payment_state=partially_paid'))->toBe([$invoice['id']])
+        ->and($states('method=cash'))->toBe([$invoice['id']])
+        ->and($states('method=card'))->toBe([]);
+
+    keyed('/api/v1/billing/payments', ['invoice_id' => $invoice['id'], 'amount' => '5.000', 'method' => 'card', 'card_last4' => '4242'])->assertCreated();
+    $row = collect($this->getJson('/api/v1/billing/invoices?payment_state=paid')->json('data'))->firstWhere('id', $invoice['id']);
+    expect($row['payment_state'])->toBe('paid')
+        ->and($row['payment_methods'])->toBe(['cash', 'card'])
+        ->and($states('method=card'))->toBe([$invoice['id']])
+        ->and($states('payment_state=unpaid'))->toBe([]);
+
+    // Unpaid after its due date reads as overdue.
+    $second = issuedInvoice();
+    actAs(staff(RoleName::Cashier));
+    $this->travel(40)->days();
+    expect($states('payment_state=overdue'))->toContain($second['id']);
+    $this->getJson('/api/v1/billing/invoices?payment_state=later')->assertStatus(422);
+    $this->getJson('/api/v1/billing/invoices?method=coins')->assertStatus(422);
+});

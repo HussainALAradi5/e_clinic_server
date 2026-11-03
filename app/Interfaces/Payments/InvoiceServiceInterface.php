@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Interfaces\Payments;
 
 use App\Dtos\Payments\InvoiceData;
+use App\Enums\Payments\InvoicePaymentState;
+use App\Enums\Shared\PaymentMethod;
 use App\Interfaces\Shared\Chargeable;
 use App\Models\Payments\Invoice;
 use App\Utilities\Query\ListQuery;
@@ -15,11 +17,12 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 interface InvoiceServiceInterface
 {
     /**
-     * Invoices by patient, status, dates, number; patients see their own.
+     * Invoices by patient, status, dates, number; patients see their own. [state] narrows to a payment state
+     * (unpaid, overdue …), [method] to invoices paid by cash, card ….
      *
      * @return LengthAwarePaginator<int, Invoice>|CursorPaginator<int, Invoice>
      */
-    public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator;
+    public function list(ListQuery $query, ?InvoicePaymentState $state = null, ?PaymentMethod $method = null): LengthAwarePaginator|CursorPaginator;
 
     /**
      * Issued invoices with a balance (cashier desk), oldest first.

@@ -58,6 +58,7 @@ return [
     // Words that need care — the rest read fine in sentence case.
     'AppointmentSource' => ['walk_in' => 'Walk-in', 'phone' => 'Phone', 'portal' => 'Online', 'referral' => 'Referral'],
     'AppointmentStatus' => ['checked_in' => 'Checked in', 'no_show' => 'No-show'],
+    'InvoicePaymentState' => ['draft' => 'Not issued', 'unpaid' => 'Unpaid', 'overdue' => 'Overdue', 'partially_paid' => 'Partly paid', 'paid' => 'Paid', 'refunded' => 'Refunded', 'cancelled' => 'Cancelled'],
     'VisitTiming' => ['coming' => 'Coming', 'today' => 'Today', 'past' => 'Past', 'missed' => 'Missed'],
     'AppointmentType' => ['follow_up' => 'Follow-up', 'teleconsultation' => 'Video consultation', 'treatment_session' => 'Treatment session'],
     'CancelledBy' => ['system' => 'Automatically'],

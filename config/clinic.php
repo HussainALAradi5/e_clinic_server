@@ -173,6 +173,7 @@ return [
         Payments\ServiceCategory::class,
         Payments\InvoiceStatus::class,
         Payments\PaymentStatus::class,
+        Payments\InvoicePaymentState::class,
         Payments\DiscountType::class,
         Transactions\CashSessionStatus::class,
         Transactions\ExpenseCategory::class,
