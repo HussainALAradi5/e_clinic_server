@@ -174,6 +174,7 @@ return [
         Payments\ServiceCategory::class,
         Payments\InvoiceStatus::class,
         Payments\PaymentStatus::class,
+        Payments\WalletEntryType::class,
         Payments\InvoicePaymentState::class,
         Payments\DiscountType::class,
         Transactions\CashSessionStatus::class,

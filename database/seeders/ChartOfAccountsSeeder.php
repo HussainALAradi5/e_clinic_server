@@ -8,7 +8,9 @@ use App\Enums\Accounting\AccountMappingKey;
 use App\Enums\Accounting\AccountType;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\AccountMapping;
+use App\Utilities\Shared\CacheKeys;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 
 /**
@@ -42,5 +44,8 @@ final class ChartOfAccountsSeeder extends Seeder
                 AccountMapping::query()->firstOrCreate(['key' => $mapping], ['account_id' => $account->id]);
             }
         }
+
+        // Mappings are cached forever; drop the cache so keys added here are seen by the running app.
+        Cache::forget(CacheKeys::accountMappings());
     }
 }
