@@ -58,4 +58,5 @@ Route::middleware(['auth:sanctum', EnsureStaff::ALIAS])->group(function (): void
             Route::patch('{ticket}/status', 'status')->whereUuid('ticket')->middleware('access:tickets.write&tickets.resolve')->name('status');
         });
     });
+    Route::dataTransfer('support/tickets', 'tickets');
 });

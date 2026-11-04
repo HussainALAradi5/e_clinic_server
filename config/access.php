@@ -241,7 +241,7 @@ return [
                 'schedules' => ['read_all', 'create', 'write', 'delete'],
                 'rooms' => ['read_all'],
             ],
-            'actions' => ['users.change_status', 'roles.assign', 'employees.terminate', 'employees.manage_salary', 'employees.view_salary', 'attendance.approve_overtime', 'staff_requests.review', 'staff_requests.export', 'leaves.approve', 'leaves.manage_types', 'attendance.self', 'leaves.request', 'people.export', 'people.import', 'users.export', 'users.import', 'departments.export', 'employees.export', 'specialties.export', 'doctors.export', 'attendance.export', 'leaves.export', 'payroll.export'],
+            'actions' => ['users.change_status', 'roles.assign', 'employees.terminate', 'employees.manage_salary', 'employees.view_salary', 'attendance.approve_overtime', 'staff_requests.review', 'staff_requests.export', 'shifts.export', 'leaves.approve', 'leaves.manage_types', 'attendance.self', 'leaves.request', 'people.export', 'people.import', 'users.export', 'users.import', 'departments.export', 'employees.export', 'specialties.export', 'doctors.export', 'attendance.export', 'leaves.export', 'payroll.export'],
         ],
         'accountant' => [
             'access' => [

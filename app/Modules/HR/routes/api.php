@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->prefix('hr')->name('hr.')->group(function ():
         });
     });
     Route::bulkActions('shifts', 'shifts')->middleware('access:shifts.write|shifts.delete');
+    Route::dataTransfer('shifts', 'shifts');
 
     // Departments
     Route::prefix('departments')->name('departments.')->controller(DepartmentController::class)->group(function (): void {
@@ -130,8 +131,8 @@ Route::middleware('auth:sanctum')->prefix('hr')->name('hr.')->group(function ():
             Route::patch('{staffRequest}/reject', 'reject')->whereUuid('staffRequest')->middleware('access:staff_requests.write&staff_requests.review')->name('reject');
         });
     });
-    Route::bulkActions('staff_requests', 'requests')->middleware('access:staff_requests.write&staff_requests.review');
-    Route::dataTransfer('staff_requests', 'requests');
+    Route::bulkActions('requests', 'staff_requests')->middleware('access:staff_requests.write&staff_requests.review');
+    Route::dataTransfer('requests', 'staff_requests');
 
     // HR switches: late excuse requests, overtime requests and the overtime pay per hour
     Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function (): void {

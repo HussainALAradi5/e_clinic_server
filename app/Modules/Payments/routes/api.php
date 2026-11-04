@@ -77,6 +77,7 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
         });
         Route::post('{fee}/waive', 'waive')->whereUuid('fee')->middleware(['access:appointment_fees.read_all&appointment_fees.waive', 'throttle:sensitive'])->name('waive');
     });
+    Route::dataTransfer('appointment-fees', 'appointment_fees');
     Route::get('document-fees', [AppointmentFeeController::class, 'documentFees'])
         ->middleware(['access:written_documents.create|appointment_fees.read_all', 'throttle:read'])->name('document-fees');
     Route::get('appointments/{appointment}/cancellation-fee', [AppointmentFeeController::class, 'cancellationFee'])->whereUuid('appointment')
@@ -159,7 +160,7 @@ Route::prefix('payments')->middleware('throttle:sensitive')->group(function (): 
 
 // The fake gateway's test checkout (local only, signed links).
 if (config('payments.online.driver') === 'fake' && ! app()->isProduction()) {
-    Route::prefix('payments/fake-checkout')->middleware('signed')->controller(FakeCheckoutController::class)->group(function (): void {
+    Route::prefix('payments/fake-checkout')->middleware(['signed', 'throttle:public'])->controller(FakeCheckoutController::class)->group(function (): void {
         Route::get('{charge}', 'show')->name('fake-checkout.show');
         Route::get('{charge}/{outcome}', 'decide')->whereIn('outcome', ['pay', 'decline'])->name('fake-checkout.decide');
     });

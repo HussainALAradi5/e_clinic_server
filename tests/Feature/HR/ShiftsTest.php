@@ -125,3 +125,13 @@ it('tells employees whether they were on time, late, on overtime or left early a
     expect($rows->firstWhere('employee.id', $nurse->id)['shift']['name'])->toBe('Morning')
         ->and($rows->firstWhere('employee.id', $doctor->id)['shift']['type'])->toBe('flexible');
 });
+
+it('lets HR export the shifts list like every other HR list; staff cannot', function () {
+    shiftAs(shiftStaff());
+    $this->postJson('/api/v1/hr/shifts/export', ['format' => 'csv'])->assertNotFound(); // cannot even read the list
+
+    shiftAs(shiftStaff(RoleName::HrManager, UserType::Hr));
+    $this->postJson('/api/v1/hr/shifts', ['name' => 'Morning', 'type' => 'fixed', 'start_time' => '07:00', 'end_time' => '15:00'])->assertCreated();
+    $this->postJson('/api/v1/hr/shifts/export', ['format' => 'csv'])->assertOk();
+    $this->getJson('/api/v1/meta/resources/shifts')->assertOk()->assertJsonPath('data.export_formats', ['xlsx', 'pdf', 'csv']);
+});

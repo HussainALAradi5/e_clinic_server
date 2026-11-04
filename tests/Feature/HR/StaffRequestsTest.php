@@ -182,3 +182,22 @@ it('deducts late minutes HR did not excuse and pays overtime at the amount kept 
     $accrual = JournalEntry::query()->findOrFail($this->getJson("/api/v1/hr/payroll-runs/{$run}")->json('data.accrual_journal_entry_id'));
     expect($accrual->total_debit)->toBe($accrual->total_credit);
 });
+
+it('lets HR reject requests in bulk and export them at /hr/requests; staff cannot', function () {
+    $nurse = requestStaff();
+    $hr = requestStaff(RoleName::HrManager, UserType::Hr);
+    requestAs($hr);
+    $this->putJson('/api/v1/hr/settings/late_excuse', ['is_enabled' => true])->assertOk();
+    requestAs($nurse);
+    requestAt('08:30');
+    $day = $this->postJson('/api/v1/hr/attendance/check-in')->assertOk()->json('data.id');
+    $id = $this->postJson('/api/v1/hr/requests', ['type' => 'late_excuse', 'attendance_id' => $day])->assertCreated()->json('data.id');
+
+    $this->postJson('/api/v1/hr/requests/bulk', ['action' => 'reject', 'reason' => 'No proof', 'ids' => [$id]])->assertForbidden();
+    $this->postJson('/api/v1/hr/requests/export', ['format' => 'csv'])->assertForbidden();
+
+    requestAs($hr);
+    $this->postJson('/api/v1/hr/requests/bulk', ['action' => 'reject', 'reason' => 'No proof', 'ids' => [$id]])->assertOk()->assertJsonPath('data.succeeded', 1);
+    $this->getJson("/api/v1/hr/requests/{$id}")->assertOk()->assertJsonPath('data.status', 'rejected')->assertJsonPath('data.review_reason', 'No proof');
+    $this->postJson('/api/v1/hr/requests/export', ['format' => 'csv'])->assertOk();
+});
