@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\DB;
 
 final class AppointmentFeeService implements AppointmentFeeServiceInterface
 {
-    private const RELATIONS = ['appointment', 'patient.person', 'invoice', 'waiver.person'];
+    public const RELATIONS = ['appointment', 'patient.person', 'invoice', 'waiver.person'];
 
     public function __construct(
         private readonly InvoiceServiceInterface $invoices,

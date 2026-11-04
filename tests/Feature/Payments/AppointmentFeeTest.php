@@ -62,6 +62,8 @@ it('charges a no-show once, from the price list, onto the patient draft invoice'
         ->assertJsonPath('data.0.appointment.id', $visit)
         ->json('data.0');
     expect($fee['code'])->toStartWith('FEE-');
+    // The fees page lists, filters and exports through the shared list system.
+    $this->getJson('/api/v1/meta/resources/appointment_fees')->assertOk();
     $this->getJson("/api/v1/billing/invoices/{$fee['invoice']['id']}")
         ->assertJsonPath('data.status', 'draft')
         ->assertJsonPath('data.total.amount', '5.000')

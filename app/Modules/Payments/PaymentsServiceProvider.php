@@ -12,6 +12,7 @@ use App\Events\Payments\PaymentVoided;
 use App\Events\Payments\RefundApproved;
 use App\Events\Payments\RefundRejected;
 use App\Events\Payments\RefundRequested;
+use App\Http\Resources\Payments\AppointmentFeeResource;
 use App\Http\Resources\Payments\BillableServiceResource;
 use App\Http\Resources\Payments\InsuranceClaimResource;
 use App\Http\Resources\Payments\InvoiceResource;
@@ -29,6 +30,7 @@ use App\Listeners\Payments\ChargeAppointmentFee;
 use App\Listeners\Payments\ChargeCompletedWork;
 use App\Listeners\Payments\ReturnVoidedBalancePayment;
 use App\Listeners\Payments\SendRefundNotifications;
+use App\Models\Payments\AppointmentFee;
 use App\Models\Payments\BillableService;
 use App\Models\Payments\InsuranceClaim;
 use App\Models\Payments\Invoice;
@@ -102,6 +104,14 @@ final class PaymentsServiceProvider extends ServiceProvider
             ->action('approve', 'refunds.write&refunds.approve', [RefundServiceInterface::class, 'approve'])
             ->exportable(RefundResource::class, fn (Builder $q) => $q->with(RefundService::RELATIONS), values: [
                 'patient' => fn (Model $r): string => $r instanceof Refund ? $r->invoice->patient->person->full_name : '',
+                'amount' => $money('amount'),
+            ])
+            ->permissionsOf('transactions');
+
+        // Fees: listed and exported; waived one by one (each needs its own reason).
+        $bulk->register('appointment_fees', AppointmentFee::class, AppointmentFee::listQueryConfig(), genericActions: false)
+            ->exportable(AppointmentFeeResource::class, fn (Builder $q) => $q->with(AppointmentFeeService::RELATIONS), values: [
+                'patient' => fn (Model $f): string => $f instanceof AppointmentFee ? $f->patient->person->full_name : '',
                 'amount' => $money('amount'),
             ])
             ->permissionsOf('transactions');
