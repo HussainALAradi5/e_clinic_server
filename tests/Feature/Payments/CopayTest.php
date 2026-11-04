@@ -2,6 +2,7 @@
 
 use App\Dtos\Accounting\FiscalYearData;
 use App\Enums\Identity\RoleName;
+use App\Enums\Identity\UserType;
 use App\Enums\Reference\CompanyType;
 use App\Interfaces\Accounting\FiscalPeriodServiceInterface;
 use App\Models\Appointments\Patient;
@@ -77,6 +78,16 @@ it('takes only the patient share at check-in, then lets the claim cover the rest
     $this->getJson("/api/v1/billing/invoices/{$invoice}")->assertJsonPath('data.balance_due.amount', '12.000');
     copayPost('/api/v1/billing/payments', ['invoice_id' => $invoice, 'amount' => '1.000', 'method' => 'card'])
         ->assertUnprocessable()->assertJsonPath('error_code', 'COPAY_EXCEEDED');
+});
+
+it('shows patients the split of their own invoices only', function () {
+    $patient = insuredPatient();
+    $invoice = checkedInInvoice($patient);
+    $other = checkedInInvoice(FrontDesk::patient());
+
+    Sanctum::actingAs(User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
+    $this->getJson("/api/v1/billing/invoices/{$invoice}/coverage")->assertOk()->assertJsonPath('data.patient_share.amount', '3.000');
+    $this->getJson("/api/v1/billing/invoices/{$other}/coverage")->assertNotFound();
 });
 
 it('lets the patient choose to pay the insurer share too, noted on the payment', function () {
