@@ -17,8 +17,9 @@ final class MessageSent implements ShouldBroadcastNow
 {
     /**
      * @param  list<string>  $memberIds
+     * @param  list<string>  $mutedIds  members who muted the chat: their apps show no pop-up (mentions aside)
      */
-    public function __construct(public readonly Message $message, public readonly array $memberIds) {}
+    public function __construct(public readonly Message $message, public readonly array $memberIds, public readonly array $mutedIds = []) {}
 
     /**
      * @return list<PrivateChannel>
@@ -41,6 +42,6 @@ final class MessageSent implements ShouldBroadcastNow
      */
     public function broadcastWith(): array
     {
-        return (new MessageResource($this->message->loadMissing('sender.person')))->resolve();
+        return [...(new MessageResource($this->message->loadMissing('sender.person')))->resolve(), 'muted_for' => $this->mutedIds];
     }
 }
