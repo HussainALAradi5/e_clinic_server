@@ -233,6 +233,18 @@ return [
         'verify' => 'Scan the code to open this drawer shift.',
     ],
 
+    'templates' => [
+        'copy_of' => ':name (copy)',
+    ],
+
+    'written' => [
+        'issued' => 'Issued',
+        'visit' => 'Visit',
+        'kind' => 'Document',
+        'author' => 'Written by',
+        'verify' => 'Scan the code to check this document with the clinic.',
+    ],
+
     'attendance_slip' => [
         'title' => ':type slip',
         'date' => 'Day',

@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             FiscalYearSeeder::class,
             LeaveTypeSeeder::class,
             Icd10Seeder::class,
+            DocumentTemplateSeeder::class,
         ]);
 
         // Demo accounts and fake data for testing (see e_clinic_documentation/DEMO_USERS.md); never in production.

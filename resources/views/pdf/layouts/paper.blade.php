@@ -72,6 +72,13 @@
     .sign .sign-art img { max-height: 60px; max-width: 200px; }
     .sign .line { border-top: 1px solid {{ $c['ink'] }}; width: 82%; padding-top: 4px; font-size: 8pt; color: {{ $c['muted'] }}; }
     .sign .name { font-weight: bold; font-size: 10pt; color: {{ $c['ink'] }}; }
+    .rich { font-size: 10pt; line-height: 1.6; }
+    .rich h1, .rich h2 { font-size: 14pt; color: {{ $c['brand_dark'] }}; margin: 10px 0 6px; }
+    .rich h3, .rich h4 { font-size: 11pt; color: {{ $c['brand'] }}; margin: 10px 0 4px; }
+    .rich p { margin: 0 0 8px; }
+    .rich ul, .rich ol { margin: 0 0 8px 18px; padding: 0; }
+    .rich blockquote { margin: 6px 0; padding: 6px 12px; border-left: 3px solid {{ $c['brand'] }}; background: {{ $c['brand_soft'] }}; }
+    .rich a { color: {{ $c['brand'] }}; }
     .verify .barcode { width: 190px; height: 44px; }
 
     .verify { margin-top: 20px; background: {{ $c['stripe'] }}; border: 1px solid {{ $c['line'] }}; border-radius: 6px; page-break-inside: avoid; }

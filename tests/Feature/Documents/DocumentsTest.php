@@ -115,3 +115,49 @@ it('reads a scanned check link as well as the bare code, and names the document 
     actingWith('codes.read_all', 'codes.scan', 'sick_leaves.read_all');
     $this->postJson('/api/v1/codes/scan', ['payload' => $link, 'purpose' => 'identify'])->assertOk()->assertJsonPath('data.id', $id);
 });
+
+it('offers ready-made templates read-only, and lets staff write, copy and delete their own in clean rich text', function () {
+    issuedSickLeave();
+
+    $list = $this->getJson('/api/v1/document-templates?per_page=50')->assertOk()->json('data');
+    expect(count($list))->toBe(6)->and(collect($list)->every(fn (array $t): bool => $t['is_system'] && ! $t['is_editable']))->toBeTrue();
+    $this->getJson('/api/v1/document-templates/placeholders')->assertOk()->assertJsonFragment(['token' => '{{patient_name}}']);
+
+    $system = $list[0]['id'];
+    $this->putJson("/api/v1/document-templates/{$system}", ['name' => 'Mine'])->assertStatus(409)->assertJsonPath('error_code', 'TEMPLATE_READ_ONLY');
+    $copy = $this->postJson("/api/v1/document-templates/{$system}/duplicate")->assertCreated()->assertJsonPath('data.is_editable', true)->json('data');
+    expect($copy['name'])->toEndWith('(copy)')->and($copy['code'])->toStartWith('TPL-');
+
+    $own = $this->postJson('/api/v1/document-templates', [
+        'name' => 'Back pain note', 'kind' => 'medical_report',
+        'body' => '<p onclick="x()"><strong>{{patient_name}}</strong> <em>rest</em></p><script>alert(1)</script><img src=x>',
+    ])->assertCreated()->json('data');
+    expect($own['body'])->toBe('<p><strong>{{patient_name}}</strong> <em>rest</em></p>');
+
+    $this->putJson("/api/v1/document-templates/{$own['id']}", ['description' => 'For desk workers'])->assertOk()->assertJsonPath('data.description', 'For desk workers');
+    $this->deleteJson("/api/v1/document-templates/{$own['id']}")->assertNoContent();
+    $this->getJson("/api/v1/document-templates/{$own['id']}")->assertNotFound();
+});
+
+it('lets the visit doctor generate, write and print a document; nobody else writes it', function () {
+    [$doctor, $patient, $leave] = issuedSickLeave();
+    $visit = $this->getJson("/api/v1/sick-leaves/{$leave}")->json('data.appointment_id');
+    $template = collect($this->getJson('/api/v1/document-templates?per_page=50')->json('data'))->firstWhere('kind', 'attendance_certificate');
+
+    $draft = $this->postJson("/api/v1/appointments/{$visit}/written-documents/draft", ['kind' => 'attendance_certificate', 'template_id' => $template['id']])
+        ->assertOk()->json('data.body');
+    expect($draft)->toContain($patient->person->full_name)->not->toContain('{{');
+
+    $written = $this->postJson("/api/v1/appointments/{$visit}/written-documents", [
+        'kind' => 'attendance_certificate', 'title' => 'Attendance certificate', 'body' => $draft.'<p>Seen by {{author_name}}.</p>', 'template_id' => $template['id'],
+    ])->assertCreated()->json('data');
+    expect($written['code'])->toStartWith('WRD-')->and($written['body'])->toContain('Seen by '.$doctor->person->full_name);
+    $this->get("/api/v1/documents/written_document/{$written['id']}/file")->assertOk()->assertHeader('content-type', 'application/pdf');
+
+    // Another doctor does not even see this visit (no existence leak); the front desk cannot write at all.
+    Sanctum::actingAs(User::query()->findOrFail(FrontDesk::doctor()->id));
+    $this->postJson("/api/v1/appointments/{$visit}/written-documents", ['kind' => 'medical_report', 'title' => 'x', 'body' => '<p>x</p>'])->assertNotFound();
+    Sanctum::actingAs(User::factory()->withRole(RoleName::Receptionist->value)->create());
+    $this->postJson("/api/v1/appointments/{$visit}/written-documents", ['kind' => 'medical_report', 'title' => 'x', 'body' => '<p>x</p>'])->assertForbidden();
+    $this->getJson('/api/v1/written-documents')->assertOk()->assertJsonCount(1, 'data');
+});

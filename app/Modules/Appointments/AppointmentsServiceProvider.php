@@ -38,6 +38,8 @@ use App\Interfaces\Appointments\RoomServiceInterface;
 use App\Interfaces\Appointments\ScheduleServiceInterface;
 use App\Interfaces\Appointments\SpecialtyServiceInterface;
 use App\Interfaces\Appointments\TreatmentServiceInterface;
+use App\Interfaces\Documents\DocumentTemplateServiceInterface;
+use App\Interfaces\Documents\WrittenDocumentServiceInterface;
 use App\Listeners\Appointments\CloseReferralOnVisit;
 use App\Listeners\Appointments\NotifyEmergencyAccess;
 use App\Listeners\Appointments\SendAppointmentNotifications;
@@ -64,6 +66,8 @@ use App\Services\Appointments\ScheduleService;
 use App\Services\Appointments\SpecialtyService;
 use App\Services\Appointments\TreatmentService;
 use App\Services\Bulk\BulkActionRegistry;
+use App\Services\Documents\DocumentTemplateService;
+use App\Services\Documents\WrittenDocumentService;
 use App\Utilities\Access\PermissionExpression;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -80,6 +84,8 @@ final class AppointmentsServiceProvider extends ServiceProvider
     /** @var array<class-string, class-string> */
     public array $singletons = [
         PatientServiceInterface::class => PatientService::class,
+        DocumentTemplateServiceInterface::class => DocumentTemplateService::class,
+        WrittenDocumentServiceInterface::class => WrittenDocumentService::class,
         SpecialtyServiceInterface::class => SpecialtyService::class,
         DoctorServiceInterface::class => DoctorService::class,
         RoomServiceInterface::class => RoomService::class,

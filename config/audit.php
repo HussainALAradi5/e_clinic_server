@@ -20,6 +20,8 @@ use App\Models\Appointments\Treatment;
 use App\Models\Communication\Conversation;
 use App\Models\Communication\Message;
 use App\Models\Communication\SupportTicket;
+use App\Models\Documents\DocumentTemplate;
+use App\Models\Documents\WrittenDocument;
 use App\Models\HR\Attendance;
 use App\Models\HR\Department;
 use App\Models\HR\Employee;
@@ -85,6 +87,8 @@ return [
         'background_task' => BackgroundTask::class,
         'attachment' => Attachment::class,
         'generated_document' => GeneratedDocument::class,
+        'document_template' => DocumentTemplate::class,
+        'written_document' => WrittenDocument::class,
         'notification' => Notification::class,
         'country' => Country::class,
         'address' => Address::class,

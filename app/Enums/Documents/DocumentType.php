@@ -9,6 +9,7 @@ use App\Interfaces\Shared\HasLabel;
 use App\Models\Appointments\ClinicalOrder;
 use App\Models\Appointments\PatientConsent;
 use App\Models\Appointments\SickLeave;
+use App\Models\Documents\WrittenDocument;
 use App\Models\HR\Payslip;
 use App\Models\HR\StaffRequest;
 use App\Models\Payments\InsuranceClaim;
@@ -25,6 +26,7 @@ use App\Services\Documents\Builders\PrescriptionDocument;
 use App\Services\Documents\Builders\ReceiptDocument;
 use App\Services\Documents\Builders\ResultDocument;
 use App\Services\Documents\Builders\SickLeaveDocument;
+use App\Services\Documents\Builders\WrittenDocumentBuilder;
 use App\Services\Documents\Builders\ZReportDocument;
 use App\Traits\Shared\EnumHelpers;
 use Illuminate\Database\Eloquent\Model;
@@ -48,6 +50,7 @@ enum DocumentType: string implements HasLabel
     case Payslip = 'payslip';
     case ZReport = 'z_report';
     case AttendanceSlip = 'attendance_slip';
+    case WrittenDocument = 'written_document';
 
     /** @return class-string<Model> */
     public function model(): string
@@ -63,6 +66,7 @@ enum DocumentType: string implements HasLabel
             self::Payslip => Payslip::class,
             self::ZReport => CashSession::class,
             self::AttendanceSlip => StaffRequest::class,
+            self::WrittenDocument => WrittenDocument::class,
         };
     }
 
@@ -79,6 +83,7 @@ enum DocumentType: string implements HasLabel
             self::Payslip => 'payroll',
             self::ZReport => 'cash_sessions',
             self::AttendanceSlip => 'staff_requests',
+            self::WrittenDocument => 'written_documents',
         };
     }
 
@@ -96,6 +101,7 @@ enum DocumentType: string implements HasLabel
             self::Payslip => PayslipDocument::class,
             self::ZReport => ZReportDocument::class,
             self::AttendanceSlip => AttendanceSlipDocument::class,
+            self::WrittenDocument => WrittenDocumentBuilder::class,
         };
     }
 
@@ -104,6 +110,7 @@ enum DocumentType: string implements HasLabel
     {
         return match ($this) {
             self::SickLeave => 'sick_leave',
+            self::WrittenDocument => 'written_document',
             self::Prescription => 'prescription',
             self::Result => 'clinical_order',
             self::Consent => 'patient_consent',

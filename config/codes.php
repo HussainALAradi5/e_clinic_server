@@ -4,6 +4,7 @@ use App\Models\Appointments\Appointment;
 use App\Models\Appointments\ClinicalOrder;
 use App\Models\Appointments\PatientConsent;
 use App\Models\Appointments\SickLeave;
+use App\Models\Documents\WrittenDocument;
 use App\Models\Identity\Attachment;
 use App\Models\Identity\Person;
 use App\Models\Payments\Invoice;
@@ -50,6 +51,12 @@ return [
             'summary' => ['code', 'start_date', 'end_date', 'days', 'issued_at', 'cancelled_at'],
             // Employers check a certificate: its dates and whether it was cancelled — never the reason.
             'public' => ['code', 'start_date', 'end_date', 'days', 'issued_at', 'cancelled_at'],
+        ],
+        'written_document' => [
+            'model' => WrittenDocument::class,
+            'resource' => 'written_documents',
+            'summary' => ['code', 'kind', 'title', 'issued_at'],
+            'public' => ['code', 'kind', 'issued_at'],
         ],
         'patient_consent' => [
             'model' => PatientConsent::class,

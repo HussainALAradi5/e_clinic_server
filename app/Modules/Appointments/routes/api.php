@@ -12,6 +12,8 @@ use App\Http\Controllers\Appointments\ScheduleController;
 use App\Http\Controllers\Appointments\SickLeaveController;
 use App\Http\Controllers\Appointments\SpecialtyController;
 use App\Http\Controllers\Appointments\TreatmentController;
+use App\Http\Controllers\Documents\DocumentTemplateController;
+use App\Http\Controllers\Documents\WrittenDocumentController;
 use App\Http\Middleware\EnsureIdempotency;
 use App\Http\Middleware\EnsurePatient;
 use App\Http\Middleware\EnsureStaff;
@@ -224,6 +226,31 @@ Route::middleware('auth:sanctum')->group(function (): void {
         });
         Route::post('appointments/{appointment}/sick-leaves', 'store')->whereUuid('appointment')->middleware(['access:sick_leaves.create', 'throttle:write'])->name('store');
         Route::patch('sick-leaves/{sickLeave}/cancel', 'cancel')->whereUuid('sickLeave')->middleware(['access:sick_leaves.write', 'throttle:write'])->name('cancel');
+    });
+
+    // Document templates: ready-made (read-only, copy to change) and staff's own, in rich text with {{placeholders}}
+    Route::prefix('document-templates')->name('document-templates.')->controller(DocumentTemplateController::class)->group(function (): void {
+        Route::middleware(['access:templates.read_all|templates.read_own', 'throttle:read'])->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::get('placeholders', 'placeholders')->name('placeholders');
+            Route::get('{template}', 'show')->whereUuid('template')->name('show');
+        });
+        Route::post('/', 'store')->middleware(['access:templates.create', 'throttle:write'])->name('store');
+        Route::post('{template}/duplicate', 'duplicate')->whereUuid('template')->middleware(['access:templates.create', 'throttle:write'])->name('duplicate');
+        Route::put('{template}', 'update')->whereUuid('template')->middleware(['access:templates.write', 'throttle:write'])->name('update');
+        Route::delete('{template}', 'destroy')->whereUuid('template')->middleware(['access:templates.delete', 'throttle:write'])->name('destroy');
+    });
+
+    // Documents written from a visit session (reports, certificates, referral notes, letters) by its provider
+    Route::controller(WrittenDocumentController::class)->name('written-documents.')->group(function (): void {
+        Route::middleware(['access:written_documents.read_all|written_documents.read_own', 'throttle:read'])->group(function (): void {
+            Route::get('written-documents', 'index')->name('index');
+            Route::get('written-documents/{document}', 'show')->whereUuid('document')->name('show');
+        });
+        Route::middleware(['access:written_documents.create', 'throttle:write'])->group(function (): void {
+            Route::post('appointments/{appointment}/written-documents/draft', 'draft')->whereUuid('appointment')->name('draft');
+            Route::post('appointments/{appointment}/written-documents', 'store')->whereUuid('appointment')->name('store');
+        });
     });
 
     // Patient consents
