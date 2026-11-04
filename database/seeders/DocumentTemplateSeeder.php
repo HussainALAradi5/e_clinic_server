@@ -36,7 +36,7 @@ final class DocumentTemplateSeeder extends Seeder
                 .'<h3>Diagnosis</h3><p>{{diagnosis}}</p><h3>Plan</h3><ul><li><em>Treatment</em></li><li><em>Follow-up</em></li></ul>'],
             [WrittenDocumentKind::AttendanceCertificate, 'Attendance certificate', 'Confirms the patient attended a visit or treatment session (for work or school).',
                 '<h2 style="text-align: center">Attendance certificate</h2><p>To whom it may concern,</p>'
-                .'<p>This is to certify that <strong>{{patient_name}}</strong> (CPR {{patient_cpr}}) attended {{clinic_name}} on <strong>{{visit_date}}</strong> from <strong>{{visit_time}}</strong>.</p>'
+                .'<p>This is to certify that <strong>{{patient_name}}</strong> (CPR {{patient_cpr}}) attended {{clinic_name}} on <strong>{{visit_date}}</strong> (<strong>{{visit_time}}</strong>).</p>'
                 .'<p>This certificate is issued at the patient\'s request.</p>'],
             [WrittenDocumentKind::FitnessCertificate, 'Fitness to work', 'States the patient is fit to return to work or school.',
                 '<h2 style="text-align: center">Medical fitness certificate</h2><p>To whom it may concern,</p>'
