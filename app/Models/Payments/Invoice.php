@@ -46,6 +46,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Money $balance_due
  * @property InvoiceStatus $status
  * @property ?string $notes
+ * @property int $reminders_sent Payment reminders sent to the patient
+ * @property ?CarbonImmutable $last_reminded_at
  * @property ?string $issued_by
  * @property ?CarbonImmutable $issued_at
  * @property ?CarbonImmutable $cancelled_at
@@ -263,6 +265,8 @@ class Invoice extends BaseModel implements OwnedByUser
             'issue_date' => 'immutable_date',
             'due_date' => 'immutable_date',
             'issued_at' => 'immutable_datetime',
+            'last_reminded_at' => 'immutable_datetime',
+            'reminders_sent' => 'integer',
             'cancelled_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

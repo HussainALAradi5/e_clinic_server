@@ -9,6 +9,7 @@ use App\Events\Appointments\AppointmentCompleted;
 use App\Events\Appointments\AppointmentNoShow;
 use App\Events\Appointments\ClinicalOrderCompleted;
 use App\Events\Documents\WrittenDocumentIssued;
+use App\Events\Payments\PaymentReceived;
 use App\Events\Payments\PaymentVoided;
 use App\Events\Payments\RefundApproved;
 use App\Events\Payments\RefundRejected;
@@ -26,6 +27,7 @@ use App\Interfaces\Payments\InsuranceClaimServiceInterface;
 use App\Interfaces\Payments\InvoiceServiceInterface;
 use App\Interfaces\Payments\OnlinePaymentServiceInterface;
 use App\Interfaces\Payments\PaymentGatewayInterface;
+use App\Interfaces\Payments\PaymentReminderServiceInterface;
 use App\Interfaces\Payments\PaymentServiceInterface;
 use App\Interfaces\Payments\RefundServiceInterface;
 use App\Interfaces\Payments\WalletServiceInterface;
@@ -33,6 +35,7 @@ use App\Listeners\Payments\ChargeAppointmentFee;
 use App\Listeners\Payments\ChargeCompletedWork;
 use App\Listeners\Payments\ChargeDocumentFee;
 use App\Listeners\Payments\ReturnVoidedBalancePayment;
+use App\Listeners\Payments\SendPaymentReceipt;
 use App\Listeners\Payments\SendRefundNotifications;
 use App\Models\Payments\AppointmentFee;
 use App\Models\Payments\BillableService;
@@ -48,6 +51,7 @@ use App\Services\Payments\Gateways\TapGateway;
 use App\Services\Payments\InsuranceClaimService;
 use App\Services\Payments\InvoiceService;
 use App\Services\Payments\OnlinePaymentService;
+use App\Services\Payments\PaymentReminderService;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\RefundService;
 use App\Services\Payments\WalletService;
@@ -75,6 +79,7 @@ final class PaymentsServiceProvider extends ServiceProvider
         WalletServiceInterface::class => WalletService::class,
         AppointmentFeeServiceInterface::class => AppointmentFeeService::class,
         OnlinePaymentServiceInterface::class => OnlinePaymentService::class,
+        PaymentReminderServiceInterface::class => PaymentReminderService::class,
     ];
 
     public function register(): void
@@ -98,6 +103,7 @@ final class PaymentsServiceProvider extends ServiceProvider
         Event::listen([RefundRequested::class, RefundApproved::class, RefundRejected::class], SendRefundNotifications::class);
         Event::listen(PaymentVoided::class, ReturnVoidedBalancePayment::class);
         Event::listen(WrittenDocumentIssued::class, ChargeDocumentFee::class);
+        Event::listen(PaymentReceived::class, SendPaymentReceipt::class);
         Event::listen([AppointmentNoShow::class, AppointmentCancelled::class], ChargeAppointmentFee::class);
 
         $bulk->register('services', BillableService::class, BillableService::listQueryConfig(), BillableServiceService::class)

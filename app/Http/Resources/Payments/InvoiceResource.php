@@ -46,6 +46,8 @@ final class InvoiceResource extends JsonResource
             'paid_amount' => MoneyHelper::toApi($this->paid_amount),
             'refunded_amount' => MoneyHelper::toApi($this->refunded_amount),
             'balance_due' => MoneyHelper::toApi($this->balance_due),
+            'reminders_sent' => (int) $this->reminders_sent,
+            'last_reminded_at' => $this->last_reminded_at?->toIso8601String(),
             'status' => $this->status->value,
             'payment_state' => $this->paymentState(app(ClinicClock::class)->today())->value,
             'payment_methods' => $this->whenLoaded('payments', fn (): array => array_map(fn (PaymentMethod $m): string => $m->value, $this->paymentMethods())),

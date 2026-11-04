@@ -113,4 +113,16 @@ return [
         'return_path' => '/portal/invoices',
     ],
 
+    /*
+    | Payment reminders (PaymentReminderService) — for the patient's own part only:
+    | - first_after_days after the invoice is issued, then every every_days, at most max_per_invoice automatically.
+    | - min_hours_between: staff may send one by hand, but not twice within this gap.
+    */
+    'reminders' => [
+        'first_after_days' => 3,
+        'every_days' => 7,
+        'max_per_invoice' => 3,
+        'min_hours_between' => 24,
+    ],
+
 ];

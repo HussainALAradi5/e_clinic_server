@@ -6,6 +6,7 @@ use App\Interfaces\HR\AttendanceServiceInterface;
 use App\Interfaces\HR\LeaveServiceInterface;
 use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Interfaces\Payments\OnlinePaymentServiceInterface;
+use App\Interfaces\Payments\PaymentReminderServiceInterface;
 use App\Interfaces\Pharmacy\InventoryServiceInterface;
 use App\Models\HR\Employee;
 use App\Models\Identity\BackgroundTask;
@@ -57,3 +58,7 @@ Schedule::call(function (): void {
 // Online payments left on the gateway's page past their expiry are given up (after one last look at the gateway).
 Schedule::call(fn () => app(OnlinePaymentServiceInterface::class)->expireStale())
     ->name('online-payments:expire')->everyTenMinutes()->withoutOverlapping();
+
+// Payment reminders for what patients still owe (their own part), spaced and capped (config payments.reminders).
+Schedule::call(fn () => app(PaymentReminderServiceInterface::class)->sendDue())
+    ->name('payments:reminders')->dailyAt('10:00')->timezone('Asia/Bahrain')->withoutOverlapping();

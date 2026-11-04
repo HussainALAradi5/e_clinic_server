@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
         });
         Route::middleware('throttle:sensitive')->group(function (): void {
             Route::post('{invoice}/issue', 'issue')->whereUuid('invoice')->middleware(['access:invoices.write&invoices.issue', EnsureIdempotency::ALIAS])->name('issue');
+            Route::post('{invoice}/remind', 'remind')->whereUuid('invoice')->middleware('access:invoices.write|payments.create')->name('remind');
             Route::post('{invoice}/cancel', 'cancel')->whereUuid('invoice')->middleware('access:invoices.write&invoices.cancel')->name('cancel');
         });
     });

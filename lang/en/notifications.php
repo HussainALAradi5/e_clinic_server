@@ -102,6 +102,16 @@ return [
             'body' => 'Your result :code is ready. Your doctor will go through it with you.',
         ],
     ],
+    'payment' => [
+        'received' => [
+            'subject' => 'Payment received: :amount',
+            'body' => 'Thank you — we received :amount (:method) for invoice :invoice. Left to pay: :balance. Your receipt is in My invoices.',
+        ],
+        'reminder' => [
+            'subject' => 'Reminder: :amount to pay',
+            'body' => 'Invoice :invoice of :date has :amount left for you to pay. Pay online in My invoices or at the clinic desk.',
+        ],
+    ],
     'refund' => [
         'requested' => [
             'subject' => 'Refund to approve: :amount',

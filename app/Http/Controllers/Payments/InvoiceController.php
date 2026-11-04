@@ -11,6 +11,7 @@ use App\Http\Requests\Payments\InvoiceRequest;
 use App\Http\Resources\Payments\CoverageResource;
 use App\Http\Resources\Payments\InvoiceResource;
 use App\Interfaces\Payments\InvoiceServiceInterface;
+use App\Interfaces\Payments\PaymentReminderServiceInterface;
 use App\Models\Payments\Invoice;
 use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Query\ListQuery;
@@ -88,5 +89,11 @@ final class InvoiceController
     public function coverage(string $invoice): JsonResponse
     {
         return $this->ok(new CoverageResource(InsuranceCoverage::split($this->invoices->find($invoice), app(ClinicClock::class)->today())));
+    }
+
+    /** Sends the patient a payment reminder now (their own part owed); not twice within the configured gap. */
+    public function remind(string $invoice): JsonResponse
+    {
+        return $this->ok(new InvoiceResource(app(PaymentReminderServiceInterface::class)->remind($this->invoices->find($invoice))));
     }
 }
