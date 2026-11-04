@@ -10,12 +10,14 @@ use App\Interfaces\Accounting\AccountServiceInterface;
 use App\Interfaces\Accounting\FinancialReportServiceInterface;
 use App\Interfaces\Accounting\FiscalPeriodServiceInterface;
 use App\Interfaces\Accounting\JournalEntryServiceInterface;
+use App\Interfaces\Accounting\MonthSummaryServiceInterface;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
 use App\Services\Accounting\AccountService;
 use App\Services\Accounting\FinancialReportService;
 use App\Services\Accounting\FiscalPeriodService;
 use App\Services\Accounting\JournalEntryService;
+use App\Services\Accounting\MonthSummaryService;
 use App\Services\Bulk\BulkActionRegistry;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +31,7 @@ final class AccountingServiceProvider extends ServiceProvider
 {
     /** @var array<class-string, class-string> */
     public array $singletons = [
+        MonthSummaryServiceInterface::class => MonthSummaryService::class,
         AccountServiceInterface::class => AccountService::class,
         FiscalPeriodServiceInterface::class => FiscalPeriodService::class,
         JournalEntryServiceInterface::class => JournalEntryService::class,

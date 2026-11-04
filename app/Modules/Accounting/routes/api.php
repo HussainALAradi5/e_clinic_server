@@ -4,6 +4,7 @@ use App\Http\Controllers\Accounting\AccountController;
 use App\Http\Controllers\Accounting\FinancialReportController;
 use App\Http\Controllers\Accounting\FiscalPeriodController;
 use App\Http\Controllers\Accounting\JournalEntryController;
+use App\Http\Controllers\Accounting\MonthSummaryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -65,6 +66,9 @@ Route::middleware('auth:sanctum')->prefix('accounting')->name('accounting.')->gr
     Route::dataTransfer('journal-entries', 'journal');
 
     // Every report shares one controller action; the route default names the report (ReportType value).
+    // The owner's month-end summary (with the month before).
+    Route::get('month-summary', [MonthSummaryController::class, 'show'])->middleware(['access:reports.read_all', 'throttle:report'])->name('month-summary');
+
     Route::prefix('reports')->name('reports.')->controller(FinancialReportController::class)->middleware('access:reports.read_all|reports.read_own')->group(function (): void {
         foreach (['trial_balance', 'general_ledger', 'income_statement', 'balance_sheet', 'cash_flow', 'revenue_by_doctor', 'revenue_by_service', 'receivables_aging'] as $report) {
             Route::get(str_replace('_', '-', $report), 'show')->defaults('report', $report)->middleware('throttle:read')->name(str_replace('_', '-', $report));

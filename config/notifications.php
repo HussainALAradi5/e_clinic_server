@@ -76,6 +76,7 @@ return [
         'order.result_ready' => ['channels' => ['in_app']],
         'order.abnormal' => ['channels' => ['in_app', 'push']],
         'order.patient_result_ready' => ['channels' => ['in_app', 'sms', 'email']],
+        'report.month_summary' => ['channels' => ['in_app', 'email']],
         'payment.received' => ['channels' => ['in_app', 'email', 'sms']],
         'payment.reminder' => ['channels' => ['in_app', 'email', 'sms']],
         'refund.requested' => ['channels' => ['in_app']],

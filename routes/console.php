@@ -9,6 +9,7 @@ use App\Interfaces\Payments\OnlinePaymentServiceInterface;
 use App\Interfaces\Payments\PackageCoverServiceInterface;
 use App\Interfaces\Payments\PaymentReminderServiceInterface;
 use App\Interfaces\Pharmacy\InventoryServiceInterface;
+use App\Listeners\Accounting\SendMonthSummary;
 use App\Models\HR\Employee;
 use App\Models\Identity\BackgroundTask;
 use App\Models\Identity\DeviceToken;
@@ -67,3 +68,7 @@ Schedule::call(fn () => app(PaymentReminderServiceInterface::class)->sendDue())
 // Packages past their validity expire; unused sessions are forfeited (moved from unearned to fees revenue).
 Schedule::call(fn () => app(PackageCoverServiceInterface::class)->expireDue())
     ->name('packages:expire')->dailyAt('00:30')->timezone('Asia/Bahrain')->withoutOverlapping();
+
+// The owner's month-end summary goes to everyone who reads the financial reports.
+Schedule::call(fn () => app(SendMonthSummary::class)())
+    ->name('reports:month-summary')->monthlyOn(1, '08:00')->timezone('Asia/Bahrain')->withoutOverlapping();

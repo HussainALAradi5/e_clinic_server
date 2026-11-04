@@ -102,6 +102,12 @@ return [
             'body' => 'Your result :code is ready. Your doctor will go through it with you.',
         ],
     ],
+    'report' => [
+        'month_summary' => [
+            'subject' => ':month in short: :revenue revenue',
+            'body' => ':month — revenue :revenue, result :result, collected :collected, :visits visits. The full summary is under Accounting → Month summary.',
+        ],
+    ],
     'payment' => [
         'received' => [
             'subject' => 'Payment received: :amount',
