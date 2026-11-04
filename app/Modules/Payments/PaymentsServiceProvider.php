@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Payments;
 
+use App\Events\Appointments\AppointmentCancelled;
 use App\Events\Appointments\AppointmentCompleted;
+use App\Events\Appointments\AppointmentNoShow;
 use App\Events\Appointments\ClinicalOrderCompleted;
 use App\Events\Payments\PaymentVoided;
 use App\Events\Payments\RefundApproved;
@@ -16,12 +18,14 @@ use App\Http\Resources\Payments\InvoiceResource;
 use App\Http\Resources\Payments\PaymentResource;
 use App\Http\Resources\Payments\RefundResource;
 use App\Imports\Payments\BillableServiceImport;
+use App\Interfaces\Payments\AppointmentFeeServiceInterface;
 use App\Interfaces\Payments\BillableServiceServiceInterface;
 use App\Interfaces\Payments\InsuranceClaimServiceInterface;
 use App\Interfaces\Payments\InvoiceServiceInterface;
 use App\Interfaces\Payments\PaymentServiceInterface;
 use App\Interfaces\Payments\RefundServiceInterface;
 use App\Interfaces\Payments\WalletServiceInterface;
+use App\Listeners\Payments\ChargeAppointmentFee;
 use App\Listeners\Payments\ChargeCompletedWork;
 use App\Listeners\Payments\ReturnVoidedBalancePayment;
 use App\Listeners\Payments\SendRefundNotifications;
@@ -31,6 +35,7 @@ use App\Models\Payments\Invoice;
 use App\Models\Payments\Payment;
 use App\Models\Payments\Refund;
 use App\Services\Bulk\BulkActionRegistry;
+use App\Services\Payments\AppointmentFeeService;
 use App\Services\Payments\BillableServiceService;
 use App\Services\Payments\InsuranceClaimService;
 use App\Services\Payments\InvoiceService;
@@ -57,6 +62,7 @@ final class PaymentsServiceProvider extends ServiceProvider
         RefundServiceInterface::class => RefundService::class,
         InsuranceClaimServiceInterface::class => InsuranceClaimService::class,
         WalletServiceInterface::class => WalletService::class,
+        AppointmentFeeServiceInterface::class => AppointmentFeeService::class,
     ];
 
     public function boot(BulkActionRegistry $bulk): void
@@ -64,6 +70,7 @@ final class PaymentsServiceProvider extends ServiceProvider
         Event::listen([AppointmentCompleted::class, ClinicalOrderCompleted::class], ChargeCompletedWork::class);
         Event::listen([RefundRequested::class, RefundApproved::class, RefundRejected::class], SendRefundNotifications::class);
         Event::listen(PaymentVoided::class, ReturnVoidedBalancePayment::class);
+        Event::listen([AppointmentNoShow::class, AppointmentCancelled::class], ChargeAppointmentFee::class);
 
         $bulk->register('services', BillableService::class, BillableService::listQueryConfig(), BillableServiceService::class)
             ->exportable(BillableServiceResource::class, fn (Builder $q) => $q->with(['specialty', 'revenueAccount']), values: [

@@ -42,6 +42,8 @@ return [
     'AUTH_2FA_REQUIRED' => 'Two-factor authentication is required.',
     'AUTH_2FA_INVALID' => 'The verification code is invalid or has expired.',
     'AUTH_2FA_ALREADY_ENABLED' => 'Two-factor authentication is already enabled.',
+    'FEE_NOT_WAIVABLE' => 'This fee is already on an issued invoice — refund it instead.',
+    'FEE_ALREADY_WAIVED' => 'This fee was already waived.',
     'WALLET_INSUFFICIENT' => 'The patient balance (:balance) does not cover this amount.',
     'WALLET_LIMIT' => 'This is outside the patient balance rules.',
     'WALLET_MIN_DEPOSIT' => 'Deposits start at :min.',

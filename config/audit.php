@@ -40,6 +40,7 @@ use App\Models\Identity\Notification;
 use App\Models\Identity\Person;
 use App\Models\Identity\Role;
 use App\Models\Identity\User;
+use App\Models\Payments\AppointmentFee;
 use App\Models\Payments\BillableService;
 use App\Models\Payments\InsuranceClaim;
 use App\Models\Payments\Invoice;
@@ -125,6 +126,7 @@ return [
         'sick_leave' => SickLeave::class,
         'invoice' => Invoice::class,
         'payment' => Payment::class,
+        'appointment_fee' => AppointmentFee::class,
         'refund' => Refund::class,
         'insurance_claim' => InsuranceClaim::class,
         'cash_session' => CashSession::class,

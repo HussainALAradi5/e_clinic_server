@@ -33,6 +33,7 @@ return [
         'companies' => ['module' => 'reference_data', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
         'sick_leaves' => ['module' => 'appointments', 'actions' => ['export'], 'ownership' => '`patient_id` = the user\'s id (portal) or `doctor_id` = the user\'s id (the issuing doctor)'],
         'templates' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`created_by` = user (ready-made templates belong to the clinic)'],
+        'appointment_fees' => ['module' => 'payments', 'actions' => ['waive'], 'ownership' => '`patient_id` = the user\'s id (portal)'],
         'wallet' => ['module' => 'payments', 'actions' => ['deposit', 'withdraw', 'adjust'], 'ownership' => '`patient_id` = the user\'s id (portal)'],
         'written_documents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id (portal) or `author_id` = the user\'s id (the writer)'],
         'consents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id or `explained_by` = the user\'s id or the patient has an appointment / treatment with the user as provider'],
@@ -84,6 +85,7 @@ return [
         'receptionist' => [
             'access' => [
                 'wallet' => ['read_all'],
+                'appointment_fees' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
@@ -238,6 +240,7 @@ return [
         'accountant' => [
             'access' => [
                 'wallet' => ['read_all', 'write'],
+                'appointment_fees' => ['read_all', 'write'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
@@ -265,11 +268,12 @@ return [
                 'leaves' => ['read_own', 'create', 'write'],
                 'staff_requests' => ['read_own', 'create', 'write'],
             ],
-            'actions' => ['wallet.deposit', 'wallet.withdraw', 'wallet.adjust', 'codes.generate', 'claims.decide', 'claims.remit', 'fiscal.close', 'journal.post', 'journal.reverse', 'reports.export', 'transactions.export', 'expenses.approve', 'expenses.pay', 'invoices.cancel', 'payments.void', 'refunds.approve', 'cash_sessions.supervise', 'payroll.approve', 'payroll.pay', 'audit.export', 'attendance.self', 'leaves.request', 'companies.export', 'companies.import', 'accounts.export', 'services.export', 'services.import', 'inventory.export', 'dispensing.export', 'payroll.export'],
+            'actions' => ['wallet.deposit', 'wallet.withdraw', 'wallet.adjust', 'appointment_fees.waive', 'codes.generate', 'claims.decide', 'claims.remit', 'fiscal.close', 'journal.post', 'journal.reverse', 'reports.export', 'transactions.export', 'expenses.approve', 'expenses.pay', 'invoices.cancel', 'payments.void', 'refunds.approve', 'cash_sessions.supervise', 'payroll.approve', 'payroll.pay', 'audit.export', 'attendance.self', 'leaves.request', 'companies.export', 'companies.import', 'accounts.export', 'services.export', 'services.import', 'inventory.export', 'dispensing.export', 'payroll.export'],
         ],
         'cashier' => [
             'access' => [
                 'wallet' => ['read_all'],
+                'appointment_fees' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'patients' => ['read_all'],
@@ -290,6 +294,7 @@ return [
         'patient' => [
             'access' => [
                 'wallet' => ['read_own'],
+                'appointment_fees' => ['read_own'],
                 'patients' => ['read_own'],
                 'people' => ['read_own'],
                 'appointments' => ['read_own', 'create'],

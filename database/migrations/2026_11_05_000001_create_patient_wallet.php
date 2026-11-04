@@ -5,16 +5,12 @@ declare(strict_types=1);
 use App\Enums\Payments\WalletEntryType;
 use App\Enums\Shared\PaymentMethod;
 use App\Models\Accounting\Account;
-use App\Models\Identity\Permission;
-use App\Models\Identity\Role;
+use App\Utilities\Access\RightsGranter;
 use App\Utilities\Database\Constraints;
 use Database\Seeders\ChartOfAccountsSeeder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schema;
-use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Patient balance (wallet): money the clinic holds for a patient.
@@ -79,31 +75,6 @@ return new class extends Migration
     /** Existing databases: `wallet.*` to the roles that have them in config/access.php. */
     private function grantRights(): void
     {
-        $guard = Config::string('access.guard');
-        if (Role::query()->where('guard_name', $guard)->doesntExist()) {
-            return;
-        }
-        Model::preventLazyLoading(false);
-        $flags = ['read_own', 'read_all', 'create', 'write', 'delete', 'deposit', 'withdraw', 'adjust'];
-        foreach ($flags as $flag) {
-            Permission::query()->firstOrCreate(['name' => "wallet.{$flag}", 'guard_name' => $guard], ['module' => 'payments', 'description' => ucfirst(str_replace('_', ' ', $flag)).' — patient balance']);
-        }
-        /** @var array<string, array{access: string|array<string, list<string>>, actions?: string|list<string>}> $roles */
-        $roles = Config::array('access.roles');
-        foreach (Role::query()->where('guard_name', $guard)->whereIn('name', array_keys($roles))->get() as $role) {
-            $config = $roles[$role->name];
-            if ($config['access'] === '*') {
-                $role->givePermissionTo(array_map(fn (string $f): string => "wallet.{$f}", $flags));
-
-                continue;
-            }
-            $grant = array_map(fn (string $f): string => "wallet.{$f}", $config['access']['wallet'] ?? []);
-            $actions = is_array($config['actions'] ?? null) ? $config['actions'] : [];
-            $grant = [...$grant, ...array_values(array_filter($actions, fn (string $a): bool => str_starts_with($a, 'wallet.')))];
-            if ($grant !== []) {
-                $role->givePermissionTo($grant);
-            }
-        }
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        RightsGranter::grant('wallet', ['read_own', 'read_all', 'create', 'write', 'delete', 'deposit', 'withdraw', 'adjust'], 'payments', 'patient balance');
     }
 };

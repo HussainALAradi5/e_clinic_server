@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Payments\AppointmentFeeController;
 use App\Http\Controllers\Payments\BillableServiceController;
 use App\Http\Controllers\Payments\InsuranceClaimController;
 use App\Http\Controllers\Payments\InvoiceController;
@@ -61,6 +62,17 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
     });
     Route::post('invoices/{invoice}/pay-from-balance', [WalletController::class, 'payInvoice'])->whereUuid('invoice')
         ->middleware(['access:payments.create&wallet.read_all', 'throttle:sensitive', EnsureIdempotency::ALIAS])->name('invoices.pay-from-balance');
+
+    // Fees for missed and late-cancelled visits (charged by the no-show / cancellation events; waived by admins and accountants)
+    Route::prefix('appointment-fees')->name('appointment-fees.')->controller(AppointmentFeeController::class)->group(function (): void {
+        Route::middleware(['access:appointment_fees.read_all|appointment_fees.read_own', 'throttle:read'])->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::get('{fee}', 'show')->whereUuid('fee')->name('show');
+        });
+        Route::post('{fee}/waive', 'waive')->whereUuid('fee')->middleware(['access:appointment_fees.read_all&appointment_fees.waive', 'throttle:sensitive'])->name('waive');
+    });
+    Route::get('appointments/{appointment}/cancellation-fee', [AppointmentFeeController::class, 'cancellationFee'])->whereUuid('appointment')
+        ->middleware(['access:appointments.cancel', 'throttle:read'])->name('appointments.cancellation-fee');
 
     Route::prefix('payments')->name('payments.')->controller(PaymentController::class)->group(function (): void {
         Route::middleware(['access:payments.read_all|payments.read_own', 'throttle:read'])->group(function (): void {

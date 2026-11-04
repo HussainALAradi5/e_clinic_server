@@ -74,4 +74,21 @@ return [
         ],
     ],
 
+    /*
+    | Fees for visits that did not happen (AppointmentFeeService):
+    | - services: the price-list item of each fee — its price is the amount (admins change it in the price list;
+    |   archive it or set 0 to stop charging that fee), posted to Fees revenue (4600).
+    | - late_cancel_hours: a cancellation by the patient this close to the start is charged. Cancellations by the
+    |   clinic, the doctor or the system never are.
+    | - waive_reason_min: shortest reason for waiving a fee (admins and accountants only, while still on a draft).
+    */
+    'fees' => [
+        'services' => [
+            'no_show' => ['code' => 'FEE-NO-SHOW', 'name' => 'Missed appointment fee', 'price' => '5.000'],
+            'late_cancel' => ['code' => 'FEE-LATE-CANCEL', 'name' => 'Late cancellation fee', 'price' => '3.000'],
+        ],
+        'late_cancel_hours' => 24,
+        'waive_reason_min' => 10,
+    ],
+
 ];

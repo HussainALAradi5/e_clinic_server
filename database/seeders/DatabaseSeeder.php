@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             SuperAdminSeeder::class,
             ChartOfAccountsSeeder::class,
+            FeeServicesSeeder::class,
             FiscalYearSeeder::class,
             LeaveTypeSeeder::class,
             Icd10Seeder::class,
