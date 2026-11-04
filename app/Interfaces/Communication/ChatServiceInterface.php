@@ -7,6 +7,7 @@ namespace App\Interfaces\Communication;
 use App\Dtos\Communication\ContactSearch;
 use App\Dtos\Communication\ConversationFilter;
 use App\Dtos\Communication\SendMessageData;
+use App\Enums\Communication\MuteDuration;
 use App\Enums\Communication\ParticipantRole;
 use App\Models\Communication\ChatSetting;
 use App\Models\Communication\Conversation;
@@ -82,6 +83,9 @@ interface ChatServiceInterface
      * @param  array<string, mixed>  $values  validated bubble_style, my_color, others_color, notify_messages, count_in_badge
      */
     public function saveSettings(User $me, array $values): ChatSetting;
+
+    /** Mutes the chat for me ([duration]; null unmutes): no notifications and no badge from it, mentions still notify. */
+    public function mute(User $me, Conversation $conversation, ?MuteDuration $duration): Conversation;
 
     /** Marks the chat read up to now. */
     public function markRead(User $me, Conversation $conversation): void;

@@ -8,6 +8,7 @@ use App\Dtos\Communication\ConversationFilter;
 use App\Enums\Communication\BubbleColor;
 use App\Enums\Communication\BubbleStyle;
 use App\Enums\Communication\ConversationType;
+use App\Enums\Communication\MuteDuration;
 use App\Enums\Communication\ParticipantRole;
 use App\Http\Concerns\ApiResponse;
 use App\Http\Requests\Communication\ContactSearchRequest;
@@ -91,6 +92,16 @@ final class ChatController
     public function restore(Request $request, string $conversation): JsonResponse
     {
         return $this->ok(new ConversationResource($this->chat->restore($this->me($request), $conversation)));
+    }
+
+    /** Mutes my copy of the chat for `duration` (8h, 1w, always); `duration: null` unmutes. */
+    public function mute(Request $request, string $conversation): JsonResponse
+    {
+        $request->validate(['duration' => ['present', 'nullable', Rule::enum(MuteDuration::class)]]);
+        $me = $this->me($request);
+        $duration = MuteDuration::tryFrom((string) $request->input('duration'));
+
+        return $this->ok(new ConversationResource($this->chat->mute($me, $this->chat->find($me, $conversation), $duration)));
     }
 
     public function rename(Request $request, string $conversation): JsonResponse

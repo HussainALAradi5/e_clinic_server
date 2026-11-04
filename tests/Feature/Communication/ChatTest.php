@@ -121,3 +121,33 @@ it('finds colleagues to message by name, phone, email or staff no., a page at a 
     expect(array_intersect(array_column($first, 'id'), array_column($second, 'id')))->toBe([]);
     $this->getJson('/api/v1/chat/contacts?per_page=500')->assertUnprocessable();
 });
+
+it('mutes a chat for one member: no badge from it, ends by itself, and shows the colleague contact in the info', function () {
+    Event::fake([MessageSent::class, ConversationRead::class]);
+    $omar = chatUser();
+    $rana = chatUser(RoleName::Receptionist, UserType::Receptionist);
+    Sanctum::actingAs($omar);
+    $chat = $this->postJson('/api/v1/chat/conversations', ['type' => 'direct', 'user_id' => $rana->id])->json('data.id');
+    $this->postJson("/api/v1/chat/conversations/{$chat}/messages", ['body' => 'Lunch?'])->assertCreated();
+
+    Sanctum::actingAs($rana);
+    $this->patchJson("/api/v1/chat/conversations/{$chat}/mute", ['duration' => 'forever'])->assertUnprocessable();
+    $this->patchJson("/api/v1/chat/conversations/{$chat}/mute", ['duration' => '8h'])->assertOk()
+        ->assertJsonPath('data.muted', true)
+        ->assertJsonPath('data.members.0.email', fn ($email) => $email !== null);
+    // The chat keeps its own count; the menu badge leaves it out.
+    $this->getJson('/api/v1/chat/unread')->assertJsonPath('data.count', 0);
+    $this->getJson('/api/v1/chat/conversations')->assertJsonPath('data.0.unread_count', 1)->assertJsonPath('data.0.muted', true);
+
+    // Omar's copy is not muted.
+    Sanctum::actingAs($omar);
+    $this->getJson("/api/v1/chat/conversations/{$chat}")->assertJsonPath('data.muted', false);
+
+    Sanctum::actingAs($rana);
+    $this->travel(9)->hours();
+    $this->getJson('/api/v1/chat/unread')->assertJsonPath('data.count', 1);
+    $this->getJson("/api/v1/chat/conversations/{$chat}")->assertJsonPath('data.muted', false);
+
+    $this->patchJson("/api/v1/chat/conversations/{$chat}/mute", ['duration' => 'always'])->assertJsonPath('data.muted', true)->assertJsonPath('data.muted_until', null);
+    $this->patchJson("/api/v1/chat/conversations/{$chat}/mute", ['duration' => null])->assertJsonPath('data.muted', false);
+});

@@ -121,6 +121,7 @@ return [
         Communication\BubbleColor::class,
         Communication\BubbleStyle::class,
         Communication\ConversationType::class,
+        Communication\MuteDuration::class,
         Communication\MessageKind::class,
         Communication\ParticipantRole::class,
         Communication\TicketCategory::class,

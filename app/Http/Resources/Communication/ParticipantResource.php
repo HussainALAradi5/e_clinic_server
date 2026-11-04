@@ -25,6 +25,9 @@ final class ParticipantResource extends JsonResource
             'user_id' => $this->user_id,
             'full_name' => $this->user->person->full_name,
             'avatar_url' => Avatar::url($this->user->person),
+            // Work contact of a colleague (chat is staff-only), for the chat's info panel.
+            'phone' => $this->user->person->phone,
+            'email' => $this->user->person->email,
             'user_type' => $this->user->user_type->value,
             'role' => $this->role->value,
             'is_me' => $this->user_id === $request->user()?->getAuthIdentifier(),

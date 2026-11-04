@@ -31,6 +31,7 @@ Route::middleware(['auth:sanctum', EnsureStaff::ALIAS])->group(function (): void
             Route::post('conversations/{conversation}/read', 'read')->whereUuid('conversation')->name('read');
             Route::post('conversations/{conversation}/messages/{message}/reactions', 'react')->whereUuid(['conversation', 'message'])->name('react');
             Route::put('settings', 'saveSettings')->name('settings.save');
+            Route::patch('conversations/{conversation}/mute', 'mute')->whereUuid('conversation')->name('mute');
             Route::patch('conversations/{conversation}', 'rename')->whereUuid('conversation')->name('rename');
             Route::post('conversations/{conversation}/members', 'addMembers')->whereUuid('conversation')->name('members.add');
             Route::patch('conversations/{conversation}/members/{user}', 'setRole')->whereUuid(['conversation', 'user'])->name('members.role');

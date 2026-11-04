@@ -10,6 +10,7 @@ use App\Dtos\Communication\SendMessageData;
 use App\Dtos\Identity\AttachToData;
 use App\Enums\Communication\ConversationType;
 use App\Enums\Communication\MessageKind;
+use App\Enums\Communication\MuteDuration;
 use App\Enums\Communication\ParticipantRole;
 use App\Enums\Identity\AttachmentCategory;
 use App\Enums\Identity\UserStatus;
@@ -166,6 +167,17 @@ final class ChatService implements ChatServiceInterface
         });
         $this->announce($conversation->id, [$me->id, ...$members]);
         $this->notify('chat.added', $members, $conversation, $me);
+
+        return $this->find($me, $conversation->id);
+    }
+
+    public function mute(User $me, Conversation $conversation, ?MuteDuration $duration): Conversation
+    {
+        $now = $this->clock->now();
+        $conversation->participantFor($me->id)?->update([
+            'muted_at' => $duration === null ? null : $now,
+            'muted_until' => $duration?->until($now),
+        ]);
 
         return $this->find($me, $conversation->id);
     }
@@ -340,6 +352,8 @@ final class ChatService implements ChatServiceInterface
         return (int) Message::query()
             ->join('conversation_participants as p', fn ($j) => $j->on('p.conversation_id', '=', 'messages.conversation_id')->where('p.user_id', $me->id)->whereNull('p.left_at'))
             ->where('messages.sender_id', '!=', $me->id)
+            // Muted chats keep their own unread count but stay out of the menu badge.
+            ->where(fn (Builder $q) => $q->whereNull('p.muted_at')->orWhere('p.muted_until', '<=', $this->clock->now()))
             ->where(fn (Builder $q) => $q->whereNull('p.last_read_at')->orWhereColumn('messages.created_at', '>', 'p.last_read_at'))
             ->count();
     }
@@ -430,7 +444,12 @@ final class ChatService implements ChatServiceInterface
             'by' => $by->person->full_name,
             ...$data,
         ];
+        $now = $this->clock->now();
         foreach ($userIds as $id) {
+            // A muted chat stays quiet, except when someone mentions you.
+            if ($template !== 'chat.mention' && $conversation->participantFor($id)?->isMutedAt($now)) {
+                continue;
+            }
             Recipients::user($id)->each(fn (Person $p) => rescue(fn () => $this->notifications->send($template, $p, $conversation, $data), report: true));
         }
     }

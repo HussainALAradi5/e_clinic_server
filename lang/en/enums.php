@@ -8,6 +8,7 @@
 return [
     'GenericStatus' => ['pending' => 'Pending', 'in_progress' => 'In progress', 'completed' => 'Completed', 'cancelled' => 'Cancelled'],
     'ConversationType' => ['direct' => 'One-to-one', 'group' => 'Group'],
+    'MuteDuration' => ['8h' => '8 hours', '1w' => '1 week', 'always' => 'Until I unmute'],
     'ParticipantRole' => ['admin' => 'Leader', 'member' => 'Member'],
     'MessageKind' => ['text' => 'Text', 'media' => 'Photo / file', 'voice' => 'Voice note'],
     'BubbleStyle' => ['rounded' => 'Rounded', 'square' => 'Square', 'minimal' => 'Minimal'],

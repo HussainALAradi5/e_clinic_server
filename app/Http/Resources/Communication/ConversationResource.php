@@ -7,6 +7,7 @@ namespace App\Http\Resources\Communication;
 use App\Models\Communication\Conversation;
 use App\Models\Communication\ConversationParticipant;
 use App\Utilities\Identity\Avatar;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -33,6 +34,8 @@ final class ConversationResource extends JsonResource
             'partner_id' => $other?->user_id,
             'avatar_url' => $other === null ? null : Avatar::url($other->user->person),
             'my_role' => $this->participantFor($me)?->role->value,
+            'muted' => $this->participantFor($me)?->isMutedAt(CarbonImmutable::now()) ?? false,
+            'muted_until' => $this->participantFor($me)?->muted_until?->toIso8601String(),
             'members' => ParticipantResource::collection($this->participants),
             'last_message' => $this->latestMessage === null ? null : new MessageResource($this->latestMessage),
             'unread_count' => (int) ($this->getAttribute('unread_count') ?? 0),

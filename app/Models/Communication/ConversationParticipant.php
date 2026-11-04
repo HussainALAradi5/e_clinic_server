@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ParticipantRole $role
  * @property CarbonImmutable|null $last_read_at
  * @property CarbonImmutable|null $left_at
+ * @property CarbonImmutable|null $muted_at When the member muted the chat (null = not muted)
+ * @property CarbonImmutable|null $muted_until When the mute ends by itself (null = until unmuted)
  * @property-read User $user
  * @property-read Conversation $conversation
  */
@@ -28,7 +30,13 @@ class ConversationParticipant extends Model
     use HasUuids;
 
     /** @var list<string> */
-    protected $fillable = ['conversation_id', 'user_id', 'role', 'last_read_at', 'left_at'];
+    protected $fillable = ['conversation_id', 'user_id', 'role', 'last_read_at', 'left_at', 'muted_at', 'muted_until'];
+
+    /** Muted at [$now]: muted, and the mute has not run out. */
+    public function isMutedAt(CarbonImmutable $now): bool
+    {
+        return $this->muted_at !== null && ($this->muted_until === null || $this->muted_until->isAfter($now));
+    }
 
     public function isAdmin(): bool
     {
@@ -57,6 +65,8 @@ class ConversationParticipant extends Model
             'role' => ParticipantRole::class,
             'last_read_at' => 'immutable_datetime',
             'left_at' => 'immutable_datetime',
+            'muted_at' => 'immutable_datetime',
+            'muted_until' => 'immutable_datetime',
         ];
     }
 }
