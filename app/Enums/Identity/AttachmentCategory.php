@@ -27,5 +27,8 @@ enum AttachmentCategory: string implements HasLabel
     case ChatMedia = 'chat_media';
     case VoiceNote = 'voice_note';
     case TicketAttachment = 'ticket_attachment';
+    case GeneratedDocument = 'generated_document';
+    case Signature = 'signature';
+    case ClinicLogo = 'clinic_logo';
     case Other = 'other';
 }

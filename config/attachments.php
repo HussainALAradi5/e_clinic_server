@@ -59,6 +59,10 @@ return [
         'voice_note' => ['mimes' => ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/aac', 'audio/x-m4a', 'audio/wav', 'video/webm'], 'max_mb' => 10, 'sensitive' => false],
         // Screenshots, photos and PDFs on a support ticket (the requester's, and the support team's).
         'ticket_attachment' => ['mimes' => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], 'max_mb' => 10, 'sensitive' => false],
+        // PDFs the server generates (sick leaves, results, invoices…) and staff signatures (drawn or uploaded).
+        'generated_document' => ['mimes' => ['application/pdf'], 'max_mb' => 20, 'sensitive' => true],
+        'signature' => ['mimes' => ['image/png', 'image/jpeg'], 'max_mb' => 1, 'sensitive' => true],
+        'clinic_logo' => ['mimes' => ['image/png', 'image/jpeg'], 'max_mb' => 1, 'sensitive' => false],
         'other' => ['mimes' => [
             'application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'text/plain', 'text/csv',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

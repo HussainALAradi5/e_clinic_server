@@ -15,10 +15,10 @@ use App\Interfaces\Shared\TaskDispatcher;
 use App\Services\Shared\FileStorage;
 use App\Utilities\Access\OwnershipScope;
 use App\Utilities\Access\PermissionExpression;
+use App\Utilities\Documents\TablePdfWriter;
 use App\Utilities\Query\ApplyListQuery;
 use App\Utilities\Query\ListQuery;
 use App\Utilities\Shared\ClinicClock;
-use App\Utilities\Transfer\Pdf\PdfTableWriter;
 use App\Utilities\Transfer\Xlsx\XlsxWriter;
 use Generator;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -44,6 +44,7 @@ final class ExportService
         private readonly ApplyListQuery $listQuery,
         private readonly FileStorage $files,
         private readonly ClinicClock $clock,
+        private readonly TablePdfWriter $pdf,
     ) {}
 
     public function export(string $resource, ExportData $data, Authenticatable $user): ExportResult
@@ -93,9 +94,9 @@ final class ExportService
         };
 
         match ($data->format) {
-            ExportFormat::Xlsx => $this->xlsx($absolutePath, $headers, $rows(), array_keys($columns)),
+            ExportFormat::Xlsx => $this->xlsx($absolutePath, $this->title($definition), $headers, $rows()),
             ExportFormat::Csv => $this->csv($absolutePath, $headers, $rows()),
-            ExportFormat::Pdf => (new PdfTableWriter)->write($absolutePath, $this->title($definition), $this->subtitle(), $headers, $rows()),
+            ExportFormat::Pdf => $this->pdf->write($absolutePath, $this->title($definition), $this->subtitle(), $headers, $rows()),
         };
 
         return $done;
@@ -164,15 +165,16 @@ final class ExportService
     }
 
     /**
+     * Branded sheet: title band, the header row (filters on, frozen), striped rows.
+     *
      * @param  list<string>  $headers
      * @param  iterable<list<string>>  $rows
-     * @param  list<string>  $fields
      */
-    private function xlsx(string $path, array $headers, iterable $rows, array $fields): void
+    private function xlsx(string $path, string $title, array $headers, iterable $rows): void
     {
-        $widths = array_map(fn (string $h): int => max(12, min(40, mb_strlen($h) + 6)), $headers);
+        $widths = array_map(fn (string $h): int => max(14, min(40, mb_strlen($h) + 8)), $headers);
         $xlsx = new XlsxWriter;
-        $sheet = $xlsx->addSheet('Data', $widths)->header($headers);
+        $sheet = $xlsx->addSheet($title, $widths)->banner($title, $this->subtitle(), count($headers))->header($headers);
         foreach ($rows as $row) {
             $sheet->row($row);
         }

@@ -26,6 +26,15 @@ final class XlsxWriter
 
     public const STYLE_WRAP = 3;
 
+    /** Branded sheets (XlsxSheet::banner): title band, subtitle, bordered body rows and their striped twins. */
+    public const STYLE_TITLE = 4;
+
+    public const STYLE_SUBTITLE = 5;
+
+    public const STYLE_BODY = 6;
+
+    public const STYLE_STRIPE = 7;
+
     /** @var list<XlsxSheet> */
     private array $sheets = [];
 
@@ -112,22 +121,36 @@ final class XlsxWriter
             .'</Relationships>';
     }
 
-    /** 0 default, 1 header (bold white on pine), 2 bold, 3 wrapped text. */
+    /**
+     * 0 default, 1 header (bold white on pine), 2 bold, 3 wrapped text, 4 title (large pine on mint band),
+     * 5 subtitle (grey italic), 6 body row (thin grey bottom border), 7 striped body row.
+     */
     private function styles(): string
     {
+        $center = '<alignment vertical="center"/>';
+
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            .'<fonts count="3"><font><sz val="11"/><name val="Calibri"/></font>'
+            .'<fonts count="5"><font><sz val="11"/><name val="Calibri"/></font>'
             .'<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
-            .'<font><b/><sz val="11"/><name val="Calibri"/></font></fonts>'
-            .'<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
-            .'<fill><patternFill patternType="solid"><fgColor rgb="FF0B5D57"/><bgColor indexed="64"/></patternFill></fill></fills>'
-            .'<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+            .'<font><b/><sz val="11"/><name val="Calibri"/></font>'
+            .'<font><b/><sz val="16"/><color rgb="FF073C39"/><name val="Calibri"/></font>'
+            .'<font><i/><sz val="10"/><color rgb="FF64748B"/><name val="Calibri"/></font></fonts>'
+            .'<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
+            .'<fill><patternFill patternType="solid"><fgColor rgb="FF0B5D57"/><bgColor indexed="64"/></patternFill></fill>'
+            .'<fill><patternFill patternType="solid"><fgColor rgb="FFE6F4F1"/><bgColor indexed="64"/></patternFill></fill>'
+            .'<fill><patternFill patternType="solid"><fgColor rgb="FFF8FAFC"/><bgColor indexed="64"/></patternFill></fill></fills>'
+            .'<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>'
+            .'<border><left/><right/><top/><bottom style="thin"><color rgb="FFE2E8F0"/></bottom><diagonal/></border></borders>'
             .'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            .'<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
-            .'<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>'
+            .'<cellXfs count="8"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            .'<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1">'.$center.'</xf>'
             .'<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
-            .'<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf></cellXfs>'
+            .'<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment wrapText="1" vertical="top"/></xf>'
+            .'<xf numFmtId="0" fontId="3" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1">'.$center.'</xf>'
+            .'<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">'.$center.'</xf>'
+            .'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1">'.$center.'</xf>'
+            .'<xf numFmtId="0" fontId="0" fillId="4" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1">'.$center.'</xf></cellXfs>'
             .'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             .'</styleSheet>';
     }

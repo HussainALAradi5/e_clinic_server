@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Reference\AddressController;
+use App\Http\Controllers\Reference\ClinicProfileController;
 use App\Http\Controllers\Reference\CompanyController;
 use App\Http\Controllers\Reference\CountryController;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +15,20 @@ use Illuminate\Support\Facades\Route;
 // Public: country picker of portal registration and the public website.
 Route::get('public/countries', [CountryController::class, 'options'])->middleware('throttle:public')->name('public.countries');
 
+// Public: the clinic's name, contacts and logo (letterheads, the public website, the apps' sign-in screens).
+Route::prefix('public/clinic-profile')->name('public.clinic-profile.')->controller(ClinicProfileController::class)->middleware('throttle:public')->group(function (): void {
+    Route::get('/', 'show')->name('show');
+    Route::get('{image}', 'image')->whereIn('image', ['logo', 'stamp'])->name('image');
+});
+
 Route::middleware('auth:sanctum')->prefix('reference')->name('reference.')->group(function (): void {
+
+    // Clinic profile (admins): name, contacts, logo and stamp printed on every PDF
+    Route::prefix('clinic-profile')->name('clinic-profile.')->controller(ClinicProfileController::class)->middleware('access:clinic_profile.write')->group(function (): void {
+        Route::put('/', 'update')->middleware('throttle:write')->name('update');
+        Route::post('{image}', 'uploadImage')->whereIn('image', ['logo', 'stamp'])->middleware('throttle:write')->name('image.upload');
+        Route::delete('{image}', 'removeImage')->whereIn('image', ['logo', 'stamp'])->middleware('throttle:write')->name('image.remove');
+    });
 
     // Countries
     Route::prefix('countries')->name('countries.')->controller(CountryController::class)->group(function (): void {

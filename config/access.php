@@ -29,6 +29,7 @@ return [
         'chat' => ['module' => 'identity', 'actions' => [], 'ownership' => 'conversations the user takes part in'],
         'claims' => ['module' => 'payments', 'actions' => ['decide', 'remit'], 'ownership' => '`patient_id` = the user\'s id (portal: own claims, without diagnoses)'],
         'codes' => ['module' => 'identity', 'actions' => ['generate', 'scan'], 'ownership' => 'the coded record passes its own resource rule (e.g. a patient\'s own booking)'],
+        'clinic_profile' => ['module' => 'reference_data', 'actions' => [], 'ownership' => 'One clinic profile (name, logo, contacts on every PDF); admins only'],
         'companies' => ['module' => 'reference_data', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
         'sick_leaves' => ['module' => 'appointments', 'actions' => ['export'], 'ownership' => '`patient_id` = the user\'s id (portal) or `doctor_id` = the user\'s id (the issuing doctor)'],
         'consents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id or `explained_by` = the user\'s id or the patient has an appointment / treatment with the user as provider'],

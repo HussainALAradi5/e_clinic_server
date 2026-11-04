@@ -33,6 +33,7 @@ use App\Models\HR\Shift;
 use App\Models\HR\StaffRequest;
 use App\Models\Identity\Attachment;
 use App\Models\Identity\BackgroundTask;
+use App\Models\Identity\GeneratedDocument;
 use App\Models\Identity\Notification;
 use App\Models\Identity\Person;
 use App\Models\Identity\Role;
@@ -47,6 +48,7 @@ use App\Models\Pharmacy\Medication;
 use App\Models\Pharmacy\MedicationBatch;
 use App\Models\Pharmacy\Prescription;
 use App\Models\Reference\Address;
+use App\Models\Reference\ClinicProfile;
 use App\Models\Reference\Company;
 use App\Models\Reference\Country;
 use App\Models\Transactions\CashSession;
@@ -82,10 +84,12 @@ return [
         'role' => Role::class,
         'background_task' => BackgroundTask::class,
         'attachment' => Attachment::class,
+        'generated_document' => GeneratedDocument::class,
         'notification' => Notification::class,
         'country' => Country::class,
         'address' => Address::class,
         'company' => Company::class,
+        'clinic_profile' => ClinicProfile::class,
         'account' => Account::class,
         'account_mapping' => AccountMapping::class,
         'fiscal_year' => FiscalYear::class,

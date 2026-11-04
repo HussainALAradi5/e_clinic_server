@@ -31,26 +31,34 @@ final class CodeService implements CodeServiceInterface
     {
         $record = $this->readable($entityAlias, fn ($q) => $q->whereKey($id));
         $payload = $this->payloadFor($entityAlias, (string) $record->getAttribute('code'));
-        $key = "code-image:{$symbology->value}:{$size}:{$format}:".hash('sha256', $payload);
+        // 2D codes carry the public check link, so any phone camera opens it; barcodes stay short (the payload).
+        $content = $symbology === CodeSymbology::Code128 ? $payload : $this->verifyUrl($payload);
+        $key = "code-image:{$symbology->value}:{$size}:{$format}:".hash('sha256', $content);
 
         /** @var string $content */
-        $content = Cache::remember($key, now()->addHours(Config::integer('codes.image_cache_hours', 24)), function () use ($payload, $symbology, $size, $format): string {
+        $image = Cache::remember($key, now()->addHours(Config::integer('codes.image_cache_hours', 24)), function () use ($content, $symbology, $size, $format): string {
             [$type, $height] = match ($symbology) {
                 CodeSymbology::Qr => ['QRCODE,M', $size],
                 CodeSymbology::Datamatrix => ['DATAMATRIX', $size],
                 CodeSymbology::Code128 => ['C128', max(32, intdiv($size, 3))],
             };
-            $barcode = (new Barcode)->getBarcodeObj($type, $payload, $size, $height, 'black', [-2, -2, -2, -2])->setBackgroundColor('white');
+            $barcode = (new Barcode)->getBarcodeObj($type, $content, $size, $height, 'black', [-2, -2, -2, -2])->setBackgroundColor('white');
 
             return base64_encode($format === 'png' ? $barcode->getPngData(false) : $barcode->getSvgCode());
         });
 
-        return new CodeImage((string) base64_decode($content, true), $format === 'png' ? 'image/png' : 'image/svg+xml', $payload);
+        return new CodeImage((string) base64_decode($image, true), $format === 'png' ? 'image/png' : 'image/svg+xml', $payload);
     }
 
     public function payloadFor(string $entityAlias, string $code): string
     {
         return "{$entityAlias}:{$code}.".$this->signature($entityAlias, $code);
+    }
+
+    /** Public check page of a payload on the web app (`/verify?code=…`). */
+    public function verifyUrl(string $payload): string
+    {
+        return rtrim(Config::string('clinic.client_url'), '/').'/verify?code='.rawurlencode($payload);
     }
 
     public function resolve(string $payload, ScanPurpose $purpose): ScanResultData
@@ -81,13 +89,25 @@ final class CodeService implements CodeServiceInterface
      */
     private function parse(string $payload): array
     {
-        if (preg_match(self::PATTERN, trim($payload), $m) !== 1
+        $payload = $this->fromLink(trim($payload));
+        if (preg_match(self::PATTERN, $payload, $m) !== 1
             || ! is_array(Config::get("codes.entities.{$m[1]}"))
             || ! hash_equals($this->signature($m[1], $m[2]), $m[3])) {
             throw new InvalidScanCodeException;
         }
 
         return [$m[1], $m[2]];
+    }
+
+    /** A scanned check link (`…/verify?code=…`) gives back its payload; anything else is returned as is. */
+    private function fromLink(string $scanned): string
+    {
+        if (! str_contains($scanned, '://')) {
+            return $scanned;
+        }
+        parse_str((string) parse_url($scanned, PHP_URL_QUERY), $query);
+
+        return is_string($query['code'] ?? null) ? $query['code'] : $scanned;
     }
 
     private function signature(string $alias, string $code): string

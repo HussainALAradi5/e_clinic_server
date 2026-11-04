@@ -20,6 +20,7 @@ use App\Http\Resources\Identity\UserResource;
 use App\Imports\Identity\PersonImport;
 use App\Imports\Identity\RoleImport;
 use App\Imports\Identity\UserImport;
+use App\Interfaces\Documents\DocumentServiceInterface;
 use App\Interfaces\Identity\AttachmentServiceInterface;
 use App\Interfaces\Identity\AuditableEvent;
 use App\Interfaces\Identity\AuditLogServiceInterface;
@@ -30,6 +31,7 @@ use App\Interfaces\Identity\FileScanner;
 use App\Interfaces\Identity\ListViewServiceInterface;
 use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Interfaces\Identity\RoleServiceInterface;
+use App\Interfaces\Identity\SignatureServiceInterface;
 use App\Interfaces\Identity\UserServiceInterface;
 use App\Interfaces\Identity\WebPushServiceInterface;
 use App\Interfaces\Shared\AuditRecorder;
@@ -51,6 +53,7 @@ use App\Models\Identity\User;
 use App\Scanners\Identity\ClamAvScanner;
 use App\Scanners\Identity\NullScanner;
 use App\Services\Bulk\BulkActionRegistry;
+use App\Services\Documents\DocumentService;
 use App\Services\Identity\AttachmentService;
 use App\Services\Identity\AuditLogService;
 use App\Services\Identity\AuthService;
@@ -59,6 +62,7 @@ use App\Services\Identity\CodeService;
 use App\Services\Identity\ListViewService;
 use App\Services\Identity\NotificationService;
 use App\Services\Identity\RoleService;
+use App\Services\Identity\SignatureService;
 use App\Services\Identity\UserService;
 use App\Services\Identity\WebPushService;
 use App\Tasks\Bulk\BulkActionTaskHandler;
@@ -93,6 +97,8 @@ final class IdentityServiceProvider extends ServiceProvider
         BackgroundTaskServiceInterface::class => BackgroundTaskService::class,
         AttachmentServiceInterface::class => AttachmentService::class,
         CodeServiceInterface::class => CodeService::class,
+        SignatureServiceInterface::class => SignatureService::class,
+        DocumentServiceInterface::class => DocumentService::class,
         NotificationServiceInterface::class => NotificationService::class,
         WebPushServiceInterface::class => WebPushService::class,
         ListViewServiceInterface::class => ListViewService::class,

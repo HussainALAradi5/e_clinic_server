@@ -15,6 +15,7 @@ use App\Models\Identity\Person;
 use App\Models\Identity\User;
 use App\Models\Reference\Address;
 use App\Models\Reference\Company;
+use App\Utilities\Demo\ImagingDemoImages;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -153,6 +154,8 @@ final class DemoSeeder extends Seeder
         $this->call(StaffRequestDemoSeeder::class);
         // Ten weeks of visits, results, prescriptions, payments and expenses, plus three weeks of bookings ahead.
         $this->call(HistoryDemoSeeder::class);
+        // Labelled synthetic pictures (X-ray, ultrasound, CT, MRI, ECG) on completed results, so their PDFs show images.
+        app(ImagingDemoImages::class)->attachMissing();
         // Staff chat: groups with leaders, one-to-one chats, files, a voice note, mentions and reactions.
         $this->call(ChatDemoSeeder::class);
         // Support tickets in every status, priority and category (two pages in the list).

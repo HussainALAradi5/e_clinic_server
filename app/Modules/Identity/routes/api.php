@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Documents\DocumentController;
 use App\Http\Controllers\Identity\AttachmentController;
 use App\Http\Controllers\Identity\AuditLogController;
 use App\Http\Controllers\Identity\AuthController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\Identity\ListViewController;
 use App\Http\Controllers\Identity\NotificationController;
 use App\Http\Controllers\Identity\ProfilePhotoController;
 use App\Http\Controllers\Identity\RoleController;
+use App\Http\Controllers\Identity\SignatureController;
 use App\Http\Controllers\Identity\UserController;
 use App\Http\Controllers\Identity\WebPushController;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +56,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::prefix('auth/photo')->name('auth.photo.')->controller(ProfilePhotoController::class)->middleware('throttle:write')->group(function (): void {
         Route::post('/', 'update')->name('update');
         Route::delete('/', 'destroy')->name('destroy');
+    });
+
+    // My signature (drawn or uploaded), printed on the documents I issue
+    Route::prefix('auth/signature')->name('auth.signature.')->controller(SignatureController::class)->group(function (): void {
+        Route::get('/', 'show')->middleware('throttle:read')->name('show');
+        Route::post('/', 'update')->middleware('throttle:write')->name('update');
+        Route::delete('/', 'destroy')->middleware('throttle:write')->name('destroy');
     });
 
     // People & Users
@@ -145,6 +154,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::prefix('codes')->name('codes.')->controller(CodeController::class)->group(function (): void {
         Route::post('scan', 'scan')->middleware(['access:(codes.read_all|codes.read_own)&codes.scan', 'throttle:write'])->name('scan');
         Route::get('{entity}/{id}', 'image')->where('entity', '[a-z_]+')->whereUuid('id')->middleware(['access:(codes.read_all|codes.read_own)&codes.generate', 'throttle:read'])->name('image');
+    });
+
+    // Documents — any record the user may read, as a branded PDF (sick leave, result, invoice…)
+    Route::prefix('documents/{type}/{id}')->name('documents.')->controller(DocumentController::class)->whereUuid('id')->middleware('throttle:read')->group(function (): void {
+        Route::get('/', 'show')->name('show');
+        Route::get('file', 'file')->name('file');
     });
 
     // Notifications — own inbox & devices (any user), delivery log (permission)

@@ -22,8 +22,8 @@ use App\Interfaces\Accounting\AccountServiceInterface;
 use App\Interfaces\Accounting\FinancialReportServiceInterface;
 use App\Interfaces\Shared\AuditRecorder;
 use App\Models\Accounting\Account;
+use App\Utilities\Documents\TablePdfWriter;
 use App\Utilities\Shared\ClinicClock;
-use App\Utilities\Transfer\Pdf\PdfTableWriter;
 use App\Utilities\Transfer\Xlsx\XlsxWriter;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -43,6 +43,7 @@ final class FinancialReportService implements FinancialReportServiceInterface
         private readonly AccountServiceInterface $accounts,
         private readonly ClinicClock $clock,
         private readonly AuditRecorder $audit,
+        private readonly TablePdfWriter $pdf,
     ) {}
 
     public function trialBalance(CarbonImmutable $asOf, bool $includeZero = false): ReportTable
@@ -410,10 +411,10 @@ final class FinancialReportService implements FinancialReportServiceInterface
         $table = $this->build($type, $params);
         $path = (string) tempnam(sys_get_temp_dir(), 'rpt');
         if ($format === ExportFormat::Pdf) {
-            (new PdfTableWriter)->write($path, $table->title, $table->subtitle, $table->headers(), $table->cells());
+            $this->pdf->write($path, $table->title, $table->subtitle, $table->headers(), $table->cells());
         } else {
             $writer = new XlsxWriter;
-            $sheet = $writer->addSheet(mb_substr($table->title, 0, 31));
+            $sheet = $writer->addSheet(mb_substr($table->title, 0, 31))->banner($table->title, $table->subtitle, count($table->headers()));
             $sheet->header($table->headers());
             foreach ($table->cells() as $cells) {
                 $sheet->row($cells);

@@ -8,12 +8,14 @@ use App\Http\Resources\Reference\CompanyResource;
 use App\Http\Resources\Reference\CountryResource;
 use App\Imports\Reference\CompanyImport;
 use App\Interfaces\Reference\AddressServiceInterface;
+use App\Interfaces\Reference\ClinicProfileServiceInterface;
 use App\Interfaces\Reference\CompanyServiceInterface;
 use App\Interfaces\Reference\CountryServiceInterface;
 use App\Models\Reference\Company;
 use App\Models\Reference\Country;
 use App\Services\Bulk\BulkActionRegistry;
 use App\Services\Reference\AddressService;
+use App\Services\Reference\ClinicProfileService;
 use App\Services\Reference\CompanyService;
 use App\Services\Reference\CountryService;
 use App\Utilities\Access\PermissionExpression;
@@ -29,6 +31,7 @@ final class ReferenceDataServiceProvider extends ServiceProvider
         CountryServiceInterface::class => CountryService::class,
         AddressServiceInterface::class => AddressService::class,
         CompanyServiceInterface::class => CompanyService::class,
+        ClinicProfileServiceInterface::class => ClinicProfileService::class,
     ];
 
     public function boot(BulkActionRegistry $bulk): void

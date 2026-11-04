@@ -43,6 +43,7 @@ return [
     'AUTH_2FA_INVALID' => 'The verification code is invalid or has expired.',
     'AUTH_2FA_ALREADY_ENABLED' => 'Two-factor authentication is already enabled.',
     'USER_EMAIL_TAKEN' => 'Another person already uses this email.',
+    'SIGNATURE_STAFF_ONLY' => 'Only staff can keep a signature.',
     'USER_CANNOT_MODIFY_SELF' => 'You cannot change the status or roles of your own account.',
     'USER_LAST_SUPER_ADMIN' => 'At least one active super admin must remain.',
     'ROLE_SYSTEM_PROTECTED' => 'System roles cannot be renamed, deleted or have this change.',

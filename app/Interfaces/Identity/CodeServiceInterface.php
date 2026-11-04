@@ -17,6 +17,9 @@ interface CodeServiceInterface
     /** Signed payload `<alias>:<code>.<signature>` of a record. */
     public function payloadFor(string $entityAlias, string $code): string;
 
+    /** Public check page of a payload on the web app; printed QR codes carry this link. */
+    public function verifyUrl(string $payload): string;
+
     /** Resolves a scanned payload for a signed-in user (their access rules apply → 404). */
     public function resolve(string $payload, ScanPurpose $purpose): ScanResultData;
 

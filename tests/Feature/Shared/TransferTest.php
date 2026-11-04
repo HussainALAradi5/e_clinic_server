@@ -58,10 +58,14 @@ it('exports the selected rows, or everything matching the filters, as Excel in t
         ->assertOk()
         ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     expect($selected->headers->get('content-disposition'))->toContain('companies-');
-    expect(readXlsx($selected))->toBe([['Name', 'Type'], ['Acme', 'Insurer']]);
+    // Branded sheet: title band, "Exported …" subtitle and a spacer above the header row.
+    $rows = readXlsx($selected);
+    expect($rows[0])->toBe(['Companies'])
+        ->and($rows[1][0])->toStartWith('Exported ')
+        ->and(array_slice($rows, 3))->toBe([['Name', 'Type'], ['Acme', 'Insurer']]);
 
     $filtered = $this->postJson('/api/v1/reference/companies/export', ['format' => 'xlsx', 'filter' => ['search' => 'a', 'sort' => 'name'], 'columns' => ['name']]);
-    expect(readXlsx($filtered))->toBe([['Name'], ['Acme'], ['Beta'], ['Gamma']]);
+    expect(array_slice(readXlsx($filtered), 3))->toBe([['Name'], ['Acme'], ['Beta'], ['Gamma']]);
 });
 
 it('exports PDF and CSV, and refuses PDFs that are too long', function () {
@@ -70,7 +74,7 @@ it('exports PDF and CSV, and refuses PDFs that are too long', function () {
     company('=cmd');
 
     $pdf = $this->postJson('/api/v1/reference/companies/export', ['format' => 'pdf'])->assertOk()->assertHeader('content-type', 'application/pdf');
-    expect($pdf->streamedContent())->toStartWith('%PDF-1.4');
+    expect($pdf->streamedContent())->toStartWith('%PDF-');
 
     $csv = $this->postJson('/api/v1/reference/companies/export', ['format' => 'csv', 'columns' => ['name']])->assertOk();
     expect($csv->streamedContent())->toContain("\nAcme\n")->toContain("\n'=cmd\n"); // no formula injection
