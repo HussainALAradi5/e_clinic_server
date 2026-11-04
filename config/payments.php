@@ -98,4 +98,19 @@ return [
         'waive_reason_min' => 10,
     ],
 
+    /*
+    | Online payments (OnlinePaymentService):
+    | - driver: tap (needs TAP_SECRET_KEY and a public APP_URL for the webhook) or fake (local test checkout; refused
+    |   in production).
+    | - min_amount: smallest online payment; the most is what the patient owes now (their co-pay when insured).
+    | - expiry_minutes: an attempt left on the payment page longer is given up (after one last look at the gateway).
+    | - return_path: the client page the payer lands on after paying (their invoices).
+    */
+    'online' => [
+        'driver' => env('PAYMENT_GATEWAY', 'fake'),
+        'min_amount' => '1.000',
+        'expiry_minutes' => 30,
+        'return_path' => '/portal/invoices',
+    ],
+
 ];

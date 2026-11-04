@@ -24,6 +24,8 @@ use App\Interfaces\Payments\AppointmentFeeServiceInterface;
 use App\Interfaces\Payments\BillableServiceServiceInterface;
 use App\Interfaces\Payments\InsuranceClaimServiceInterface;
 use App\Interfaces\Payments\InvoiceServiceInterface;
+use App\Interfaces\Payments\OnlinePaymentServiceInterface;
+use App\Interfaces\Payments\PaymentGatewayInterface;
 use App\Interfaces\Payments\PaymentServiceInterface;
 use App\Interfaces\Payments\RefundServiceInterface;
 use App\Interfaces\Payments\WalletServiceInterface;
@@ -41,16 +43,21 @@ use App\Models\Payments\Refund;
 use App\Services\Bulk\BulkActionRegistry;
 use App\Services\Payments\AppointmentFeeService;
 use App\Services\Payments\BillableServiceService;
+use App\Services\Payments\Gateways\FakeGateway;
+use App\Services\Payments\Gateways\TapGateway;
 use App\Services\Payments\InsuranceClaimService;
 use App\Services\Payments\InvoiceService;
+use App\Services\Payments\OnlinePaymentService;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\RefundService;
 use App\Services\Payments\WalletService;
 use App\Utilities\Shared\MoneyHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use RuntimeException;
 
 /**
  * Payments & Billing module: the service catalog, patient invoices (the single billing path), payments and refunds.
@@ -67,7 +74,23 @@ final class PaymentsServiceProvider extends ServiceProvider
         InsuranceClaimServiceInterface::class => InsuranceClaimService::class,
         WalletServiceInterface::class => WalletService::class,
         AppointmentFeeServiceInterface::class => AppointmentFeeService::class,
+        OnlinePaymentServiceInterface::class => OnlinePaymentService::class,
     ];
+
+    public function register(): void
+    {
+        // The gateway: Tap with real (or sk_test_) keys; the local fake checkout only outside production.
+        $this->app->singleton(PaymentGatewayInterface::class, function (): PaymentGatewayInterface {
+            if (Config::string('payments.online.driver') === 'tap') {
+                return new TapGateway;
+            }
+            if ($this->app->isProduction()) {
+                throw new RuntimeException('PAYMENT_GATEWAY=fake is not allowed in production.');
+            }
+
+            return new FakeGateway;
+        });
+    }
 
     public function boot(BulkActionRegistry $bulk): void
     {

@@ -31,12 +31,13 @@ enum AccountMappingKey: string implements HasLabel
     case CostOfGoodsSold = 'cost_of_goods_sold';
     case PatientDeposits = 'patient_deposits';
     case FeeRevenue = 'fee_revenue';
+    case OnlineClearing = 'online_clearing';
 
     /** Account type a mapped account must have. */
     public function accountType(): AccountType
     {
         return match ($this) {
-            self::CashOnHand, self::Bank, self::CardClearing, self::AccountsReceivable, self::InsuranceReceivable, self::InputVat, self::PharmacyInventory => AccountType::Asset,
+            self::CashOnHand, self::Bank, self::CardClearing, self::OnlineClearing, self::AccountsReceivable, self::InsuranceReceivable, self::InputVat, self::PharmacyInventory => AccountType::Asset,
             self::VatPayable, self::SalariesPayable, self::SocialInsurancePayable, self::PatientDeposits => AccountType::Liability,
             self::SalariesExpense, self::CashOverShort, self::CostOfGoodsSold => AccountType::Expense,
             self::SalesReturns, self::FeeRevenue => AccountType::Revenue,

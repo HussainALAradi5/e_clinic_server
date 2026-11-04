@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Tap Payments (online card / BenefitPay). The secret key stays on the server; test keys start with sk_test_.
+    'tap' => [
+        'secret_key' => env('TAP_SECRET_KEY'),
+        'base_url' => env('TAP_BASE_URL', 'https://api.tap.company/v2'),
+        'source' => env('TAP_SOURCE', 'src_all'),
+    ],
+
 ];

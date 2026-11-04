@@ -21,7 +21,7 @@ it('seeds the default chart as a tree with every automatic-posting role mapped',
 
     $this->getJson('/api/v1/accounting/accounts/tree?type=revenue')->assertJsonCount(1, 'data')->assertJsonCount(7, 'data.0.children');
     $mappings = collect($this->getJson('/api/v1/accounting/accounts/mappings')->assertOk()->json('data'));
-    expect($mappings)->toHaveCount(17)->and($mappings->whereNull('account'))->toBeEmpty();
+    expect($mappings)->toHaveCount(18)->and($mappings->whereNull('account'))->toBeEmpty();
 });
 
 it('creates leaf and group accounts under a group of the same type, never under itself', function () {

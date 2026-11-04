@@ -35,4 +35,7 @@ interface WalletServiceInterface
 
     /** A balance payment was voided: its amount goes back to the balance. */
     public function returnVoided(Payment $payment): void;
+
+    /** Puts what an online payment brought beyond the invoice's balance on the patient's balance (no deposit limits). */
+    public function creditOnlineSurplus(Patient $patient, Money $amount, string $reference, string $idempotencyKey): PatientWalletEntry;
 }

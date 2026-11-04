@@ -26,7 +26,7 @@ return [
     'Currency' => ['BHD' => 'Bahraini Dinar', 'USD' => 'US Dollar', 'SAR' => 'Saudi Riyal'],
     'Gender' => ['male' => 'Male', 'female' => 'Female'],
     'DayOfWeek' => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-    'PaymentMethod' => ['cash' => 'Cash', 'card' => 'Card', 'bank_transfer' => 'Bank transfer', 'benefit_pay' => 'BenefitPay', 'insurance' => 'Insurance', 'cheque' => 'Cheque', 'patient_balance' => 'Patient balance'],
+    'PaymentMethod' => ['cash' => 'Cash', 'card' => 'Card', 'bank_transfer' => 'Bank transfer', 'benefit_pay' => 'BenefitPay', 'insurance' => 'Insurance', 'cheque' => 'Cheque', 'patient_balance' => 'Patient balance', 'online' => 'Online'],
     'DateRangePreset' => [
         'today' => 'Today', 'yesterday' => 'Yesterday', 'this_week' => 'This week', 'last_week' => 'Last week',
         'this_month' => 'This month', 'last_month' => 'Last month', 'last_7_days' => 'Last 7 days', 'last_30_days' => 'Last 30 days',
@@ -46,6 +46,7 @@ return [
     'LoginFailureReason' => ['invalid_credentials' => 'Invalid credentials', 'account_locked' => 'Account locked', 'account_inactive' => 'Account inactive', 'too_many_attempts' => 'Too many attempts', 'invalid_2fa_code' => 'Invalid 2FA code'],
     'TaskType' => ['report_export' => 'Report export', 'audit_export' => 'Audit export', 'transaction_export' => 'Transaction export', 'payroll_calculation' => 'Payroll calculation', 'payslip_emailing' => 'Payslip e-mailing', 'fiscal_year_close' => 'Fiscal year close', 'bulk_notification' => 'Bulk notification', 'bulk_action' => 'Bulk action', 'attachments_zip' => 'Attachments ZIP', 'list_export' => 'List export'],
     'TaskCancelReason' => ['user' => 'Cancelled by user', 'failed' => 'Failed', 'timeout' => 'Timed out'],
+    'OnlinePaymentStatus' => ['initiated' => 'Waiting for payment', 'captured' => 'Paid', 'failed' => 'Failed', 'expired' => 'Expired'],
     'AppointmentFeeType' => ['no_show' => 'Missed appointment', 'late_cancel' => 'Late cancellation'],
     'AppointmentFeeStatus' => ['charged' => 'Charged', 'waived' => 'Waived'],
     'WalletEntryType' => ['deposit' => 'Deposit', 'invoice_payment' => 'Invoice paid', 'payment_reversal' => 'Payment returned', 'withdrawal' => 'Paid back', 'adjustment_credit' => 'Credit', 'adjustment_debit' => 'Debit', 'fee' => 'Fee'],

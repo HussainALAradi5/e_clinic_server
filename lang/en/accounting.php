@@ -10,6 +10,8 @@ return [
     'invoice_issued' => 'Invoice :number — :patient',
     'invoice_cancelled' => 'Invoice :number cancelled',
     'payment_received' => 'Payment :code — invoice :invoice',
+    'online_charge' => 'e-Clinic invoice :invoice',
+    'online_surplus' => 'Paid online beyond the invoice balance',
     'insurer_share_paid' => 'Patient paid the insurer\'s share too',
     'fee_line' => ':fee — :code on :date',
     'wallet_deposit' => 'Patient balance deposit :code',

@@ -43,6 +43,7 @@ return [
         'cheque' => AccountMappingKey::Bank,
         'insurance' => AccountMappingKey::InsuranceReceivable,
         'patient_balance' => AccountMappingKey::PatientDeposits,
+        'online' => AccountMappingKey::OnlineClearing,
     ],
 
     /*
@@ -73,6 +74,7 @@ return [
         ['1110', 'Cash on hand', 'asset', '1100', false, AccountMappingKey::CashOnHand],
         ['1120', 'Bank', 'asset', '1100', false, AccountMappingKey::Bank],
         ['1130', 'Card clearing', 'asset', '1100', false, AccountMappingKey::CardClearing],
+        ['1140', 'Online payments clearing', 'asset', '1100', false, AccountMappingKey::OnlineClearing],
         ['1200', 'Receivables', 'asset', '1000', true, null],
         ['1210', 'Accounts receivable — patients', 'asset', '1200', false, AccountMappingKey::AccountsReceivable],
         ['1220', 'Insurance receivable', 'asset', '1200', false, AccountMappingKey::InsuranceReceivable],

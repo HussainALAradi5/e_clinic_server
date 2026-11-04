@@ -42,6 +42,8 @@ return [
     'AUTH_2FA_REQUIRED' => 'Two-factor authentication is required.',
     'AUTH_2FA_INVALID' => 'The verification code is invalid or has expired.',
     'AUTH_2FA_ALREADY_ENABLED' => 'Two-factor authentication is already enabled.',
+    'ONLINE_PAYMENT_UNAVAILABLE' => 'Online payment is not available right now — nothing was charged. Please try again later or pay at the clinic.',
+    'ONLINE_PAYMENT_AMOUNT' => 'Pay between :min and :max online.',
     'COPAY_EXCEEDED' => ':insurer covers part of this invoice: take :due from the patient now (their share), or tick "patient pays the insurer\'s share too".',
     'FEE_NOT_WAIVABLE' => 'This fee is already on an issued invoice — refund it instead.',
     'FEE_ALREADY_WAIVED' => 'This fee was already waived.',

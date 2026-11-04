@@ -5,6 +5,7 @@ use App\Interfaces\Appointments\AppointmentServiceInterface;
 use App\Interfaces\HR\AttendanceServiceInterface;
 use App\Interfaces\HR\LeaveServiceInterface;
 use App\Interfaces\Identity\NotificationServiceInterface;
+use App\Interfaces\Payments\OnlinePaymentServiceInterface;
 use App\Interfaces\Pharmacy\InventoryServiceInterface;
 use App\Models\HR\Employee;
 use App\Models\Identity\BackgroundTask;
@@ -52,3 +53,7 @@ Schedule::call(function (): void {
     $year = app(ClinicClock::class)->today()->year;
     Employee::query()->where('status', EmployeeStatus::Active->value)->each(fn (Employee $e) => $leaves->initializeBalances($e, $year));
 })->name('hr:roll-leave-balances')->yearlyOn(1, 1, '00:30')->timezone(app(ClinicClock::class)->timezone())->withoutOverlapping();
+
+// Online payments left on the gateway's page past their expiry are given up (after one last look at the gateway).
+Schedule::call(fn () => app(OnlinePaymentServiceInterface::class)->expireStale())
+    ->name('online-payments:expire')->everyTenMinutes()->withoutOverlapping();

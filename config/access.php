@@ -33,6 +33,7 @@ return [
         'companies' => ['module' => 'reference_data', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
         'sick_leaves' => ['module' => 'appointments', 'actions' => ['export'], 'ownership' => '`patient_id` = the user\'s id (portal) or `doctor_id` = the user\'s id (the issuing doctor)'],
         'templates' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`created_by` = user (ready-made templates belong to the clinic)'],
+        'online_payments' => ['module' => 'payments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id (portal)'],
         'appointment_fees' => ['module' => 'payments', 'actions' => ['waive'], 'ownership' => '`patient_id` = the user\'s id (portal)'],
         'wallet' => ['module' => 'payments', 'actions' => ['deposit', 'withdraw', 'adjust'], 'ownership' => '`patient_id` = the user\'s id (portal)'],
         'written_documents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id (portal) or `author_id` = the user\'s id (the writer)'],
@@ -86,6 +87,7 @@ return [
             'access' => [
                 'wallet' => ['read_all'],
                 'appointment_fees' => ['read_all'],
+                'online_payments' => ['read_all', 'create'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
@@ -241,6 +243,7 @@ return [
             'access' => [
                 'wallet' => ['read_all', 'write'],
                 'appointment_fees' => ['read_all', 'write'],
+                'online_payments' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
@@ -274,6 +277,7 @@ return [
             'access' => [
                 'wallet' => ['read_all'],
                 'appointment_fees' => ['read_all'],
+                'online_payments' => ['read_all', 'create'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'patients' => ['read_all'],
@@ -295,6 +299,7 @@ return [
             'access' => [
                 'wallet' => ['read_own'],
                 'appointment_fees' => ['read_own'],
+                'online_payments' => ['read_own', 'create'],
                 'patients' => ['read_own'],
                 'people' => ['read_own'],
                 'appointments' => ['read_own', 'create'],

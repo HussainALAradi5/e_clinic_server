@@ -93,6 +93,19 @@ final class WalletService implements WalletServiceInterface
         });
     }
 
+    public function creditOnlineSurplus(Patient $patient, Money $amount, string $reference, string $idempotencyKey): PatientWalletEntry
+    {
+        // The money is already received, so the deposit limits do not apply: it is the patient's to spend or claim back.
+        return $this->once($idempotencyKey, $patient, WalletEntryType::Deposit, $amount, fn (Patient $locked, Money $balance): PatientWalletEntry => $this->record(
+            $locked, WalletEntryType::Deposit, $amount, $balance->plus($amount), [
+                'method' => PaymentMethod::Online, 'reference_number' => $reference,
+                'reason' => __('accounting.online_surplus'), 'idempotency_key' => $idempotencyKey,
+            ], [
+                JournalLineData::debit($this->methodAccount(PaymentMethod::Online), $amount, null, $locked->id),
+                JournalLineData::credit(AccountMappingKey::PatientDeposits, $amount, null, $locked->id),
+            ]));
+    }
+
     public function withdraw(Patient $patient, WalletMovementData $data, string $idempotencyKey): PatientWalletEntry
     {
         $amount = MoneyHelper::of($data->amount);

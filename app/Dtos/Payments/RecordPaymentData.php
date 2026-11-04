@@ -17,6 +17,8 @@ final readonly class RecordPaymentData
         public ?string $notes = null,
         /** The patient pays the insurer's share too (no claim for it); off = co-pay only on insured invoices. */
         public bool $payInsurerShare = false,
+        /** Who takes the payment when nobody is signed in (an online capture: the one who started it). */
+        public ?string $receivedBy = null,
     ) {}
 
     /**

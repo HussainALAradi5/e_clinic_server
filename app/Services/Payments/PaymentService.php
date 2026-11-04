@@ -102,7 +102,7 @@ final class PaymentService extends BaseEntityService implements PaymentServiceIn
                 'reference_number' => $data->referenceNumber,
                 'card_last4' => $data->cardLast4,
                 'paid_at' => $this->clock->now(),
-                'received_by' => Auth::id(),
+                'received_by' => $data->receivedBy ?? Auth::id(),
                 'cash_session_id' => $session instanceof CashSession ? $session->id : null,
                 'idempotency_key' => $idempotencyKey,
                 'notes' => $data->notes ?? ($data->payInsurerShare ? __('accounting.insurer_share_paid') : null),

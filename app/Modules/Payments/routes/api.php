@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\Payments\AppointmentFeeController;
 use App\Http\Controllers\Payments\BillableServiceController;
+use App\Http\Controllers\Payments\FakeCheckoutController;
+use App\Http\Controllers\Payments\GatewayCallbackController;
 use App\Http\Controllers\Payments\InsuranceClaimController;
 use App\Http\Controllers\Payments\InvoiceController;
+use App\Http\Controllers\Payments\OnlinePaymentController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payments\RefundController;
 use App\Http\Controllers\Payments\WalletController;
@@ -77,6 +80,15 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
     Route::get('appointments/{appointment}/cancellation-fee', [AppointmentFeeController::class, 'cancellationFee'])->whereUuid('appointment')
         ->middleware(['access:appointments.cancel', 'throttle:read'])->name('appointments.cancellation-fee');
 
+    // Online payments: the payer is sent to the gateway's page; money is booked once the gateway confirms.
+    Route::post('invoices/{invoice}/online-payments', [OnlinePaymentController::class, 'start'])->whereUuid('invoice')
+        ->middleware(['access:online_payments.create', 'throttle:sensitive', EnsureIdempotency::ALIAS])->name('invoices.online-payments');
+    Route::prefix('online-payments')->name('online-payments.')->controller(OnlinePaymentController::class)
+        ->middleware(['access:online_payments.read_all|online_payments.read_own', 'throttle:read'])->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::get('{payment}', 'show')->whereUuid('payment')->name('show');
+        });
+
     Route::prefix('payments')->name('payments.')->controller(PaymentController::class)->group(function (): void {
         Route::middleware(['access:payments.read_all|payments.read_own', 'throttle:read'])->group(function (): void {
             Route::get('/', 'index')->name('index');
@@ -123,3 +135,17 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
     Route::bulkActions('insurance-claims', 'claims')->middleware('access:claims.write');
     Route::dataTransfer('insurance-claims', 'claims');
 });
+
+// Gateway callbacks (no sign-in): the signed webhook and the payer's way back. Both only make the server look again.
+Route::prefix('payments')->middleware('throttle:sensitive')->group(function (): void {
+    Route::post('webhooks/tap', [GatewayCallbackController::class, 'webhook'])->name('webhooks.tap');
+    Route::get('online/return', [GatewayCallbackController::class, 'return'])->name('online-payments.return');
+});
+
+// The fake gateway's test checkout (local only, signed links).
+if (config('payments.online.driver') === 'fake' && ! app()->isProduction()) {
+    Route::prefix('payments/fake-checkout')->middleware('signed')->controller(FakeCheckoutController::class)->group(function (): void {
+        Route::get('{charge}', 'show')->name('fake-checkout.show');
+        Route::get('{charge}/{outcome}', 'decide')->whereIn('outcome', ['pay', 'decline'])->name('fake-checkout.decide');
+    });
+}
