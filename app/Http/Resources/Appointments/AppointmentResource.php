@@ -74,6 +74,10 @@ final class AppointmentResource extends JsonResource
             'cancellation_reason' => $this->cancellation_reason,
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
             'checked_in_at' => $this->checked_in_at?->toIso8601String(),
+            // Desk and apps show Check in from this moment (1 hour before, on the day) and the patient's own
+            // Cancel / Reschedule only while patient_can_change (3 days or more before).
+            'check_in_opens_at' => $this->checkInOpensAt()->toIso8601String(),
+            'patient_can_change' => $this->patientMayChange(app(ClinicClock::class)->now()),
             'started_at' => $this->started_at?->toIso8601String(),
             'completed_at' => $this->completed_at?->toIso8601String(),
             'version' => $this->version,

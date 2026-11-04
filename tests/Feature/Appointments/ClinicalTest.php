@@ -157,6 +157,8 @@ it('tracks attendance from the sessions, alerts after two misses and completes t
     $four = postKeyed("/api/v1/treatments/{$id}/sessions", sessionAt($therapist->id, '2026-11-01', '14:00'))->assertCreated()->assertJsonPath('data.session_number', 2)->json('data.id');
     $this->getJson('/api/v1/treatments/queue')->assertOk()->assertJsonCount(0, 'data');
 
+    // Check-in opens an hour before each session.
+    $this->travelTo(CarbonImmutable::parse('2026-11-01 13:30', 'Asia/Bahrain'));
     foreach ([$three, $four] as $session) {
         $this->patchJson("/api/v1/appointments/{$session}/check-in")->assertOk();
     }
@@ -251,6 +253,7 @@ it('closes an internal referral when the referred visit is completed and checks 
     $this->patchJson("/api/v1/clinical-orders/{$referral}/referral-appointment", ['appointment_id' => $other])->assertUnprocessable();
     $this->patchJson("/api/v1/clinical-orders/{$referral}/referral-appointment", ['appointment_id' => $visit])->assertOk()->assertJsonPath('data.status', 'in_progress');
 
+    $this->travelTo(CarbonImmutable::parse('2026-11-01 09:30', 'Asia/Bahrain'));
     $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
     signedIn($cardio->id);
     $this->patchJson("/api/v1/appointments/{$visit}/start")->assertOk();
@@ -341,6 +344,7 @@ it('opens a patient\'s whole history to the doctors caring for them, keeps writi
     $omarsVisit = postKeyed('/api/v1/appointments', ['patient_id' => $shared->id, 'provider_id' => $omar->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->assertCreated()->json('data.id');
     $sarasVisit = postKeyed('/api/v1/appointments', ['patient_id' => $shared->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'phone'])->assertCreated()->json('data.id');
     postKeyed('/api/v1/appointments', ['patient_id' => $notMine->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->assertCreated();
+    $this->travelTo(CarbonImmutable::parse('2026-11-01 09:30', 'Asia/Bahrain'));
     foreach ([$omarsVisit, $sarasVisit] as $visit) {
         $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
     }

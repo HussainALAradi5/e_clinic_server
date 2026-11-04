@@ -14,8 +14,14 @@ return [
     /* Portal bookings must start at least this many hours ahead; they start as `pending`. */
     'portal_min_hours_ahead' => 2,
 
-    /* Patients may cancel / reschedule up to this many hours before the start (staff: any time before check-in). */
-    'patient_change_hours' => 2,
+    /*
+     * Patients may cancel / reschedule online up to this many hours before the start: 3 days. Closer to the visit
+     * they call reception, who may cancel at any time before check-in with a reason (e.g. an emergency).
+     */
+    'patient_change_hours' => 72,
+
+    /* Check-in opens this many minutes before the start, on the visit's day (the desk hides the button until then). */
+    'check_in_early_minutes' => 60,
 
     /* A confirmed booking not checked in this many minutes after its start becomes `no_show` (scheduler). */
     'no_show_after_minutes' => 15,

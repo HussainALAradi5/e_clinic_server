@@ -111,6 +111,18 @@ class Appointment extends BaseModel implements Chargeable, OwnedByUser
     }
 
     /** Start instant (times are clinic local). */
+    /** Check-in opens this long before the start (config appointments.check_in_early_minutes), on the visit's day. */
+    public function checkInOpensAt(): CarbonImmutable
+    {
+        return $this->startsAt()->subMinutes(Config::integer('appointments.check_in_early_minutes'));
+    }
+
+    /** Whether the patient may still cancel or reschedule online (up to appointments.patient_change_hours before). */
+    public function patientMayChange(CarbonImmutable $now): bool
+    {
+        return $now->lte($this->startsAt()->subHours(Config::integer('appointments.patient_change_hours')));
+    }
+
     public function startsAt(): CarbonImmutable
     {
         return CarbonImmutable::parse($this->scheduled_date->toDateString().' '.$this->start_time, Config::string('clinic.timezone'));

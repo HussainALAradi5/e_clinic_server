@@ -97,7 +97,8 @@ return [
     'PATIENT_DOUBLE_BOOKED' => 'The patient already has an appointment at that time.',
     'BOOKING_WINDOW_EXCEEDED' => 'Appointments can be booked up to :days days ahead.',
     'BOOKING_TOO_SOON' => 'Online bookings need at least :hours hours\' notice. Please call the clinic for an earlier time.',
-    'CANCELLATION_WINDOW_EXPIRED' => 'It is too late to change this appointment online. Please call the clinic.',
+    'CANCELLATION_WINDOW_EXPIRED' => 'Appointments can be changed online up to 3 days before. Please call reception — they can cancel it for you, for example in an emergency.',
+    'CHECK_IN_TOO_EARLY' => 'Check-in opens 1 hour before the appointment, on its day.',
     // Treatments
     'TREATMENT_NOT_OPEN' => 'This treatment is completed or cancelled; its sessions can no longer change.',
     'SESSION_LIMIT_REACHED' => 'All planned sessions are already booked or done. Raise the number of planned sessions first.',

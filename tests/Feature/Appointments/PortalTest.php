@@ -102,7 +102,15 @@ it('books for the signed-in patient only, at least two hours ahead, and cancels 
     $this->get("/api/v1/codes/appointment/{$othersBooking}")->assertNotFound();
 
     $this->patchJson("/api/v1/portal/appointments/{$othersBooking}/cancel", ['reason' => 'Not mine'])->assertNotFound();
-    $this->patchJson("/api/v1/portal/appointments/{$own}/cancel", ['reason' => 'Feeling better'])->assertOk()
+    // Tomorrow's visit: too close to change online — the patient calls reception.
+    $this->getJson("/api/v1/appointments/{$own}")->assertOk()->assertJsonPath('data.patient_can_change', false);
+    $this->patchJson("/api/v1/portal/appointments/{$own}/cancel", ['reason' => 'Feeling better'])
+        ->assertStatus(409)->assertJsonPath('error_code', 'CANCELLATION_WINDOW_EXPIRED');
+    // Three days or more ahead: the patient cancels online.
+    $later = portalPost('/api/v1/portal/appointments', [
+        'doctor_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-05', 'start_time' => '10:00',
+    ])->assertCreated()->assertJsonPath('data.patient_can_change', true)->json('data.id');
+    $this->patchJson("/api/v1/portal/appointments/{$later}/cancel", ['reason' => 'Feeling better'])->assertOk()
         ->assertJsonPath('data.status', 'cancelled')->assertJsonPath('data.cancelled_by', 'patient');
 });
 

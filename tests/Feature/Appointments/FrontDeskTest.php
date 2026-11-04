@@ -118,6 +118,10 @@ it('walks a visit through check-in, start and completion following the state mac
     $id = book(booking($doctor, FrontDesk::patient()->id, ['scheduled_date' => '2026-11-01', 'start_time' => '10:00']))->json('data.id');
 
     $this->patchJson("/api/v1/appointments/{$id}/start")->assertForbidden(); // receptionists do not treat
+    // Check-in opens an hour before the start (08:00 is two hours early), on the visit's day.
+    $this->patchJson("/api/v1/appointments/{$id}/check-in")->assertStatus(409)->assertJsonPath('error_code', 'INVALID_STATE_TRANSITION')
+        ->assertJsonPath('message', 'Check-in opens 1 hour before the appointment, on its day.');
+    $this->travelTo(CarbonImmutable::parse('2026-11-01 09:05', 'Asia/Bahrain'));
     $this->patchJson("/api/v1/appointments/{$id}/check-in")->assertOk()->assertJsonPath('data.status', 'checked_in')->assertJsonPath('data.allowed_transitions', ['in_progress']);
     $this->patchJson("/api/v1/appointments/{$id}/cancel", ['reason' => 'x', 'cancelled_by' => 'clinic'])->assertStatus(409)->assertJsonPath('error_code', 'INVALID_STATE_TRANSITION');
 

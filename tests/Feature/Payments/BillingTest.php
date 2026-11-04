@@ -125,6 +125,7 @@ it('bills a visit at check-in so the patient pays before the consultation, and c
 
     $this->postJson('/api/v1/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $id])
         ->assertUnprocessable()->assertJsonPath('error_code', 'NOT_CHARGEABLE');
+    $this->travelTo(CarbonImmutable::parse('2026-11-01 09:30', 'Asia/Bahrain'));
     $this->patchJson("/api/v1/appointments/{$id}/check-in")->assertOk();
     $invoice = $this->postJson('/api/v1/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $id])
         ->assertOk()->assertJsonPath('data.total.amount', '15.000')->json('data');

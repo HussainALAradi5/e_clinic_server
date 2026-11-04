@@ -251,6 +251,9 @@ final class AppointmentService implements AppointmentServiceInterface
         if ($appointment->scheduled_date->toDateString() !== $this->clock->today()->toDateString()) {
             throw new InvalidStateTransitionException(context: ['from' => $appointment->status->value, 'to' => AppointmentStatus::CheckedIn->value, 'reason' => 'not_today']);
         }
+        if ($this->clock->now()->lt($appointment->checkInOpensAt())) {
+            throw new InvalidStateTransitionException(__('errors.CHECK_IN_TOO_EARLY'), ['from' => $appointment->status->value, 'to' => AppointmentStatus::CheckedIn->value, 'reason' => 'too_early']);
+        }
         $this->transition($appointment, AppointmentStatus::CheckedIn, ['checked_in_at' => $this->clock->now(), 'is_attended' => true]);
         PatientCheckedIn::dispatch($appointment);
 
@@ -460,8 +463,7 @@ final class AppointmentService implements AppointmentServiceInterface
     /** Patients (portal) may change their own booking only up to the change window before the start. */
     private function assertPatientMayChange(Appointment $appointment): void
     {
-        if ($this->isPatientActor($appointment)
-            && $this->clock->now()->gt($appointment->startsAt()->subHours(Config::integer('appointments.patient_change_hours')))) {
+        if ($this->isPatientActor($appointment) && ! $appointment->patientMayChange($this->clock->now())) {
             throw new CancellationWindowExpiredException;
         }
     }
