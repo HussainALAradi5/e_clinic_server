@@ -49,6 +49,12 @@ it('makes a sick leave PDF once per version and reader, with its own DOC code an
         ->and($first['file_name'])->toStartWith('sick-leave_SLV-')->toEndWith($first['code'].'.pdf')
         ->and($first['download_path'])->toBe("documents/sick_leave/{$id}/file?download=1");
 
+    // Apps hand the file to the device's viewer through a short-lived signed link (no bearer token needed).
+    Sanctum::actingAs(User::factory()->create());
+    auth()->forgetGuards();
+    $this->get($first['open_url'])->assertOk()->assertHeader('content-type', 'application/pdf');
+    Sanctum::actingAs($doctor);
+
     // Opened again unchanged: the stored file, no new document.
     expect($this->getJson("/api/v1/documents/sick_leave/{$id}")->json('data.code'))->toBe($first['code']);
     $file = $this->get("/api/v1/documents/sick_leave/{$id}/file?download=1")->assertOk()->assertHeader('content-type', 'application/pdf');
