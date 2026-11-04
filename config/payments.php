@@ -81,11 +81,18 @@ return [
     | - late_cancel_hours: a cancellation by the patient this close to the start is charged. Cancellations by the
     |   clinic, the doctor or the system never are.
     | - waive_reason_min: shortest reason for waiving a fee (admins and accountants only, while still on a draft).
+    | - documents: written documents charged when issued, by kind (a medical report, a fitness certificate …),
+    |   each a price-list item like the visit fees; taking one off is done on the draft invoice (discount rules apply).
     */
     'fees' => [
         'services' => [
             'no_show' => ['code' => 'FEE-NO-SHOW', 'name' => 'Missed appointment fee', 'price' => '5.000'],
             'late_cancel' => ['code' => 'FEE-LATE-CANCEL', 'name' => 'Late cancellation fee', 'price' => '3.000'],
+        ],
+        // Documents written at a visit that are charged (kinds not listed are free; sick leave is always free).
+        'documents' => [
+            'medical_report' => ['code' => 'FEE-MEDICAL-REPORT', 'name' => 'Medical report', 'price' => '10.000'],
+            'fitness_certificate' => ['code' => 'FEE-FITNESS-CERT', 'name' => 'Fitness certificate', 'price' => '5.000'],
         ],
         'late_cancel_hours' => 24,
         'waive_reason_min' => 10,

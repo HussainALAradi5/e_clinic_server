@@ -8,6 +8,7 @@ use App\Events\Appointments\AppointmentCancelled;
 use App\Events\Appointments\AppointmentCompleted;
 use App\Events\Appointments\AppointmentNoShow;
 use App\Events\Appointments\ClinicalOrderCompleted;
+use App\Events\Documents\WrittenDocumentIssued;
 use App\Events\Payments\PaymentVoided;
 use App\Events\Payments\RefundApproved;
 use App\Events\Payments\RefundRejected;
@@ -28,6 +29,7 @@ use App\Interfaces\Payments\RefundServiceInterface;
 use App\Interfaces\Payments\WalletServiceInterface;
 use App\Listeners\Payments\ChargeAppointmentFee;
 use App\Listeners\Payments\ChargeCompletedWork;
+use App\Listeners\Payments\ChargeDocumentFee;
 use App\Listeners\Payments\ReturnVoidedBalancePayment;
 use App\Listeners\Payments\SendRefundNotifications;
 use App\Models\Payments\AppointmentFee;
@@ -72,6 +74,7 @@ final class PaymentsServiceProvider extends ServiceProvider
         Event::listen([AppointmentCompleted::class, ClinicalOrderCompleted::class], ChargeCompletedWork::class);
         Event::listen([RefundRequested::class, RefundApproved::class, RefundRejected::class], SendRefundNotifications::class);
         Event::listen(PaymentVoided::class, ReturnVoidedBalancePayment::class);
+        Event::listen(WrittenDocumentIssued::class, ChargeDocumentFee::class);
         Event::listen([AppointmentNoShow::class, AppointmentCancelled::class], ChargeAppointmentFee::class);
 
         $bulk->register('services', BillableService::class, BillableService::listQueryConfig(), BillableServiceService::class)

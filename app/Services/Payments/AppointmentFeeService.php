@@ -20,6 +20,7 @@ use App\Utilities\Access\OwnershipScope;
 use App\Utilities\Query\ApplyListQuery;
 use App\Utilities\Query\ListQuery;
 use App\Utilities\Shared\ClinicClock;
+use App\Utilities\Shared\MoneyHelper;
 use Brick\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -119,6 +120,22 @@ final class AppointmentFeeService implements AppointmentFeeServiceInterface
 
             return $this->find($fee->id);
         });
+    }
+
+    public function documentFees(): array
+    {
+        /** @var array<string, array{code: string}> $documents */
+        $documents = Config::array('payments.fees.documents');
+        $services = BillableService::query()->whereIn('code', array_column($documents, 'code'))->where('is_archived', false)->get()->keyBy('code');
+        $fees = [];
+        foreach ($documents as $kind => $item) {
+            $service = $services->get($item['code']);
+            if ($service !== null && $service->price->isPositive()) {
+                $fees[] = ['kind' => $kind, 'name' => $service->name, 'amount' => MoneyHelper::toApi($service->price)];
+            }
+        }
+
+        return $fees;
     }
 
     /** Cancelling at [$at] is late: within the late-cancel window before the start (or after it). */

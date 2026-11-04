@@ -8,6 +8,7 @@ use App\Dtos\Documents\WrittenDocumentData;
 use App\Enums\Appointments\AppointmentStatus;
 use App\Enums\Documents\WrittenDocumentKind;
 use App\Enums\Identity\UserType;
+use App\Events\Documents\WrittenDocumentIssued;
 use App\Exceptions\Documents\WrittenDocumentNotAllowedException;
 use App\Exceptions\Shared\InvalidStateTransitionException;
 use App\Interfaces\Documents\DocumentTemplateServiceInterface;
@@ -88,6 +89,7 @@ final class WrittenDocumentService extends BaseEntityService implements WrittenD
             'issued_at' => $this->clock->now(),
         ]);
         $document->save();
+        WrittenDocumentIssued::dispatch($document);
 
         return $this->findWritten($document->id);
     }

@@ -13,7 +13,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Config;
 
 /**
- * The price-list items of the appointment fees (config payments.fees.services), posted to Fees revenue.
+ * The price-list items of the visit fees and the charged documents (config payments.fees), posted to Fees revenue.
  * Idempotent: an item the clinic already changed (price, name, archived) is left as it is.
  */
 final class FeeServicesSeeder extends Seeder
@@ -21,9 +21,12 @@ final class FeeServicesSeeder extends Seeder
     public function run(AccountServiceInterface $accounts): void
     {
         $revenue = $accounts->resolve(AccountMappingKey::FeeRevenue)->id;
-        foreach (AppointmentFeeType::cases() as $type) {
-            /** @var array{code: string, name: string, price: string} $service */
-            $service = Config::array('payments.fees.services.'.$type->value);
+        /** @var list<array{code: string, name: string, price: string}> $services */
+        $services = [
+            ...array_map(fn (AppointmentFeeType $t): array => Config::array('payments.fees.services.'.$t->value), AppointmentFeeType::cases()),
+            ...array_values(Config::array('payments.fees.documents')),
+        ];
+        foreach ($services as $service) {
             BillableService::query()->withDeleted()->firstOrCreate(['code' => $service['code']], [
                 'name' => $service['name'],
                 'category' => ServiceCategory::Other,

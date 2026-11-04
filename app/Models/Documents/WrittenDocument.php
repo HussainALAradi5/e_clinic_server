@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace App\Models\Documents;
 
+use App\Dtos\Shared\ChargeLine;
 use App\Enums\Documents\WrittenDocumentKind;
+use App\Interfaces\Shared\Chargeable;
 use App\Interfaces\Shared\OwnedByUser;
 use App\Models\Appointments\Appointment;
 use App\Models\Appointments\Patient;
 use App\Models\Base\BaseModel;
 use App\Models\HR\Employee;
+use App\Models\Payments\BillableService;
 use App\Traits\Shared\HasListQuery;
 use App\Utilities\Query\ListQueryConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Config;
 
 /**
  * A document written at a visit (WRD-2026-000001) — medical report, attendance or fitness certificate, referral note,
@@ -41,7 +45,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read Employee $author
  * @property-read ?DocumentTemplate $template
  */
-class WrittenDocument extends BaseModel implements OwnedByUser
+class WrittenDocument extends BaseModel implements Chargeable, OwnedByUser
 {
     use HasListQuery;
 
@@ -117,5 +121,22 @@ class WrittenDocument extends BaseModel implements OwnedByUser
             'is_archived' => 'boolean',
             'is_deleted' => 'boolean',
         ];
+    }
+
+    public function chargePatientId(): string
+    {
+        return $this->patient_id;
+    }
+
+    /** The kind's price-list item when it costs money (config payments.fees.documents); none for free kinds. */
+    public function chargeLines(): array
+    {
+        $code = Config::get('payments.fees.documents.'.$this->kind->value.'.code');
+        $service = $code === null ? null : BillableService::query()->where('code', $code)->where('is_archived', false)->first();
+        if ($service === null || ! $service->price->isPositive()) {
+            return [];
+        }
+
+        return [new ChargeLine($service->id, '1', $service->name.' — '.$this->code)];
     }
 }

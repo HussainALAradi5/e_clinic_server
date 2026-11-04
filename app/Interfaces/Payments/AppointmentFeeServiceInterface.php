@@ -34,6 +34,13 @@ interface AppointmentFeeServiceInterface
     /** What the patient would be charged for cancelling now (to warn before confirming); null = free. */
     public function cancellationFee(Appointment $appointment): ?Money;
 
+    /**
+     * Documents that cost money now, by kind, from the price list (archived or 0 = free).
+     *
+     * @return list<array{kind: string, name: string, amount: array{amount: string, currency: string}}>
+     */
+    public function documentFees(): array;
+
     /** Takes the fee off the draft invoice, recording who waived it and why. */
     public function waive(AppointmentFee $fee, string $reason): AppointmentFee;
 }

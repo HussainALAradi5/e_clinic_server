@@ -72,6 +72,8 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
         });
         Route::post('{fee}/waive', 'waive')->whereUuid('fee')->middleware(['access:appointment_fees.read_all&appointment_fees.waive', 'throttle:sensitive'])->name('waive');
     });
+    Route::get('document-fees', [AppointmentFeeController::class, 'documentFees'])
+        ->middleware(['access:written_documents.create|appointment_fees.read_all', 'throttle:read'])->name('document-fees');
     Route::get('appointments/{appointment}/cancellation-fee', [AppointmentFeeController::class, 'cancellationFee'])->whereUuid('appointment')
         ->middleware(['access:appointments.cancel', 'throttle:read'])->name('appointments.cancellation-fee');
 

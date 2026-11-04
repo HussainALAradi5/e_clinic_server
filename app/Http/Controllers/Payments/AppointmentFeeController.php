@@ -51,4 +51,10 @@ final class AppointmentFeeController
     {
         return $this->ok(new AppointmentFeeResource($this->fees->waive($this->fees->find($fee), $request->reason())));
     }
+
+    /** `[{ kind, name, amount }]`: the documents that cost money now (shown before a doctor issues one). */
+    public function documentFees(): JsonResponse
+    {
+        return $this->ok($this->fees->documentFees());
+    }
 }
