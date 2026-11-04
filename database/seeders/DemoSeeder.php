@@ -156,6 +156,8 @@ final class DemoSeeder extends Seeder
         $this->call(HistoryDemoSeeder::class);
         // Labelled synthetic pictures (X-ray, ultrasound, CT, MRI, ECG) on completed results, so their PDFs show images.
         app(ImagingDemoImages::class)->attachMissing();
+        // Every demo person gets a CPR (printed on sick leaves and certificates).
+        self::fillMissingCprs();
         // Staff chat: groups with leaders, one-to-one chats, files, a voice note, mentions and reactions.
         $this->call(ChatDemoSeeder::class);
         // Support tickets in every status, priority and category (two pages in the list).
@@ -174,5 +176,17 @@ final class DemoSeeder extends Seeder
             'block' => (string) fake()->numberBetween(300, 999),
             'area' => fake()->randomElement(['Seef', 'Juffair', 'Adliya', 'Riffa', 'Muharraq', 'Saar', 'Hamad Town', 'Isa Town', 'Budaiya']),
         ]);
+    }
+
+    /** Bahraini-style CPR (birth year and month, then five digits) for demo people who have none. */
+    public static function fillMissingCprs(): int
+    {
+        $filled = 0;
+        Person::query()->whereNull('national_id')->each(function (Person $person) use (&$filled): void {
+            $person->forceFill(['national_id' => $person->date_of_birth->format('ym').fake()->numerify('#####')])->save();
+            $filled++;
+        });
+
+        return $filled;
     }
 }

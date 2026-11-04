@@ -98,7 +98,7 @@
                 <div class="brand-tag">{{ $clinic['tagline'] }}</div>
             </td>
             <td class="head-ref">
-                <b>{{ $reference }}</b><br>
+                @if ($reference !== '')<b>{{ $reference }}</b><br>@endif
                 {{ $title }}<br>
                 {{ __('documents.letterhead.printed', ['at' => $generatedAt]) }}@if ($printedBy)<br>{{ __('documents.letterhead.printed_by', ['name' => $printedBy]) }}@endif
             </td>

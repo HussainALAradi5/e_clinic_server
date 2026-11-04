@@ -3,6 +3,7 @@
 use App\Enums\Accounting;
 use App\Enums\Appointments;
 use App\Enums\Communication;
+use App\Enums\Documents;
 use App\Enums\HR;
 use App\Enums\Identity;
 use App\Enums\Payments;
@@ -178,6 +179,9 @@ return [
         Transactions\CashSessionStatus::class,
         Transactions\ExpenseCategory::class,
         Appointments\ConsentType::class,
+        Documents\WrittenDocumentKind::class,
+        Documents\TemplatePlaceholder::class,
+        Documents\DocumentType::class,
         Appointments\BloodGroup::class,
         Appointments\RoomType::class,
         Appointments\ScheduleExceptionType::class,

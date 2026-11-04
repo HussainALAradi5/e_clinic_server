@@ -19,7 +19,7 @@ use App\Utilities\Documents\DocumentFormat;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Sick leave certificate: the patient (name, CPR, file no., sex), the days off as coloured tiles, the condition and
+ * Sick leave certificate for the patient to hand on: the patient (name, CPR, sex — no internal codes), the days off as coloured tiles, the condition and
  * case description, the certificate wording, then the doctor's signature beside the clinic stamp. The condition is
  * printed only when the patient allowed it (`show_reason`).
  */
@@ -32,7 +32,7 @@ final class SickLeaveDocument implements DocumentBuilder
 
     public function with(): array
     {
-        return ['patient.person', 'doctor.person', 'appointment'];
+        return ['patient.person', 'doctor.person'];
     }
 
     public function build(Model $record): DocumentPage
@@ -59,19 +59,16 @@ final class SickLeaveDocument implements DocumentBuilder
             ],
             blocks: [
                 ...($cancelled ? [new NoticeBlock($f->text('sick_leave.cancelled_notice', ['at' => $f->dateTime($leave->cancelled_at)]), (string) $leave->cancel_reason, DocumentTone::Danger)] : []),
-                new FactsBlock($f->text('common.patient'), $f->patient($leave->patient, withCpr: true)),
+                new FactsBlock($f->text('common.patient'), $f->patient($leave->patient, withCpr: true, withFileNo: false)),
                 new FactsBlock($f->text('sick_leave.medical'), [
                     new DocumentFact($f->text('sick_leave.condition'), $disclosed ? (string) $leave->reason : $f->text('sick_leave.condition_private'), wide: true),
                     DocumentFact::optional($f->text('sick_leave.case'), $leave->notes, wide: true),
-                    DocumentFact::optional($f->text('sick_leave.visit'), $leave->appointment?->code),
                 ]),
                 new TextBlock($f->text('sick_leave.certificate'), [
                     $f->text('sick_leave.greeting'),
                     $f->text('sick_leave.body', [
                         'name' => $person->full_name,
-                        'id' => $person->national_id !== null
-                            ? $f->text('sick_leave.id_cpr', ['value' => $person->national_id])
-                            : $f->text('sick_leave.id_file', ['value' => $person->code]),
+                        'id' => $person->national_id !== null ? ' ('.$f->text('sick_leave.id_cpr', ['value' => $person->national_id]).')' : '',
                         'clinic' => $this->clinic->current()->name,
                         'days' => $f->days($leave->days),
                         'from' => $f->date($leave->start_date),
@@ -84,6 +81,7 @@ final class SickLeaveDocument implements DocumentBuilder
             ],
             verifyNote: $f->text('sick_leave.verify'),
             issuedBy: $leave->doctor->person->full_name,
+            showReference: false,
         );
     }
 }

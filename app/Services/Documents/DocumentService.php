@@ -116,7 +116,7 @@ final class DocumentService implements DocumentServiceInterface
     {
         $page = $this->withSignatures($builder->build($record));
         $bytes = $this->renderer->render(DocumentLayout::Document, [
-            ...$this->letterhead($page->title, $page->reference),
+            ...$this->letterhead($page->title, $page->showReference ? $page->reference : ''),
             'page' => $page,
             'qr' => $this->qr($type, (string) $record->getKey()),
         ]);
@@ -194,7 +194,7 @@ final class DocumentService implements DocumentServiceInterface
             ? $block->withImages($block->signerId !== null ? $this->signatures->dataUri($block->signerId) : null, $stamp)
             : $block, $page->blocks);
 
-        return new DocumentPage($page->title, $page->reference, $page->fileName, $page->badges, $page->highlights, $blocks, $page->verifyNote, $page->issuedBy);
+        return new DocumentPage($page->title, $page->reference, $page->fileName, $page->badges, $page->highlights, $blocks, $page->verifyNote, $page->issuedBy, $page->showReference);
     }
 
     private function clinicImage(ClinicImage $image): ?string

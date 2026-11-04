@@ -46,7 +46,7 @@
                     <td style="width: 100px;"><img src="{{ $qr }}" alt="{{ __('documents.letterhead.verification') }}"></td>
                 @endif
                 <td>
-                    <div class="ref">{{ $page->reference }}</div>
+                    @if ($page->showReference)<div class="ref">{{ $page->reference }}</div>@endif
                     <div>{{ $page->verifyNote }}</div>
                     <div class="by">
                         @if ($page->issuedBy){{ __('documents.letterhead.issued_by') }} <b>{{ $page->issuedBy }}</b> · @endif

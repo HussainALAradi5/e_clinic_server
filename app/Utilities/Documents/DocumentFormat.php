@@ -110,18 +110,19 @@ final class DocumentFormat
     }
 
     /**
-     * Name, CPR (when asked), file number, date of birth with age, sex (coloured badge) and phone of a patient.
+     * Name, CPR (when asked; "Not recorded" when missing), file number (unless left out), date of birth with age, sex
+     * (coloured badge) and phone of a patient.
      *
      * @return list<DocumentFact|null>
      */
-    public function patient(Patient $patient, bool $withCpr = false): array
+    public function patient(Patient $patient, bool $withCpr = false, bool $withFileNo = true): array
     {
         $person = $patient->person;
 
         return [
             new DocumentFact($this->text('common.name'), $person->full_name),
-            $withCpr ? DocumentFact::optional($this->text('common.cpr'), $person->national_id) : null,
-            new DocumentFact($this->text('common.file_no'), $person->code),
+            $withCpr ? new DocumentFact($this->text('common.cpr'), $person->national_id ?? $this->text('common.not_recorded')) : null,
+            $withFileNo ? new DocumentFact($this->text('common.file_no'), $person->code) : null,
             new DocumentFact($this->text('common.born'), $this->text('common.age', ['date' => $this->date($person->date_of_birth), 'age' => $person->date_of_birth->age])),
             new DocumentFact($this->text('common.sex'), $person->gender->label(), tone: $person->gender === Gender::Female ? DocumentTone::Rose : DocumentTone::Info),
             new DocumentFact($this->text('common.phone'), $person->phone),
