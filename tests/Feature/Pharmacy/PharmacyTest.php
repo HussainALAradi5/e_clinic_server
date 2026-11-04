@@ -223,13 +223,17 @@ it('records medicines given in a session on the appointment, and returns a same-
     $pharmacist = pharmacist();
     $ceft = medication('MED-CEFT-1G', ['generic_name' => 'Ceftriaxone', 'brand_name' => null, 'form' => 'injection', 'unit' => 'vial', 'strength' => '1 g', 'price' => '3.500']);
     $lot = receive($ceft['id'], 'C1', '2027-12-31', '10', '1.200');
+    // Doctors prescribe; the nurse gives the dose in their own treatment-room session.
+    $nurse = FrontDesk::employee(UserType::MedicalStaff, RoleName::Nurse);
     $visit = Appointment::query()->create([
-        'patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01',
+        'patient_id' => $patient->id, 'provider_id' => $nurse->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01',
         'start_time' => '09:00:00', 'end_time' => '09:15:00', 'status' => AppointmentStatus::Confirmed, 'source' => 'walk_in',
     ]);
     $given = ['items' => [['medication_id' => $ceft['id'], 'quantity' => '1', 'route' => 'intramuscular', 'dose' => '1 g']], 'notes' => 'Left gluteal'];
 
     asUser($doctor->id);
+    idempotent("/api/v1/appointments/{$visit->id}/medications", $given)->assertForbidden();
+    asUser($nurse->id);
     idempotent("/api/v1/appointments/{$visit->id}/medications", $given)->assertUnprocessable()->assertJsonPath('error_code', 'ADMINISTRATION_REQUIRES_SESSION');
     $visit->forceFill(['status' => AppointmentStatus::InProgress])->save();
     // Given in a session, medicines come from the treatment room's stock unless the pharmacy is chosen.
@@ -249,7 +253,7 @@ it('records medicines given in a session on the appointment, and returns a same-
     $this->getJson('/api/v1/pharmacy/inventory/stock?filter[location][eq]=treatment_room')->assertOk()->assertJsonCount(1, 'data');
     $this->getJson("/api/v1/pharmacy/medications/{$ceft['id']}")->assertOk()
         ->assertJsonPath('data.stock_on_hand', '9.00')->assertJsonPath('data.stock_treatment_room', '4.00')->assertJsonPath('data.next_expiry', '2027-12-31');
-    asUser($doctor->id);
+    asUser($nurse->id);
     idempotent("/api/v1/appointments/{$visit->id}/medications", $given)->assertCreated();
     expect(MedicationBatch::query()->findOrFail($ward['id'])->qty_on_hand)->toBe('3.00');
 

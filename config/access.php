@@ -143,7 +143,8 @@ return [
                 'staff_requests' => ['read_own', 'create', 'write'],
                 'payroll' => ['read_own'],
             ],
-            'actions' => ['patients.view_medical', 'patients.view_history', 'appointments.treat', 'dispensing.administer', 'orders.perform', 'codes.generate', 'codes.scan', 'attendance.self', 'leaves.request'],
+            // Doctors prescribe; they do not hand out or give medicines (the pharmacy dispenses, nurses administer).
+            'actions' => ['patients.view_medical', 'patients.view_history', 'appointments.treat', 'orders.perform', 'codes.generate', 'codes.scan', 'attendance.self', 'leaves.request'],
         ],
         // The staff nurse: her own patients (the sessions she gives), allergies and blood group to give medicine
         // safely — not their health, surgical or family history, nor past visit notes (doctors only).

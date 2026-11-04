@@ -149,3 +149,19 @@ it('sends an admin-initiated reset code', function () {
     $this->postJson("/api/v1/users/{$user->id}/send-reset-link")->assertAccepted();
     Notification::assertSentTo($user, PasswordResetCodeNotification::class);
 });
+
+it('keeps one mobile number per account holder, in international format', function () {
+    superAdmin();
+    $holder = Person::factory()->create(['phone' => '+97336112233']);
+    User::factory()->create(['id' => $holder->id]);
+    $person = Person::factory()->create(['phone' => '+97339000001']);
+    User::factory()->create(['id' => $person->id]);
+    // A child without an account may share a parent's number.
+    $child = Person::factory()->create(['phone' => '+97336112233']);
+
+    $this->putJson("/api/v1/people/{$person->id}", ['version' => 1, 'phone' => '36112233'])
+        ->assertStatus(409)->assertJsonPath('error_code', 'USER_PHONE_TAKEN');
+    $this->putJson("/api/v1/people/{$person->id}", ['version' => 1, 'phone' => '12'])->assertUnprocessable()->assertJsonValidationErrors('phone');
+    $this->putJson("/api/v1/people/{$person->id}", ['version' => 1, 'phone' => '+97336445566'])->assertOk()->assertJsonPath('data.phone', '+97336445566');
+    expect($child->refresh()->phone)->toBe('+97336112233');
+});

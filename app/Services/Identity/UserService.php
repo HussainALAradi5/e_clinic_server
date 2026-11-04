@@ -13,6 +13,7 @@ use App\Exceptions\Identity\CannotModifySelfException;
 use App\Exceptions\Identity\DuplicatePersonException;
 use App\Exceptions\Identity\EmailAlreadyTakenException;
 use App\Exceptions\Identity\LastSuperAdminException;
+use App\Exceptions\Identity\PhoneAlreadyTakenException;
 use App\Interfaces\Identity\AuthServiceInterface;
 use App\Interfaces\Identity\UserServiceInterface;
 use App\Interfaces\Reference\AddressServiceInterface;
@@ -131,6 +132,10 @@ final class UserService implements UserServiceInterface
                 }
             }
 
+            if ($person->isDirty('phone') && $person->user !== null) {
+                $this->assertPhoneAvailable($person->phone, $person->id);
+            }
+
             if ($person->isDirty('email')) {
                 $this->assertEmailAvailable($person->email, $person->id);
                 // A changed login email must be verified again.
@@ -170,6 +175,7 @@ final class UserService implements UserServiceInterface
         if (User::query()->whereKey($person->id)->exists()) {
             throw new EmailAlreadyTakenException;
         }
+        $this->assertPhoneAvailable($person->phone, $person->id);
 
         $this->privileges->assertCanGrantRoles($this->actor(), $data->roles);
 
@@ -250,6 +256,21 @@ final class UserService implements UserServiceInterface
             ->with(['person', 'roles']);
 
         return OwnershipScope::apply($query, 'users', Auth::user());
+    }
+
+    /** One mobile number per account holder (people without an account, e.g. children, may share a parent's). */
+    private function assertPhoneAvailable(string $phone, string $exceptId): void
+    {
+        $taken = Person::query()
+            ->where('phone', PhoneNumber::normalise($phone))
+            ->whereKeyNot($exceptId)
+            ->where('is_deleted', false)
+            ->whereHas('user')
+            ->exists();
+
+        if ($taken) {
+            throw new PhoneAlreadyTakenException;
+        }
     }
 
     private function assertEmailAvailable(?string $email, ?string $exceptId = null): void
