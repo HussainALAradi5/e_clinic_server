@@ -118,8 +118,7 @@ final class DocumentService implements DocumentServiceInterface
         $bytes = $this->renderer->render(DocumentLayout::Document, [
             ...$this->letterhead($page->title, $page->reference),
             'page' => $page,
-            'qr' => $this->code($type, (string) $record->getKey(), CodeSymbology::Qr),
-            'barcode' => $this->code($type, (string) $record->getKey(), CodeSymbology::Code128),
+            'qr' => $this->qr($type, (string) $record->getKey()),
         ]);
 
         return DB::transaction(function () use ($type, $record, $page, $bytes): GeneratedDocument {
@@ -175,15 +174,14 @@ final class DocumentService implements DocumentServiceInterface
         }
     }
 
-    /** The record's signed QR (a check link any camera opens) or reference barcode, as a PNG data URI. */
-    private function code(DocumentType $type, string $id, CodeSymbology $symbology): ?string
+    /** The record's signed QR (a check link any camera opens), as a PNG data URI; null for types without one. */
+    private function qr(DocumentType $type, string $id): ?string
     {
         $entity = $type->codeEntity();
         if ($entity === null) {
             return null;
         }
-        $pixels = Config::integer($symbology === CodeSymbology::Code128 ? 'documents.barcode_pixels' : 'documents.qr_pixels');
-        $image = $this->codes->image($entity, $id, $symbology, $pixels, 'png');
+        $image = $this->codes->image($entity, $id, CodeSymbology::Qr, Config::integer('documents.qr_pixels'), 'png');
 
         return 'data:'.$image->mimeType.';base64,'.base64_encode($image->content);
     }

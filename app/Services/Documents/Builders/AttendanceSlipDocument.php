@@ -71,7 +71,7 @@ final class AttendanceSlipDocument implements DocumentBuilder
                     new DocumentFact($f->text('attendance_slip.staff_no'), $employee->person->code),
                     new DocumentFact($f->text('attendance_slip.job'), $employee->job_title),
                     new DocumentFact($f->text('attendance_slip.department'), $employee->department->name),
-                    new DocumentFact($f->text('attendance_slip.shift'), substr($employee->work_start_time, 0, 5).' – '.substr($employee->work_end_time, 0, 5)),
+                    new DocumentFact($f->text('attendance_slip.shift'), $f->clockTime($employee->work_start_time).' – '.$f->clockTime($employee->work_end_time)),
                 ]),
                 new FactsBlock($f->text('attendance_slip.day'), [
                     new DocumentFact($f->text('attendance_slip.check_in'), $f->time($day->check_in_at)),

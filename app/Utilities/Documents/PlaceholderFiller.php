@@ -51,7 +51,7 @@ final class PlaceholderFiller
             TemplatePlaceholder::PatientSex->value => mb_strtolower($person->gender->label()),
             TemplatePlaceholder::PatientBirthDate->value => $this->format->date($person->date_of_birth),
             TemplatePlaceholder::VisitDate->value => $this->format->date($visit->scheduled_date),
-            TemplatePlaceholder::VisitTime->value => substr($visit->start_time, 0, 5).'–'.substr($visit->end_time, 0, 5),
+            TemplatePlaceholder::VisitTime->value => $this->format->clockTime($visit->start_time).' – '.$this->format->clockTime($visit->end_time),
             TemplatePlaceholder::VisitReason->value => $visit->reason ?? '—',
             TemplatePlaceholder::Diagnosis->value => $diagnoses !== null && $diagnoses !== '' ? $diagnoses : '—',
             TemplatePlaceholder::AuthorName->value => $author->person->full_name,

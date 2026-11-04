@@ -36,6 +36,4 @@ return [
     /* Pixel size of the verification QR drawn on documents. */
     'qr_pixels' => 240,
 
-    /* Pixel width of the reference barcode (Code 128) beside the QR. */
-    'barcode_pixels' => 560,
 ];

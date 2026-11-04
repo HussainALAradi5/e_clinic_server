@@ -79,7 +79,6 @@
     .rich ul, .rich ol { margin: 0 0 8px 18px; padding: 0; }
     .rich blockquote { margin: 6px 0; padding: 6px 12px; border-left: 3px solid {{ $c['brand'] }}; background: {{ $c['brand_soft'] }}; }
     .rich a { color: {{ $c['brand'] }}; }
-    .verify .barcode { width: 190px; height: 44px; }
 
     .verify { margin-top: 20px; background: {{ $c['stripe'] }}; border: 1px solid {{ $c['line'] }}; border-radius: 6px; page-break-inside: avoid; }
     .verify td { padding: 10px 12px; vertical-align: middle; }

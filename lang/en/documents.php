@@ -18,7 +18,6 @@ return [
         'page' => 'Page {PAGE_NUM} of {PAGE_COUNT}',
         'exported' => 'Exported :at from :clinic',
         'verification' => 'Verification code',
-        'barcode' => 'Reference barcode',
     ],
 
     'common' => [

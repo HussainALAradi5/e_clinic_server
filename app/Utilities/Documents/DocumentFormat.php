@@ -14,6 +14,7 @@ use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\MoneyHelper;
 use BackedEnum;
 use Brick\Money\Money;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
 /**
@@ -24,9 +25,10 @@ final class DocumentFormat
 {
     private const DATE = 'j M Y';
 
-    private const DATE_TIME = 'j M Y, H:i';
+    /** 12-hour clock with AM / PM, as people read times at the clinic. */
+    private const DATE_TIME = 'j M Y, g:i A';
 
-    private const TIME = 'H:i';
+    private const TIME = 'g:i A';
 
     /** Status values read as good, bad or waiting, whatever enum they come from. */
     private const TONES = [
@@ -74,15 +76,21 @@ final class DocumentFormat
         return $at === null ? '—' : $this->clock->toClinic($at)->format(self::DATE_TIME);
     }
 
-    /** Time of day in clinic time ("08:35"). */
+    /** Time of day in clinic time ("8:35 AM"). */
     public function time(?CarbonInterface $at): string
     {
         return $at === null ? '—' : $this->clock->toClinic($at)->format(self::TIME);
     }
 
+    /** A wall-clock time stored as text ("16:00:00" → "4:00 PM"), e.g. shift hours. */
+    public function clockTime(string $time): string
+    {
+        return CarbonImmutable::createFromFormat('H:i', substr($time, 0, 5))?->format(self::TIME) ?? $time;
+    }
+
     public function now(): string
     {
-        return $this->clock->now()->format(self::DATE_TIME);
+        return $this->clock->toClinic($this->clock->now())->format(self::DATE_TIME);
     }
 
     public function money(?Money $money): string

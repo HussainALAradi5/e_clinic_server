@@ -1,6 +1,6 @@
 {{--
     One record as a document (sick leave, result, invoice…): eyebrow + title + badges, key fact tiles, the blocks
-    in order, then the verification card. Variables: $page (DocumentPage), $qr and $barcode (data URIs or null),
+    in order, then the verification card. Variables: $page (DocumentPage), $qr (data URI or null),
     plus the letterhead variables of layouts.paper.
 --}}
 @extends('pdf.layouts.paper')
@@ -53,9 +53,6 @@
                         {{ __('documents.letterhead.printed', ['at' => $generatedAt]) }}@if ($printedBy) {{ __('documents.letterhead.printed_by', ['name' => '']) }}<b>{{ $printedBy }}</b>@endif
                     </div>
                 </td>
-                @if ($barcode !== null)
-                    <td style="width: 200px; text-align: right;"><img class="barcode" src="{{ $barcode }}" alt="{{ __('documents.letterhead.barcode') }}"></td>
-                @endif
             </tr>
         </table>
     @endif
