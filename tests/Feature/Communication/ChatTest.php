@@ -97,3 +97,27 @@ it('runs a group: admins rename, add, promote and remove; members leave; a group
     Sanctum::actingAs($sara);
     $this->getJson("/api/v1/chat/conversations/{$group}")->assertOk()->assertJsonPath('data.my_role', 'admin');
 });
+
+it('finds colleagues to message by name, phone, email or staff no., a page at a time', function () {
+    $me = chatUser();
+    $omar = chatUser();
+    $omar->person->forceFill(['first_name' => 'Omar', 'last_name' => 'Khalil', 'phone' => '+97336001122', 'email' => 'omar.k@clinic.test'])->save();
+    foreach (range(1, 4) as $i) {
+        chatUser();
+    }
+    $patient = User::factory()->state(['user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create();
+    $patient->person->forceFill(['first_name' => 'Omar', 'phone' => '+97336009999'])->save();
+
+    Sanctum::actingAs($me);
+    foreach (['omar kh', '36001122', 'omar.k@clinic', $omar->person->code] as $search) {
+        $this->getJson('/api/v1/chat/contacts?search='.urlencode($search))->assertOk()
+            ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $omar->id)->assertJsonPath('meta.total', 1);
+    }
+    $this->getJson('/api/v1/chat/contacts?search=nobody-here')->assertOk()->assertJsonCount(0, 'data');
+
+    $first = $this->getJson('/api/v1/chat/contacts?per_page=2')->assertOk()->assertJsonCount(2, 'data')
+        ->assertJsonPath('meta.total', 5)->assertJsonPath('meta.last_page', 3)->json('data');
+    $second = $this->getJson('/api/v1/chat/contacts?per_page=2&page=2')->assertOk()->assertJsonCount(2, 'data')->json('data');
+    expect(array_intersect(array_column($first, 'id'), array_column($second, 'id')))->toBe([]);
+    $this->getJson('/api/v1/chat/contacts?per_page=500')->assertUnprocessable();
+});

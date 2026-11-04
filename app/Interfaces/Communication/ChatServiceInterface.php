@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Interfaces\Communication;
 
+use App\Dtos\Communication\ContactSearch;
 use App\Dtos\Communication\ConversationFilter;
 use App\Dtos\Communication\SendMessageData;
 use App\Enums\Communication\ParticipantRole;
@@ -88,10 +89,6 @@ interface ChatServiceInterface
     /** Unread messages over all my chats (the badge on the Chat menu). */
     public function unreadTotal(User $me): int;
 
-    /**
-     * Active colleagues I can message (never patients, never me).
-     *
-     * @return Collection<int, User>
-     */
-    public function contacts(User $me, ?string $search, int $limit): Collection;
+    /** Active staff (not me) whose name, phone, email or staff no. matches every word of the search, a page at a time. */
+    public function contacts(User $me, ContactSearch $query): LengthAwarePaginator;
 }

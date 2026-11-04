@@ -10,6 +10,7 @@ use App\Enums\Communication\BubbleStyle;
 use App\Enums\Communication\ConversationType;
 use App\Enums\Communication\ParticipantRole;
 use App\Http\Concerns\ApiResponse;
+use App\Http\Requests\Communication\ContactSearchRequest;
 use App\Http\Requests\Communication\SendMessageRequest;
 use App\Http\Requests\Communication\StartConversationRequest;
 use App\Http\Resources\Communication\ChatSettingResource;
@@ -183,11 +184,10 @@ final class ChatController
         return $this->ok(['count' => $this->chat->unreadTotal($this->me($request))]);
     }
 
-    public function contacts(Request $request): JsonResponse
+    /** Colleagues to message, searched by name, phone, email or staff no.; paginated. */
+    public function contacts(ContactSearchRequest $request): JsonResponse
     {
-        $request->validate(['search' => ['nullable', 'string', 'max:100']]);
-
-        return $this->ok(ContactResource::collection($this->chat->contacts($this->me($request), $request->string('search')->toString() ?: null, 50)));
+        return $this->paginated(ContactResource::collection($this->chat->contacts($this->me($request), $request->toData())));
     }
 
     private function me(Request $request): User

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Communication;
 
+use App\Dtos\Communication\ContactSearch;
 use App\Dtos\Communication\ConversationFilter;
 use App\Dtos\Communication\SendMessageData;
 use App\Dtos\Identity\AttachToData;
@@ -343,22 +344,32 @@ final class ChatService implements ChatServiceInterface
             ->count();
     }
 
-    public function contacts(User $me, ?string $search, int $limit): Collection
+    public function contacts(User $me, ContactSearch $query): LengthAwarePaginator
     {
+        $words = $query->words();
+
         return User::query()
             ->with('person')
             ->where('users.id', '!=', $me->id)
             ->where('status', UserStatus::Active)
             ->where('user_type', '!=', UserType::Patient)
             ->join('persons', 'persons.id', '=', 'users.id')
-            ->when($search !== null && $search !== '', fn (Builder $q) => $q->where(fn (Builder $w) => $w
-                ->whereLike('persons.first_name', '%'.$search.'%')
-                ->orWhereLike('persons.last_name', '%'.$search.'%')))
+            // Every word must match the name, phone, email or staff no. (so "omar kh" finds Omar Khalil).
+            ->when($words !== [], fn (Builder $q) => $q->where(function (Builder $all) use ($words): void {
+                foreach ($words as $word) {
+                    $like = '%'.$word.'%';
+                    $all->where(fn (Builder $w) => $w
+                        ->whereLike('persons.first_name', $like)
+                        ->orWhereLike('persons.last_name', $like)
+                        ->orWhereLike('persons.phone', $like)
+                        ->orWhereLike('persons.email', $like)
+                        ->orWhereLike('persons.code', $like));
+                }
+            }))
             ->orderBy('persons.first_name')
             ->orderBy('persons.last_name')
-            ->limit($limit)
-            ->get(['users.*'])
-            ->toBase();
+            ->select('users.*')
+            ->paginate($query->perPage, page: $query->page);
     }
 
     /**
