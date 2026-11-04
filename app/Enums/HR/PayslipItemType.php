@@ -17,6 +17,7 @@ enum PayslipItemType: string implements HasLabel
     case Basic = 'basic';
     case Allowance = 'allowance';
     case Overtime = 'overtime';
+    case Commission = 'commission';
     case Deduction = 'deduction';
     case Absence = 'absence';
     case Lateness = 'lateness';
@@ -27,6 +28,6 @@ enum PayslipItemType: string implements HasLabel
     /** Earnings add to gross pay; everything else is deducted. */
     public function isEarning(): bool
     {
-        return in_array($this, [self::Basic, self::Allowance, self::Overtime], true);
+        return in_array($this, [self::Basic, self::Allowance, self::Overtime, self::Commission], true);
     }
 }

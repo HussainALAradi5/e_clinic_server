@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HR\AttendanceController;
 use App\Http\Controllers\HR\DepartmentController;
+use App\Http\Controllers\HR\DoctorEarningController;
 use App\Http\Controllers\HR\EmployeeController;
 use App\Http\Controllers\HR\LeaveController;
 use App\Http\Controllers\HR\PayrollController;
@@ -143,6 +144,11 @@ Route::middleware('auth:sanctum')->prefix('hr')->name('hr.')->group(function ():
 
     // Payroll (runs behind 2FA; staff read their own payslips)
     Route::controller(PayrollController::class)->group(function (): void {
+        // Doctor earnings: the month's commission per doctor (doctors see their own) and each doctor's terms.
+        Route::get('doctor-earnings', [DoctorEarningController::class, 'index'])->middleware(['access:payroll.read_all|payroll.read_own', 'throttle:report'])->name('doctor-earnings.index');
+        Route::put('doctors/{doctor}/commission', [DoctorEarningController::class, 'update'])->whereUuid('doctor')
+            ->middleware(['access:employees.manage_salary', 'throttle:sensitive'])->name('doctor-earnings.commission');
+
         Route::prefix('payroll-runs')->name('payroll-runs.')->group(function (): void {
             Route::middleware(['access:payroll.read_all', 'throttle:read'])->group(function (): void {
                 Route::get('/', 'index')->name('index');

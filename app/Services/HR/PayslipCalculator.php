@@ -6,14 +6,17 @@ namespace App\Services\HR;
 
 use App\Dtos\HR\AppliedDeductions;
 use App\Dtos\HR\PayslipLine;
+use App\Enums\HR\CommissionType;
 use App\Enums\HR\PayslipItemType;
 use App\Enums\HR\SalaryComponentType;
 use App\Enums\HR\SettingKey;
 use App\Interfaces\HR\AttendanceServiceInterface;
 use App\Interfaces\HR\SettingServiceInterface;
+use App\Models\Appointments\Doctor;
 use App\Models\HR\Employee;
 use App\Models\HR\EmployeeSalaryComponent;
 use App\Utilities\HR\AttendancePay;
+use App\Utilities\HR\DoctorEarnings;
 use App\Utilities\Shared\MoneyHelper;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -73,6 +76,15 @@ final class PayslipCalculator
         $overtime = $summary->approvedOvertimeAmount;
         $lines[] = new PayslipLine(PayslipItemType::Overtime, __('Overtime (:hours h)', ['hours' => (string) $overtimeHours->toScale(2, RoundingMode::HALF_UP)]), $overtime);
 
+        // Doctors on commission: their share of the month's revenue (or per completed visit).
+        $doctor = Doctor::query()->with('person')->find($employee->id);
+        $commission = $doctor === null || $doctor->commission_type === CommissionType::None ? null : DoctorEarnings::of($doctor, $from, $to);
+        if ($commission !== null && $commission->commission->isPositive()) {
+            $lines[] = new PayslipLine(PayslipItemType::Commission, $commission->type === CommissionType::Percent
+                ? __('Commission (:rate% of :revenue)', ['rate' => (float) $commission->rate, 'revenue' => MoneyHelper::format($commission->revenue)])
+                : __('Commission (:visits visits)', ['visits' => $commission->visits]), $commission->commission);
+        }
+
         // With late excuses on, late minutes HR did not excuse are deducted at the hourly wage.
         if ($this->settings->enabled(SettingKey::LateExcuse) && $summary->unexcusedLateMinutes > 0) {
             $lines[] = new PayslipLine(PayslipItemType::Lateness, __('Late arrival (:minutes min)', ['minutes' => $summary->unexcusedLateMinutes]), $this->pay->lateness($employee, $summary->unexcusedLateMinutes));
@@ -92,7 +104,7 @@ final class PayslipCalculator
         $lines = array_values(array_filter($lines, fn (PayslipLine $l): bool => $l->type === PayslipItemType::Basic || $l->amount->isPositive()));
 
         $sum = fn (PayslipItemType ...$types): Money => MoneyHelper::sum(...array_map(fn (PayslipLine $l): Money => $l->amount, array_filter($lines, fn (PayslipLine $l): bool => in_array($l->type, $types, true))));
-        $gross = $sum(PayslipItemType::Basic, PayslipItemType::Allowance, PayslipItemType::Overtime);
+        $gross = $sum(PayslipItemType::Basic, PayslipItemType::Allowance, PayslipItemType::Overtime, PayslipItemType::Commission);
         $applied = AppliedDeductions::of($gross, $sum(PayslipItemType::Absence, PayslipItemType::Lateness, PayslipItemType::UnpaidLeave), $sum(PayslipItemType::SocialInsurance), $sum(PayslipItemType::Deduction, PayslipItemType::Adjustment));
 
         return [

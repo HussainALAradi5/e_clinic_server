@@ -169,6 +169,7 @@ return [
         HR\AttendanceStatus::class,
         HR\AttendanceSource::class,
         HR\PayrollStatus::class,
+        HR\CommissionType::class,
         HR\PayslipItemType::class,
         HR\StaffRequestType::class,
         HR\SettingKey::class,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Appointments;
 
+use App\Enums\HR\CommissionType;
 use App\Enums\HR\EmployeeStatus;
 use App\Interfaces\Shared\Auditable;
 use App\Interfaces\Shared\OwnedByUser;
@@ -35,6 +36,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $is_accepting_patients
  * @property ?string $default_room_id
  * @property ?string $bio
+ * @property CommissionType $commission_type
+ * @property string $commission_value Percent (0–100) or BHD per visit
  * @property-read Employee $employee
  * @property-read Person $person
  * @property-read Specialty $specialty
@@ -150,6 +153,8 @@ class Doctor extends Model implements Auditable, OwnedByUser
     protected function casts(): array
     {
         return [
+            'commission_type' => CommissionType::class,
+            'commission_value' => 'decimal:3',
             'license_expiry_date' => 'immutable_date',
             'is_accepting_patients' => 'boolean',
             'default_slot_minutes' => 'integer',

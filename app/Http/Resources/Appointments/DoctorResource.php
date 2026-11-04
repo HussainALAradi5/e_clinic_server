@@ -54,6 +54,11 @@ final class DoctorResource extends JsonResource
             'default_room_id' => $this->default_room_id,
             'default_room' => $this->whenLoaded('defaultRoom', fn (): ?array => $this->defaultRoom === null ? null : ['id' => $this->defaultRoom->id, 'code' => $this->defaultRoom->code, 'name' => $this->defaultRoom->name]),
             'bio' => $this->bio,
+            // Salary data: commission terms only for those who see salaries.
+            'commission' => $this->when($request->user()?->can('employees.view_salary') ?? false, fn (): array => [
+                'type' => $this->commission_type->value,
+                'value' => (string) $this->commission_value,
+            ]),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
