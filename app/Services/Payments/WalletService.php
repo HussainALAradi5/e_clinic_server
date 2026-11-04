@@ -23,6 +23,7 @@ use App\Models\Payments\Invoice;
 use App\Models\Payments\PatientWalletEntry;
 use App\Models\Payments\Payment;
 use App\Utilities\Access\OwnershipScope;
+use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Query\ApplyListQuery;
 use App\Utilities\Query\ListQuery;
 use App\Utilities\Shared\ClinicClock;
@@ -143,7 +144,10 @@ final class WalletService implements WalletServiceInterface
             }
             [$locked, $balance] = $this->lock($invoice->patient()->firstOrFail());
             $invoice->refresh();
-            $paid = $amount !== null ? MoneyHelper::of($amount, $invoice->currency) : MoneyHelper::of(min((string) $balance->getAmount(), (string) $invoice->balance_due->getAmount()), $invoice->currency);
+            // By default: what the patient owes (their co-pay on an insured invoice), within the balance.
+            $split = InsuranceCoverage::split($invoice, $this->clock->today());
+            $owed = $split->covered ? $split->patientDue : $invoice->balance_due;
+            $paid = $amount !== null ? MoneyHelper::of($amount, $invoice->currency) : ($balance->isLessThan($owed) ? $balance : $owed);
             if ($paid->isNegativeOrZero()) {
                 throw new InsufficientBalanceException;
             }

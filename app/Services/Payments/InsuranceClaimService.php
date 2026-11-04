@@ -28,11 +28,11 @@ use App\Models\Payments\Invoice;
 use App\Models\Payments\InvoiceItem;
 use App\Services\Base\BaseEntityService;
 use App\Utilities\Access\OwnershipScope;
+use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Query\ApplyListQuery;
 use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\MoneyHelper;
 use Brick\Money\Money;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -79,10 +79,9 @@ final class InsuranceClaimService extends BaseEntityService implements Insurance
             }
 
             $patient = $invoice->patient;
-            $insurable = $invoice->items->filter(fn (InvoiceItem $i): bool => $i->billableService?->is_insurable === true);
-            $lastService = $insurable->map(fn (InvoiceItem $i): CarbonImmutable => $this->serviceDate($i, $invoice))->max() ?? $invoice->issue_date;
-            $valid = $patient->insurance_company_id !== null && $patient->insurance_policy_number !== null
-                && ($patient->insurance_expiry_date === null || $lastService === null || $patient->insurance_expiry_date->gte($lastService));
+            $insurable = InsuranceCoverage::insurableItems($invoice);
+            $lastService = InsuranceCoverage::lastServiceDate($insurable, $invoice, $this->clock->today());
+            $valid = InsuranceCoverage::hasPolicy($patient) && InsuranceCoverage::validOn($patient, $lastService);
             if (! $valid || $insurable->isEmpty()) {
                 throw new InsuranceNotValidException;
             }
@@ -230,13 +229,6 @@ final class InsuranceClaimService extends BaseEntityService implements Insurance
     }
 
     /** When the service was given: the visit's date, else the invoice date. */
-    private function serviceDate(InvoiceItem $item, Invoice $invoice): CarbonImmutable
-    {
-        $source = $item->chargeable;
-
-        return $source instanceof Appointment ? $source->scheduled_date : ($invoice->issue_date ?? $this->clock->today());
-    }
-
     /**
      * Every visit on the claim needs a signed note with a primary diagnosis.
      *

@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
             Route::get('/', 'index')->name('index');
             Route::get('outstanding', 'outstanding')->name('outstanding');
             Route::get('{invoice}', 'show')->whereUuid('invoice')->name('show');
+            Route::get('{invoice}/coverage', 'coverage')->whereUuid('invoice')->name('coverage');
         });
         Route::middleware(['access:invoices.create', 'throttle:write'])->group(function (): void {
             Route::post('/', 'store')->name('store');

@@ -10,6 +10,7 @@ return [
     'invoice_issued' => 'Invoice :number — :patient',
     'invoice_cancelled' => 'Invoice :number cancelled',
     'payment_received' => 'Payment :code — invoice :invoice',
+    'insurer_share_paid' => 'Patient paid the insurer\'s share too',
     'fee_line' => ':fee — :code on :date',
     'wallet_deposit' => 'Patient balance deposit :code',
     'wallet_withdrawal' => 'Patient balance paid back :code',

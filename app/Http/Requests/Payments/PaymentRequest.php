@@ -29,6 +29,7 @@ final class PaymentRequest extends FormRequest
             'reference_number' => [Rule::requiredIf(fn (): bool => in_array($this->input('method'), [PaymentMethod::BankTransfer->value, PaymentMethod::Cheque->value], true)), 'nullable', 'string', 'max:100'],
             'card_last4' => ['nullable', 'digits:4'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'pay_insurer_share' => ['sometimes', 'boolean'],
         ];
     }
 

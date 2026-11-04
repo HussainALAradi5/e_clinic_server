@@ -15,6 +15,8 @@ final readonly class RecordPaymentData
         public ?string $referenceNumber = null,
         public ?string $cardLast4 = null,
         public ?string $notes = null,
+        /** The patient pays the insurer's share too (no claim for it); off = co-pay only on insured invoices. */
+        public bool $payInsurerShare = false,
     ) {}
 
     /**
@@ -29,6 +31,7 @@ final readonly class RecordPaymentData
             isset($data['reference_number']) ? (string) $data['reference_number'] : null,
             isset($data['card_last4']) ? (string) $data['card_last4'] : null,
             isset($data['notes']) ? (string) $data['notes'] : null,
+            (bool) ($data['pay_insurer_share'] ?? false),
         );
     }
 }

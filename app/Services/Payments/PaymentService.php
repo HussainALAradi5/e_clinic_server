@@ -12,6 +12,7 @@ use App\Enums\Payments\PaymentStatus;
 use App\Enums\Shared\PaymentMethod;
 use App\Events\Payments\PaymentReceived;
 use App\Events\Payments\PaymentVoided;
+use App\Exceptions\Payments\CopayExceededException;
 use App\Exceptions\Payments\InvoiceNotPayableException;
 use App\Exceptions\Payments\OverpaymentException;
 use App\Exceptions\Payments\PaymentNotVoidableException;
@@ -26,11 +27,13 @@ use App\Models\Payments\Payment;
 use App\Models\Transactions\CashSession;
 use App\Services\Base\BaseEntityService;
 use App\Utilities\Access\OwnershipScope;
+use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Query\ApplyListQuery;
 use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\MoneyHelper;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Brick\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -85,6 +88,7 @@ final class PaymentService extends BaseEntityService implements PaymentServiceIn
                 $balance = MoneyHelper::format($invoice->balance_due);
                 throw new OverpaymentException(__('errors.PAYMENT_EXCEEDS_BALANCE', ['balance' => $balance]), ['balance_due' => MoneyHelper::toDb($invoice->balance_due), 'errors' => ['amount' => [__('errors.PAYMENT_EXCEEDS_BALANCE', ['balance' => $balance])]]]);
             }
+            $this->assertCopay($invoice, $amount, $data);
             $actor = Auth::user();
             $session = $data->method === PaymentMethod::Cash && $actor !== null ? $this->cashSessions->requireOpen($actor) : null;
 
@@ -101,7 +105,7 @@ final class PaymentService extends BaseEntityService implements PaymentServiceIn
                 'received_by' => Auth::id(),
                 'cash_session_id' => $session instanceof CashSession ? $session->id : null,
                 'idempotency_key' => $idempotencyKey,
-                'notes' => $data->notes,
+                'notes' => $data->notes ?? ($data->payInsurerShare ? __('accounting.insurer_share_paid') : null),
             ]);
 
             $entry = $this->journal->postAutomatic(new AutomaticEntryData(
@@ -209,5 +213,25 @@ final class PaymentService extends BaseEntityService implements PaymentServiceIn
         $map = Config::array('accounting.payment_method_accounts');
 
         return $map[$method->value];
+    }
+
+    /**
+     * On an insured invoice the patient pays their share only (the insurer is claimed for the rest), unless they
+     * choose to pay it all. Insurance remittances are the insurer's own payments and are not limited.
+     */
+    private function assertCopay(Invoice $invoice, Money $amount, RecordPaymentData $data): void
+    {
+        if ($data->method === PaymentMethod::Insurance || $data->payInsurerShare) {
+            return;
+        }
+        $split = InsuranceCoverage::split($invoice, $this->clock->today());
+        if ($split->covered && $amount->isGreaterThan($split->patientDue)) {
+            $due = MoneyHelper::format($split->patientDue);
+            throw new CopayExceededException(__('errors.COPAY_EXCEEDED', ['due' => $due, 'insurer' => $split->insurerName]), [
+                'patient_due' => MoneyHelper::toDb($split->patientDue),
+                'insurer_share' => MoneyHelper::toDb($split->insurerShare),
+                'errors' => ['amount' => [__('errors.COPAY_EXCEEDED', ['due' => $due, 'insurer' => $split->insurerName])]],
+            ]);
+        }
     }
 }

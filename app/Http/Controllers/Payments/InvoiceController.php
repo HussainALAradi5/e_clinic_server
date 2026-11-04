@@ -8,10 +8,13 @@ use App\Enums\Payments\InvoicePaymentState;
 use App\Enums\Shared\PaymentMethod;
 use App\Http\Concerns\ApiResponse;
 use App\Http\Requests\Payments\InvoiceRequest;
+use App\Http\Resources\Payments\CoverageResource;
 use App\Http\Resources\Payments\InvoiceResource;
 use App\Interfaces\Payments\InvoiceServiceInterface;
 use App\Models\Payments\Invoice;
+use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Query\ListQuery;
+use App\Utilities\Shared\ClinicClock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -79,5 +82,11 @@ final class InvoiceController
         $request->validate(['reason' => ['required', 'string', 'max:500']]);
 
         return $this->ok(new InvoiceResource($this->invoices->cancel($this->invoices->find($invoice), $request->string('reason')->toString())));
+    }
+
+    /** How the invoice splits between the insurer and the patient: the co-pay the desk takes now. */
+    public function coverage(string $invoice): JsonResponse
+    {
+        return $this->ok(new CoverageResource(InsuranceCoverage::split($this->invoices->find($invoice), app(ClinicClock::class)->today())));
     }
 }
