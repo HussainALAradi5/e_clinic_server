@@ -42,6 +42,7 @@ return [
         'bank_transfer' => AccountMappingKey::Bank,
         'cheque' => AccountMappingKey::Bank,
         'insurance' => AccountMappingKey::InsuranceReceivable,
+        'patient_balance' => AccountMappingKey::PatientDeposits,
     ],
 
     /*
@@ -82,6 +83,7 @@ return [
         ['2200', 'Salaries payable', 'liability', '2000', false, AccountMappingKey::SalariesPayable],
         ['2300', 'Social insurance payable', 'liability', '2000', false, AccountMappingKey::SocialInsurancePayable],
         ['2400', 'Payroll deductions payable', 'liability', '2000', false, null],
+        ['2500', 'Patient deposits', 'liability', '2000', false, AccountMappingKey::PatientDeposits],
         ['3000', 'Equity', 'equity', null, true, null],
         ['3100', 'Owner capital', 'equity', '3000', false, null],
         ['3200', 'Retained earnings', 'equity', '3000', false, AccountMappingKey::RetainedEarnings],
@@ -91,6 +93,7 @@ return [
         ['4300', 'Laboratory revenue', 'revenue', '4000', false, null],
         ['4400', 'Radiology revenue', 'revenue', '4000', false, null],
         ['4500', 'Pharmacy sales', 'revenue', '4000', false, null],
+        ['4600', 'Fees revenue', 'revenue', '4000', false, AccountMappingKey::FeeRevenue],
         ['4900', 'Sales returns', 'revenue', '4000', false, AccountMappingKey::SalesReturns],
         ['5000', 'Expenses', 'expense', null, true, null],
         ['5100', 'Salaries expense', 'expense', '5000', false, AccountMappingKey::SalariesExpense],

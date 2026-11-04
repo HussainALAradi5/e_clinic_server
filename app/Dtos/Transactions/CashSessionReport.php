@@ -12,6 +12,8 @@ use Brick\Money\Money;
 final readonly class CashSessionReport
 {
     /**
+     * @param  Money  $balanceDeposits  cash patients left on their balance during the session
+     * @param  Money  $balancePaybacks  cash paid back from patient balances during the session
      * @param  array<string, Money>  $byMethod  completed payments taken by the cashier during the session, per method
      */
     public function __construct(
@@ -19,6 +21,8 @@ final readonly class CashSessionReport
         public Money $cashIn,
         public Money $cashRefunds,
         public Money $cashExpenses,
+        public Money $balanceDeposits,
+        public Money $balancePaybacks,
         public Money $expected,
         public array $byMethod,
         public int $payments,

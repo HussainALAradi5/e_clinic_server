@@ -33,6 +33,7 @@ return [
         'companies' => ['module' => 'reference_data', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
         'sick_leaves' => ['module' => 'appointments', 'actions' => ['export'], 'ownership' => '`patient_id` = the user\'s id (portal) or `doctor_id` = the user\'s id (the issuing doctor)'],
         'templates' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`created_by` = user (ready-made templates belong to the clinic)'],
+        'wallet' => ['module' => 'payments', 'actions' => ['deposit', 'withdraw', 'adjust'], 'ownership' => '`patient_id` = the user\'s id (portal)'],
         'written_documents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id (portal) or `author_id` = the user\'s id (the writer)'],
         'consents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id or `explained_by` = the user\'s id or the patient has an appointment / treatment with the user as provider'],
         'departments' => ['module' => 'hr', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
@@ -82,6 +83,7 @@ return [
         'admin' => ['access' => '*', 'actions' => '*', 'except_actions' => ['fiscal.reopen']],
         'receptionist' => [
             'access' => [
+                'wallet' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
@@ -111,7 +113,7 @@ return [
                 'staff_requests' => ['read_own', 'create', 'write'],
                 'payroll' => ['read_own'],
             ],
-            'actions' => ['codes.generate', 'codes.scan', 'appointments.cancel', 'appointments.check_in', 'invoices.issue', 'refunds.request', 'cash_sessions.operate', 'attendance.self', 'leaves.request', 'people.export', 'people.import', 'companies.export', 'appointments.export'],
+            'actions' => ['wallet.deposit', 'codes.generate', 'codes.scan', 'appointments.cancel', 'appointments.check_in', 'invoices.issue', 'refunds.request', 'cash_sessions.operate', 'attendance.self', 'leaves.request', 'people.export', 'people.import', 'companies.export', 'appointments.export'],
         ],
         'doctor' => [
             'access' => [
@@ -235,6 +237,7 @@ return [
         ],
         'accountant' => [
             'access' => [
+                'wallet' => ['read_all', 'write'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'claims' => ['read_all', 'create', 'write'],
@@ -262,10 +265,11 @@ return [
                 'leaves' => ['read_own', 'create', 'write'],
                 'staff_requests' => ['read_own', 'create', 'write'],
             ],
-            'actions' => ['codes.generate', 'claims.decide', 'claims.remit', 'fiscal.close', 'journal.post', 'journal.reverse', 'reports.export', 'transactions.export', 'expenses.approve', 'expenses.pay', 'invoices.cancel', 'payments.void', 'refunds.approve', 'cash_sessions.supervise', 'payroll.approve', 'payroll.pay', 'audit.export', 'attendance.self', 'leaves.request', 'companies.export', 'companies.import', 'accounts.export', 'services.export', 'services.import', 'inventory.export', 'dispensing.export', 'payroll.export'],
+            'actions' => ['wallet.deposit', 'wallet.withdraw', 'wallet.adjust', 'codes.generate', 'claims.decide', 'claims.remit', 'fiscal.close', 'journal.post', 'journal.reverse', 'reports.export', 'transactions.export', 'expenses.approve', 'expenses.pay', 'invoices.cancel', 'payments.void', 'refunds.approve', 'cash_sessions.supervise', 'payroll.approve', 'payroll.pay', 'audit.export', 'attendance.self', 'leaves.request', 'companies.export', 'companies.import', 'accounts.export', 'services.export', 'services.import', 'inventory.export', 'dispensing.export', 'payroll.export'],
         ],
         'cashier' => [
             'access' => [
+                'wallet' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'patients' => ['read_all'],
@@ -281,10 +285,11 @@ return [
                 'staff_requests' => ['read_own', 'create', 'write'],
                 'payroll' => ['read_own'],
             ],
-            'actions' => ['codes.generate', 'codes.scan', 'invoices.issue', 'refunds.request', 'refunds.process', 'cash_sessions.operate', 'attendance.self', 'leaves.request'],
+            'actions' => ['wallet.deposit', 'codes.generate', 'codes.scan', 'invoices.issue', 'refunds.request', 'refunds.process', 'cash_sessions.operate', 'attendance.self', 'leaves.request'],
         ],
         'patient' => [
             'access' => [
+                'wallet' => ['read_own'],
                 'patients' => ['read_own'],
                 'people' => ['read_own'],
                 'appointments' => ['read_own', 'create'],

@@ -68,8 +68,10 @@ final class ZReportDocument implements DocumentBuilder
                 new TotalsBlock([
                     new DocumentFact($f->text('z_report.opening_float'), $f->money($report->openingFloat)),
                     new DocumentFact($f->text('z_report.cash_in'), '+ '.$f->money($report->cashIn)),
+                    new DocumentFact($f->text('z_report.balance_deposits'), '+ '.$f->money($report->balanceDeposits)),
                     new DocumentFact($f->text('z_report.cash_refunds'), '− '.$f->money($report->cashRefunds)),
                     new DocumentFact($f->text('z_report.cash_expenses'), '− '.$f->money($report->cashExpenses)),
+                    new DocumentFact($f->text('z_report.balance_paybacks'), '− '.$f->money($report->balancePaybacks)),
                     new DocumentFact($f->text('z_report.expected'), $f->money($report->expected)),
                     DocumentFact::optional($f->text('z_report.counted'), $session->counted_closing ? $f->money($session->counted_closing) : null),
                 ], new DocumentFact($f->text('z_report.difference'), $f->money($session->difference))),

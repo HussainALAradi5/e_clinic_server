@@ -77,6 +77,8 @@ final class CashSessionResource extends JsonResource
             'cash_in' => MoneyHelper::toApi($r->cashIn),
             'cash_refunds' => MoneyHelper::toApi($r->cashRefunds),
             'cash_expenses' => MoneyHelper::toApi($r->cashExpenses),
+            'balance_deposits' => MoneyHelper::toApi($r->balanceDeposits),
+            'balance_paybacks' => MoneyHelper::toApi($r->balancePaybacks),
             'expected' => MoneyHelper::toApi($r->expected),
             // Lists, not enum-keyed maps: the client camelCases object keys.
             'by_method' => array_map(fn (string $method, Money $total): array => ['method' => $method, 'total' => MoneyHelper::toApi($total)], array_keys($r->byMethod), array_values($r->byMethod)),

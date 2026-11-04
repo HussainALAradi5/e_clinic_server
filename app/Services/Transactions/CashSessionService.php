@@ -11,6 +11,7 @@ use App\Dtos\Transactions\CloseSessionData;
 use App\Dtos\Transactions\DepositData;
 use App\Enums\Accounting\AccountMappingKey;
 use App\Enums\Payments\PaymentStatus;
+use App\Enums\Payments\WalletEntryType;
 use App\Enums\Shared\PaymentMethod;
 use App\Enums\Transactions\CashSessionStatus;
 use App\Exceptions\Shared\InvalidStateTransitionException;
@@ -21,6 +22,7 @@ use App\Exceptions\Transactions\DepositExceedsCashException;
 use App\Exceptions\Transactions\NoOpenCashSessionException;
 use App\Interfaces\Accounting\JournalEntryServiceInterface;
 use App\Interfaces\Transactions\CashSessionServiceInterface;
+use App\Models\Payments\PatientWalletEntry;
 use App\Models\Payments\Payment;
 use App\Models\Transactions\CashSession;
 use App\Services\Base\BaseEntityService;
@@ -185,6 +187,10 @@ final class CashSessionService extends BaseEntityService implements CashSessionS
         $cashIn = $sum($session->payments()->where('status', PaymentStatus::Completed->value)->where('method', PaymentMethod::Cash->value));
         $refunds = $sum($session->refunds()->whereNotNull('processed_at')->where('method', PaymentMethod::Cash->value));
         $expenses = $sum($session->expenses()->whereNotNull('paid_at')->where('payment_method', PaymentMethod::Cash->value));
+        $balance = fn (WalletEntryType $type): Money => MoneyHelper::of($this->decimal(PatientWalletEntry::query()
+            ->where('cash_session_id', $session->id)->where('type', $type->value)->sum('amount')), $currency);
+        $deposits = $balance(WalletEntryType::Deposit);
+        $paybacks = $balance(WalletEntryType::Withdrawal);
 
         // Everything the cashier took during the shift, any method (Z-report).
         $taken = Payment::query()
@@ -206,7 +212,9 @@ final class CashSessionService extends BaseEntityService implements CashSessionS
             cashIn: $cashIn,
             cashRefunds: $refunds,
             cashExpenses: $expenses,
-            expected: $session->opening_float->plus($cashIn)->minus($refunds)->minus($expenses),
+            balanceDeposits: $deposits,
+            balancePaybacks: $paybacks,
+            expected: $session->opening_float->plus($cashIn)->plus($deposits)->minus($refunds)->minus($expenses)->minus($paybacks),
             byMethod: $byMethod,
             payments: $session->payments()->where('status', PaymentStatus::Completed->value)->count(),
             refunds: $session->refunds()->whereNotNull('processed_at')->count(),

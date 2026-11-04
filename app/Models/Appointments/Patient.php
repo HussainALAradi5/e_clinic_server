@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Appointments;
 
+use App\Casts\MoneyCast;
 use App\Enums\Appointments\BloodGroup;
 use App\Enums\Shared\Gender;
 use App\Interfaces\Shared\Auditable;
@@ -16,6 +17,7 @@ use App\Traits\Shared\HasListQuery;
 use App\Traits\Shared\HasVersion;
 use App\Utilities\Appointments\CareTeam;
 use App\Utilities\Query\ListQueryConfig;
+use Brick\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,6 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $insurance_expiry_date
  * @property ?string $insurance_coverage_percent
  * @property ?string $notes
+ * @property Money $wallet_balance Money the clinic holds for the patient (changed only by WalletService)
  * @property int $version
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
@@ -57,7 +60,7 @@ class Patient extends Model implements Auditable, OwnedByUser
 
     protected $keyType = 'string';
 
-    protected $guarded = ['version'];
+    protected $guarded = ['version', 'wallet_balance'];
 
     protected $attributes = ['blood_group' => 'unknown'];
 
@@ -152,6 +155,7 @@ class Patient extends Model implements Auditable, OwnedByUser
             'emergency_contacts' => 'encrypted:array',
             'insurance_expiry_date' => 'immutable_date',
             'insurance_coverage_percent' => 'decimal:2',
+            'wallet_balance' => MoneyCast::class,
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

@@ -6,6 +6,7 @@ namespace App\Modules\Payments;
 
 use App\Events\Appointments\AppointmentCompleted;
 use App\Events\Appointments\ClinicalOrderCompleted;
+use App\Events\Payments\PaymentVoided;
 use App\Events\Payments\RefundApproved;
 use App\Events\Payments\RefundRejected;
 use App\Events\Payments\RefundRequested;
@@ -20,7 +21,9 @@ use App\Interfaces\Payments\InsuranceClaimServiceInterface;
 use App\Interfaces\Payments\InvoiceServiceInterface;
 use App\Interfaces\Payments\PaymentServiceInterface;
 use App\Interfaces\Payments\RefundServiceInterface;
+use App\Interfaces\Payments\WalletServiceInterface;
 use App\Listeners\Payments\ChargeCompletedWork;
+use App\Listeners\Payments\ReturnVoidedBalancePayment;
 use App\Listeners\Payments\SendRefundNotifications;
 use App\Models\Payments\BillableService;
 use App\Models\Payments\InsuranceClaim;
@@ -33,6 +36,7 @@ use App\Services\Payments\InsuranceClaimService;
 use App\Services\Payments\InvoiceService;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\RefundService;
+use App\Services\Payments\WalletService;
 use App\Utilities\Shared\MoneyHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -52,12 +56,14 @@ final class PaymentsServiceProvider extends ServiceProvider
         PaymentServiceInterface::class => PaymentService::class,
         RefundServiceInterface::class => RefundService::class,
         InsuranceClaimServiceInterface::class => InsuranceClaimService::class,
+        WalletServiceInterface::class => WalletService::class,
     ];
 
     public function boot(BulkActionRegistry $bulk): void
     {
         Event::listen([AppointmentCompleted::class, ClinicalOrderCompleted::class], ChargeCompletedWork::class);
         Event::listen([RefundRequested::class, RefundApproved::class, RefundRejected::class], SendRefundNotifications::class);
+        Event::listen(PaymentVoided::class, ReturnVoidedBalancePayment::class);
 
         $bulk->register('services', BillableService::class, BillableService::listQueryConfig(), BillableServiceService::class)
             ->exportable(BillableServiceResource::class, fn (Builder $q) => $q->with(['specialty', 'revenueAccount']), values: [

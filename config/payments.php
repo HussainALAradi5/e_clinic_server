@@ -54,4 +54,24 @@ return [
     */
     'cash_tolerance' => '1.000',
 
+    /*
+    | Patient balance (money the clinic holds for a patient): limits of the WalletService.
+    | - min_deposit / max_balance: smallest top-up and the largest balance one patient may hold (BHD).
+    | - deposit_methods: how money comes in at the desk; withdraw_methods: how it is paid back.
+    | - reason_min_length: withdrawals and adjustments need a written reason at least this long.
+    | - adjustment_limits: largest single adjustment per role (null = unlimited; roles not listed may not adjust).
+    */
+    'wallet' => [
+        'min_deposit' => '1.000',
+        'max_balance' => '1000.000',
+        'deposit_methods' => ['cash', 'card', 'benefit_pay', 'bank_transfer'],
+        'withdraw_methods' => ['cash', 'bank_transfer'],
+        'reason_min_length' => 10,
+        'adjustment_limits' => [
+            'super_admin' => null,
+            'admin' => null,
+            'accountant' => '100.000',
+        ],
+    ],
+
 ];

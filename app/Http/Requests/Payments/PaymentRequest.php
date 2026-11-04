@@ -20,7 +20,7 @@ final class PaymentRequest extends FormRequest
      */
     public function rules(): array
     {
-        $desk = array_values(array_filter(PaymentMethod::cases(), fn (PaymentMethod $m): bool => $m !== PaymentMethod::Insurance));
+        $desk = array_values(array_filter(PaymentMethod::cases(), fn (PaymentMethod $m): bool => $m->isDesk()));
 
         return [
             'invoice_id' => ['required', 'uuid', Rule::exists('invoices', 'id')->where('is_deleted', 0)],

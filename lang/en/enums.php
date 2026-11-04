@@ -25,7 +25,7 @@ return [
     'Currency' => ['BHD' => 'Bahraini Dinar', 'USD' => 'US Dollar', 'SAR' => 'Saudi Riyal'],
     'Gender' => ['male' => 'Male', 'female' => 'Female'],
     'DayOfWeek' => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-    'PaymentMethod' => ['cash' => 'Cash', 'card' => 'Card', 'bank_transfer' => 'Bank transfer', 'benefit_pay' => 'BenefitPay', 'insurance' => 'Insurance', 'cheque' => 'Cheque'],
+    'PaymentMethod' => ['cash' => 'Cash', 'card' => 'Card', 'bank_transfer' => 'Bank transfer', 'benefit_pay' => 'BenefitPay', 'insurance' => 'Insurance', 'cheque' => 'Cheque', 'patient_balance' => 'Patient balance'],
     'DateRangePreset' => [
         'today' => 'Today', 'yesterday' => 'Yesterday', 'this_week' => 'This week', 'last_week' => 'Last week',
         'this_month' => 'This month', 'last_month' => 'Last month', 'last_7_days' => 'Last 7 days', 'last_30_days' => 'Last 30 days',
@@ -45,6 +45,7 @@ return [
     'LoginFailureReason' => ['invalid_credentials' => 'Invalid credentials', 'account_locked' => 'Account locked', 'account_inactive' => 'Account inactive', 'too_many_attempts' => 'Too many attempts', 'invalid_2fa_code' => 'Invalid 2FA code'],
     'TaskType' => ['report_export' => 'Report export', 'audit_export' => 'Audit export', 'transaction_export' => 'Transaction export', 'payroll_calculation' => 'Payroll calculation', 'payslip_emailing' => 'Payslip e-mailing', 'fiscal_year_close' => 'Fiscal year close', 'bulk_notification' => 'Bulk notification', 'bulk_action' => 'Bulk action', 'attachments_zip' => 'Attachments ZIP', 'list_export' => 'List export'],
     'TaskCancelReason' => ['user' => 'Cancelled by user', 'failed' => 'Failed', 'timeout' => 'Timed out'],
+    'WalletEntryType' => ['deposit' => 'Deposit', 'invoice_payment' => 'Invoice paid', 'payment_reversal' => 'Payment returned', 'withdrawal' => 'Paid back', 'adjustment_credit' => 'Credit', 'adjustment_debit' => 'Debit', 'fee' => 'Fee'],
     'WrittenDocumentKind' => ['medical_report' => 'Medical report', 'attendance_certificate' => 'Attendance certificate', 'fitness_certificate' => 'Fitness certificate', 'referral_note' => 'Referral note', 'general_letter' => 'Letter'],
     'TemplatePlaceholder' => ['patient_name' => 'Patient name', 'patient_cpr' => 'Patient CPR', 'patient_file_no' => 'Patient file no.', 'patient_age' => 'Patient age', 'patient_sex' => 'Patient sex', 'patient_birth_date' => 'Patient date of birth', 'visit_date' => 'Visit date', 'visit_time' => 'Visit time', 'visit_reason' => 'Reason for visit', 'diagnosis' => 'Diagnosis', 'author_name' => 'Your name', 'author_title' => 'Your job title', 'clinic_name' => 'Clinic name', 'today' => "Today's date"],
     'DocumentType' => ['sick_leave' => 'Sick leave', 'prescription' => 'Prescription', 'result' => 'Result', 'consent' => 'Consent', 'invoice' => 'Invoice', 'receipt' => 'Receipt', 'insurance_claim' => 'Insurance claim', 'payslip' => 'Payslip', 'z_report' => 'Z-report', 'attendance_slip' => 'Attendance slip', 'written_document' => 'Written document'],

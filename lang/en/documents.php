@@ -226,6 +226,8 @@ return [
         'cash_in' => 'Cash in',
         'cash_refunds' => 'Cash refunds',
         'cash_expenses' => 'Cash expenses',
+        'balance_deposits' => 'Cash deposits to patient balances',
+        'balance_paybacks' => 'Cash paid back from patient balances',
         'counted' => 'Counted',
         'difference' => 'Difference',
         'verify' => 'Scan the code to open this drawer shift.',

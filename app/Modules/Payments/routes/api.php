@@ -5,6 +5,7 @@ use App\Http\Controllers\Payments\InsuranceClaimController;
 use App\Http\Controllers\Payments\InvoiceController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payments\RefundController;
+use App\Http\Controllers\Payments\WalletController;
 use App\Http\Middleware\EnsureIdempotency;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +51,16 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
         });
     });
     Route::dataTransfer('invoices', 'invoices');
+
+    // Patient balance: money the clinic holds for a patient (deposits, paying invoices from it, pay-backs, adjustments)
+    Route::prefix('patients/{patient}/wallet')->name('wallet.')->controller(WalletController::class)->whereUuid('patient')->group(function (): void {
+        Route::get('/', 'show')->middleware(['access:wallet.read_all|wallet.read_own', 'throttle:read'])->name('show');
+        Route::post('deposits', 'deposit')->middleware(['access:wallet.read_all&wallet.deposit', 'throttle:sensitive', EnsureIdempotency::ALIAS])->name('deposit');
+        Route::post('withdrawals', 'withdraw')->middleware(['access:wallet.read_all&wallet.withdraw', 'throttle:sensitive', EnsureIdempotency::ALIAS])->name('withdraw');
+        Route::post('adjustments', 'adjust')->middleware(['access:wallet.read_all&wallet.adjust', 'throttle:sensitive'])->name('adjust');
+    });
+    Route::post('invoices/{invoice}/pay-from-balance', [WalletController::class, 'payInvoice'])->whereUuid('invoice')
+        ->middleware(['access:payments.create&wallet.read_all', 'throttle:sensitive', EnsureIdempotency::ALIAS])->name('invoices.pay-from-balance');
 
     Route::prefix('payments')->name('payments.')->controller(PaymentController::class)->group(function (): void {
         Route::middleware(['access:payments.read_all|payments.read_own', 'throttle:read'])->group(function (): void {
