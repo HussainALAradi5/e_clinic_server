@@ -24,9 +24,11 @@ use App\Exceptions\Payments\EmptyInvoiceException;
 use App\Exceptions\Payments\InvoiceHasPaymentsException;
 use App\Exceptions\Payments\InvoiceNotEditableException;
 use App\Exceptions\Payments\NotChargeableException;
+use App\Exceptions\Payments\PackageCoveredException;
 use App\Exceptions\Shared\InvalidStateTransitionException;
 use App\Interfaces\Accounting\JournalEntryServiceInterface;
 use App\Interfaces\Payments\InvoiceServiceInterface;
+use App\Interfaces\Payments\PackageCoverServiceInterface;
 use App\Interfaces\Shared\Chargeable;
 use App\Models\Accounting\Account;
 use App\Models\Accounting\JournalEntry;
@@ -36,6 +38,7 @@ use App\Models\Payments\BillableService;
 use App\Models\Payments\InsuranceClaim;
 use App\Models\Payments\Invoice;
 use App\Models\Payments\InvoiceItem;
+use App\Models\Payments\PackageSession;
 use App\Services\Base\BaseEntityService;
 use App\Utilities\Access\OwnershipScope;
 use App\Utilities\Query\ApplyListQuery;
@@ -77,6 +80,7 @@ final class InvoiceService extends BaseEntityService implements InvoiceServiceIn
         private readonly JournalEntryServiceInterface $journal,
         private readonly DocumentNumberGenerator $numbers,
         private readonly ClinicClock $clock,
+        private readonly PackageCoverServiceInterface $packages,
     ) {
         parent::__construct($listQuery);
     }
@@ -123,6 +127,10 @@ final class InvoiceService extends BaseEntityService implements InvoiceServiceIn
 
     public function charge(Chargeable $source): ?Invoice
     {
+        // A visit covered by the patient's paid package uses a session instead of being billed.
+        if ($source instanceof Appointment && $this->packages->coverVisit($source) !== null) {
+            return null;
+        }
         /** @var Model&Chargeable $source */
         $lines = $source->chargeLines();
         if ($lines === []) {
@@ -197,7 +205,12 @@ final class InvoiceService extends BaseEntityService implements InvoiceServiceIn
             throw new NotChargeableException;
         }
 
-        return $this->charge($source) ?? throw new NotChargeableException;
+        $invoice = $this->charge($source);
+        if ($invoice === null && $source instanceof Appointment && PackageSession::query()->where('appointment_id', $source->id)->exists()) {
+            throw new PackageCoveredException;
+        }
+
+        return $invoice ?? throw new NotChargeableException;
     }
 
     public function updateDraft(Invoice $invoice, InvoiceData $data, int $version): Invoice

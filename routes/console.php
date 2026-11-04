@@ -6,6 +6,7 @@ use App\Interfaces\HR\AttendanceServiceInterface;
 use App\Interfaces\HR\LeaveServiceInterface;
 use App\Interfaces\Identity\NotificationServiceInterface;
 use App\Interfaces\Payments\OnlinePaymentServiceInterface;
+use App\Interfaces\Payments\PackageCoverServiceInterface;
 use App\Interfaces\Payments\PaymentReminderServiceInterface;
 use App\Interfaces\Pharmacy\InventoryServiceInterface;
 use App\Models\HR\Employee;
@@ -62,3 +63,7 @@ Schedule::call(fn () => app(OnlinePaymentServiceInterface::class)->expireStale()
 // Payment reminders for what patients still owe (their own part), spaced and capped (config payments.reminders).
 Schedule::call(fn () => app(PaymentReminderServiceInterface::class)->sendDue())
     ->name('payments:reminders')->dailyAt('10:00')->timezone('Asia/Bahrain')->withoutOverlapping();
+
+// Packages past their validity expire; unused sessions are forfeited (moved from unearned to fees revenue).
+Schedule::call(fn () => app(PackageCoverServiceInterface::class)->expireDue())
+    ->name('packages:expire')->dailyAt('00:30')->timezone('Asia/Bahrain')->withoutOverlapping();

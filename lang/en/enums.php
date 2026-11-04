@@ -46,6 +46,7 @@ return [
     'LoginFailureReason' => ['invalid_credentials' => 'Invalid credentials', 'account_locked' => 'Account locked', 'account_inactive' => 'Account inactive', 'too_many_attempts' => 'Too many attempts', 'invalid_2fa_code' => 'Invalid 2FA code'],
     'TaskType' => ['report_export' => 'Report export', 'audit_export' => 'Audit export', 'transaction_export' => 'Transaction export', 'payroll_calculation' => 'Payroll calculation', 'payslip_emailing' => 'Payslip e-mailing', 'fiscal_year_close' => 'Fiscal year close', 'bulk_notification' => 'Bulk notification', 'bulk_action' => 'Bulk action', 'attachments_zip' => 'Attachments ZIP', 'list_export' => 'List export'],
     'TaskCancelReason' => ['user' => 'Cancelled by user', 'failed' => 'Failed', 'timeout' => 'Timed out'],
+    'PatientPackageStatus' => ['awaiting_payment' => 'Awaiting payment', 'active' => 'Active', 'used_up' => 'Used up', 'expired' => 'Expired', 'cancelled' => 'Cancelled'],
     'OnlinePaymentStatus' => ['initiated' => 'Waiting for payment', 'captured' => 'Paid', 'failed' => 'Failed', 'expired' => 'Expired'],
     'AppointmentFeeType' => ['no_show' => 'Missed appointment', 'late_cancel' => 'Late cancellation'],
     'AppointmentFeeStatus' => ['charged' => 'Charged', 'waived' => 'Waived'],

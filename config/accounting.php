@@ -86,6 +86,7 @@ return [
         ['2300', 'Social insurance payable', 'liability', '2000', false, AccountMappingKey::SocialInsurancePayable],
         ['2400', 'Payroll deductions payable', 'liability', '2000', false, null],
         ['2500', 'Patient deposits', 'liability', '2000', false, AccountMappingKey::PatientDeposits],
+        ['2510', 'Unearned package revenue', 'liability', '2000', false, AccountMappingKey::UnearnedPackages],
         ['3000', 'Equity', 'equity', null, true, null],
         ['3100', 'Owner capital', 'equity', '3000', false, null],
         ['3200', 'Retained earnings', 'equity', '3000', false, AccountMappingKey::RetainedEarnings],

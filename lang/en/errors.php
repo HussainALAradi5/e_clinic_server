@@ -42,6 +42,8 @@ return [
     'AUTH_2FA_REQUIRED' => 'Two-factor authentication is required.',
     'AUTH_2FA_INVALID' => 'The verification code is invalid or has expired.',
     'AUTH_2FA_ALREADY_ENABLED' => 'Two-factor authentication is already enabled.',
+    'PACKAGE_NOT_ON_SALE' => 'This package is not on sale any more.',
+    'PACKAGE_COVERED' => 'This visit is covered by the patient\'s package — a session was used instead of billing it.',
     'REMINDER_NOT_ALLOWED' => 'No reminder can be sent now.',
     'REMINDER_NOTHING_OWED' => 'The patient owes nothing of their own on this invoice.',
     'REMINDER_TOO_SOON' => 'A reminder went out less than :hours hours ago.',

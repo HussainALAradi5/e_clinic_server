@@ -9,6 +9,7 @@ use App\Events\Appointments\AppointmentCompleted;
 use App\Events\Appointments\AppointmentNoShow;
 use App\Events\Appointments\ClinicalOrderCompleted;
 use App\Events\Documents\WrittenDocumentIssued;
+use App\Events\Payments\InvoiceCancelled;
 use App\Events\Payments\PaymentReceived;
 use App\Events\Payments\PaymentVoided;
 use App\Events\Payments\RefundApproved;
@@ -26,6 +27,8 @@ use App\Interfaces\Payments\BillableServiceServiceInterface;
 use App\Interfaces\Payments\InsuranceClaimServiceInterface;
 use App\Interfaces\Payments\InvoiceServiceInterface;
 use App\Interfaces\Payments\OnlinePaymentServiceInterface;
+use App\Interfaces\Payments\PackageCoverServiceInterface;
+use App\Interfaces\Payments\PackageServiceInterface;
 use App\Interfaces\Payments\PaymentGatewayInterface;
 use App\Interfaces\Payments\PaymentReminderServiceInterface;
 use App\Interfaces\Payments\PaymentServiceInterface;
@@ -37,12 +40,15 @@ use App\Listeners\Payments\ChargeDocumentFee;
 use App\Listeners\Payments\ReturnVoidedBalancePayment;
 use App\Listeners\Payments\SendPaymentReceipt;
 use App\Listeners\Payments\SendRefundNotifications;
+use App\Listeners\Payments\UpdatePackagesFromInvoice;
 use App\Models\Payments\AppointmentFee;
 use App\Models\Payments\BillableService;
 use App\Models\Payments\InsuranceClaim;
 use App\Models\Payments\Invoice;
+use App\Models\Payments\PatientPackage;
 use App\Models\Payments\Payment;
 use App\Models\Payments\Refund;
+use App\Models\Payments\ServicePackage;
 use App\Services\Bulk\BulkActionRegistry;
 use App\Services\Payments\AppointmentFeeService;
 use App\Services\Payments\BillableServiceService;
@@ -51,6 +57,8 @@ use App\Services\Payments\Gateways\TapGateway;
 use App\Services\Payments\InsuranceClaimService;
 use App\Services\Payments\InvoiceService;
 use App\Services\Payments\OnlinePaymentService;
+use App\Services\Payments\PackageCoverService;
+use App\Services\Payments\PackageService;
 use App\Services\Payments\PaymentReminderService;
 use App\Services\Payments\PaymentService;
 use App\Services\Payments\RefundService;
@@ -80,6 +88,8 @@ final class PaymentsServiceProvider extends ServiceProvider
         AppointmentFeeServiceInterface::class => AppointmentFeeService::class,
         OnlinePaymentServiceInterface::class => OnlinePaymentService::class,
         PaymentReminderServiceInterface::class => PaymentReminderService::class,
+        PackageServiceInterface::class => PackageService::class,
+        PackageCoverServiceInterface::class => PackageCoverService::class,
     ];
 
     public function register(): void
@@ -104,6 +114,7 @@ final class PaymentsServiceProvider extends ServiceProvider
         Event::listen(PaymentVoided::class, ReturnVoidedBalancePayment::class);
         Event::listen(WrittenDocumentIssued::class, ChargeDocumentFee::class);
         Event::listen(PaymentReceived::class, SendPaymentReceipt::class);
+        Event::listen([PaymentReceived::class, InvoiceCancelled::class], UpdatePackagesFromInvoice::class);
         Event::listen([AppointmentNoShow::class, AppointmentCancelled::class], ChargeAppointmentFee::class);
 
         $bulk->register('services', BillableService::class, BillableService::listQueryConfig(), BillableServiceService::class)
@@ -147,6 +158,9 @@ final class PaymentsServiceProvider extends ServiceProvider
                 'amount' => $money('amount'),
             ])
             ->permissionsOf('transactions');
+
+        $bulk->register('packages', ServicePackage::class, ServicePackage::listQueryConfig(), genericActions: false);
+        $bulk->register('patient_packages', PatientPackage::class, PatientPackage::listQueryConfig(), genericActions: false);
 
         $bulk->register('claims', InsuranceClaim::class, InsuranceClaim::listQueryConfig(), genericActions: false)
             ->action('submit', 'claims.write', [InsuranceClaimServiceInterface::class, 'submit'])

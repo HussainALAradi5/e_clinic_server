@@ -44,8 +44,10 @@ use App\Models\Payments\AppointmentFee;
 use App\Models\Payments\BillableService;
 use App\Models\Payments\InsuranceClaim;
 use App\Models\Payments\Invoice;
+use App\Models\Payments\PatientPackage;
 use App\Models\Payments\Payment;
 use App\Models\Payments\Refund;
+use App\Models\Payments\ServicePackage;
 use App\Models\Pharmacy\Dispensation;
 use App\Models\Pharmacy\Medication;
 use App\Models\Pharmacy\MedicationBatch;
@@ -127,6 +129,8 @@ return [
         'invoice' => Invoice::class,
         'payment' => Payment::class,
         'appointment_fee' => AppointmentFee::class,
+        'patient_package' => PatientPackage::class,
+        'service_package' => ServicePackage::class,
         'refund' => Refund::class,
         'insurance_claim' => InsuranceClaim::class,
         'cash_session' => CashSession::class,

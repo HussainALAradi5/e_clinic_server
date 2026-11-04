@@ -10,6 +10,8 @@ return [
     'invoice_issued' => 'Invoice :number — :patient',
     'invoice_cancelled' => 'Invoice :number cancelled',
     'payment_received' => 'Payment :code — invoice :invoice',
+    'package_session' => 'Package :package used for visit :visit',
+    'package_forfeit' => 'Package :package expired — unused sessions forfeited',
     'online_charge' => 'e-Clinic invoice :invoice',
     'online_surplus' => 'Paid online beyond the invoice balance',
     'insurer_share_paid' => 'Patient paid the insurer\'s share too',

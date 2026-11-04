@@ -178,6 +178,7 @@ return [
         Payments\WalletEntryType::class,
         Payments\AppointmentFeeType::class,
         Payments\OnlinePaymentStatus::class,
+        Payments\PatientPackageStatus::class,
         Payments\AppointmentFeeStatus::class,
         Payments\InvoicePaymentState::class,
         Payments\DiscountType::class,

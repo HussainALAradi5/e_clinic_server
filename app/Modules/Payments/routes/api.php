@@ -7,6 +7,7 @@ use App\Http\Controllers\Payments\GatewayCallbackController;
 use App\Http\Controllers\Payments\InsuranceClaimController;
 use App\Http\Controllers\Payments\InvoiceController;
 use App\Http\Controllers\Payments\OnlinePaymentController;
+use App\Http\Controllers\Payments\PackageController;
 use App\Http\Controllers\Payments\PaymentController;
 use App\Http\Controllers\Payments\RefundController;
 use App\Http\Controllers\Payments\WalletController;
@@ -80,6 +81,19 @@ Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(fu
         ->middleware(['access:written_documents.create|appointment_fees.read_all', 'throttle:read'])->name('document-fees');
     Route::get('appointments/{appointment}/cancellation-fee', [AppointmentFeeController::class, 'cancellationFee'])->whereUuid('appointment')
         ->middleware(['access:appointments.cancel', 'throttle:read'])->name('appointments.cancellation-fee');
+
+    // Packages: the catalog, and the packages patients bought (sessions used instead of billing visits)
+    Route::controller(PackageController::class)->group(function (): void {
+        Route::middleware(['access:packages.read_all', 'throttle:read'])->group(function (): void {
+            Route::get('packages', 'index')->name('packages.index');
+            Route::get('packages/{package}', 'show')->whereUuid('package')->name('packages.show');
+        });
+        Route::post('packages', 'store')->middleware(['access:packages.create', 'throttle:write'])->name('packages.store');
+        Route::put('packages/{package}', 'update')->whereUuid('package')->middleware(['access:packages.write', 'throttle:write'])->name('packages.update');
+        Route::get('patient-packages', 'sold')->middleware(['access:patient_packages.read_all|patient_packages.read_own', 'throttle:read'])->name('patient-packages.index');
+        Route::post('patients/{patient}/packages', 'sell')->whereUuid('patient')
+            ->middleware(['access:patient_packages.create&packages.read_all', 'throttle:sensitive', EnsureIdempotency::ALIAS])->name('patient-packages.sell');
+    });
 
     // Online payments: the payer is sent to the gateway's page; money is booked once the gateway confirms.
     Route::post('invoices/{invoice}/online-payments', [OnlinePaymentController::class, 'start'])->whereUuid('invoice')
