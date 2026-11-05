@@ -12,7 +12,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface DocumentTemplateServiceInterface
 {
-    /** Ready-made templates and the reader's own. */
+    /**
+     * Ready-made templates and the reader's own.
+     *
+     * @return LengthAwarePaginator<int, DocumentTemplate>|CursorPaginator<int, DocumentTemplate>
+     */
     public function listTemplates(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function findTemplate(string $id): DocumentTemplate;

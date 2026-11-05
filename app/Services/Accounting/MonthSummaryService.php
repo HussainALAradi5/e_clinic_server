@@ -31,7 +31,7 @@ final class MonthSummaryService implements MonthSummaryServiceInterface
 
     public function summary(int $year, int $month): array
     {
-        $from = CarbonImmutable::create($year, $month, 1)->startOfMonth();
+        $from = CarbonImmutable::now()->setDate($year, $month, 1)->startOfMonth();
         $previous = $from->subMonthNoOverflow();
 
         return [
@@ -101,7 +101,7 @@ final class MonthSummaryService implements MonthSummaryServiceInterface
     /** @return list<array{doctor_id: string, full_name: string, revenue: array{amount: string, currency: string}}> */
     private function topDoctors(CarbonImmutable $from, CarbonImmutable $to): array
     {
-        return $this->lines($from, $to)
+        return array_values($this->lines($from, $to)
             ->whereNotNull('doctor_id')
             ->whereHas('account', fn (Builder $q) => $q->where('type', AccountType::Revenue->value))
             ->selectRaw('doctor_id, COALESCE(SUM(credit),0) - COALESCE(SUM(debit),0) AS net')
@@ -112,7 +112,7 @@ final class MonthSummaryService implements MonthSummaryServiceInterface
                 'doctor_id' => (string) $l->doctor_id,
                 'full_name' => (string) $l->doctor?->person->full_name,
                 'revenue' => MoneyHelper::toApi(MoneyHelper::of((string) $l->getAttribute('net'))),
-            ])->values()->all();
+            ])->all());
     }
 
     /** @return Builder<JournalEntryLine> */

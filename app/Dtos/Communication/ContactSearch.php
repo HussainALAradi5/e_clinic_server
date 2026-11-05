@@ -19,7 +19,11 @@ final readonly class ContactSearch
         public int $perPage = self::DEFAULT_PER_PAGE,
     ) {}
 
-    /** Words of the search (each must match), empty when there is none. @return list<string> */
+    /**
+     * Words of the search (each must match), empty when there is none.
+     *
+     * @return list<string>
+     */
     public function words(): array
     {
         return array_values(array_filter(preg_split('/\s+/', trim((string) $this->search)) ?: [], fn (string $w): bool => $w !== ''));

@@ -56,7 +56,7 @@ final class SignatureService implements SignatureServiceInterface
         $signature = $this->latest($personId);
         $bytes = $signature !== null ? $this->files->disk()->get($signature->path) : null;
 
-        return $bytes === null || $signature === null ? null : 'data:'.$signature->mime_type.';base64,'.base64_encode($bytes);
+        return $bytes === null ? null : 'data:'.$signature->mime_type.';base64,'.base64_encode($bytes);
     }
 
     private function latest(string $personId): ?Attachment

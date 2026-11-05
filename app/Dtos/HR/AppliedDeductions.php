@@ -52,7 +52,7 @@ final readonly class AppliedDeductions
         $sum = ['gross' => MoneyHelper::zero(), 'absences' => MoneyHelper::zero(), 'insurance' => MoneyHelper::zero(), 'other' => MoneyHelper::zero()];
         foreach ($items as $item) {
             $key = match ($item->type) {
-                PayslipItemType::Basic, PayslipItemType::Allowance, PayslipItemType::Overtime => 'gross',
+                PayslipItemType::Basic, PayslipItemType::Allowance, PayslipItemType::Overtime, PayslipItemType::Commission => 'gross',
                 PayslipItemType::Absence, PayslipItemType::Lateness, PayslipItemType::UnpaidLeave => 'absences',
                 PayslipItemType::SocialInsurance => 'insurance',
                 PayslipItemType::Deduction, PayslipItemType::Adjustment => 'other',

@@ -19,6 +19,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 interface PackageServiceInterface
 {
+    /** @return LengthAwarePaginator<int, ServicePackage>|CursorPaginator<int, ServicePackage> */
     public function listCatalog(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function findPackage(string $id): ServicePackage;
@@ -28,6 +29,7 @@ interface PackageServiceInterface
     /** New terms apply to future sales; packages already sold keep theirs. */
     public function update(ServicePackage $package, ServicePackageData $data): ServicePackage;
 
+    /** @return LengthAwarePaginator<int, PatientPackage>|CursorPaginator<int, PatientPackage> */
     public function listSold(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function findSold(string $id): PatientPackage;

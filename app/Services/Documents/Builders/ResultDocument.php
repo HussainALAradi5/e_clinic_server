@@ -117,14 +117,13 @@ final class ResultDocument implements DocumentBuilder
     /** @return list<DocumentImage> */
     private function images(ClinicalOrder $order): array
     {
-        return $order->attachments
+        return array_values($order->attachments
             ->filter(fn (Attachment $a): bool => in_array($a->mime_type, self::IMAGE_TYPES, true) && ! $a->is_deleted && $a->scan_status !== FileScanStatus::Infected)
             ->take(self::MAX_IMAGES)
             ->map(fn (Attachment $a): ?DocumentImage => ($bytes = Storage::disk($a->disk)->get($a->path)) === null
                 ? null
                 : DocumentImage::fromBytes($bytes, $a->mime_type, $a->description ?: $a->original_name))
             ->filter()
-            ->values()
-            ->all();
+            ->all());
     }
 }

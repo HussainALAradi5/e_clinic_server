@@ -48,6 +48,11 @@ final class ImagingImageGenerator
         return (string) ob_get_clean();
     }
 
+    /**
+     * @param  int<0, 255>  $r
+     * @param  int<0, 255>  $g
+     * @param  int<0, 255>  $b
+     */
     private function canvas(int $r = 0, int $g = 0, int $b = 0): GdImage
     {
         $image = imagecreatetruecolor(self::WIDTH, self::HEIGHT) ?: throw new RuntimeException('Cannot draw.');

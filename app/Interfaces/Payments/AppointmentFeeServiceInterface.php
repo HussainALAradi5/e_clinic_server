@@ -20,7 +20,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 interface AppointmentFeeServiceInterface
 {
-    /** Fees I may see (patients: their own), newest first. */
+    /**
+     * Fees I may see (patients: their own), newest first.
+     *
+     * @return LengthAwarePaginator<int, AppointmentFee>|CursorPaginator<int, AppointmentFee>
+     */
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function find(string $id): AppointmentFee;

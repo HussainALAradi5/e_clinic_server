@@ -281,6 +281,6 @@ final class WalletService implements WalletServiceInterface
         /** @var array<string, AccountMappingKey> $map */
         $map = Config::array('accounting.payment_method_accounts');
 
-        return $map[$method?->value ?? PaymentMethod::Cash->value];
+        return $map[$method->value ?? PaymentMethod::Cash->value];
     }
 }

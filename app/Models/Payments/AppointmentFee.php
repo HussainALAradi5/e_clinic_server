@@ -20,6 +20,7 @@ use Brick\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -129,8 +130,10 @@ class AppointmentFee extends BaseModel implements Chargeable, OwnedByUser
     }
 
     /**
-     * @param  Builder<self>  $query
-     * @return Builder<self>
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
      */
     public function scopeOwnedBy(Builder $query, Authenticatable $user): Builder
     {

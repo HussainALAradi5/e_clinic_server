@@ -33,7 +33,7 @@ final class PdfRenderer
         $dompdf->render();
 
         $canvas = $dompdf->getCanvas();
-        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans');
+        $font = $dompdf->getFontMetrics()->getFont('DejaVu Sans') ?? 'Helvetica';
         [$r, $g, $b] = sscanf(Config::string('documents.colors.muted'), '#%02x%02x%02x') ?? [100, 116, 139];
         $canvas->page_text($canvas->get_width() - 112, $canvas->get_height() - 30, (string) __('documents.letterhead.page'), $font, 7.5, [$r / 255, $g / 255, $b / 255]);
 

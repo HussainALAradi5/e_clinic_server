@@ -3,6 +3,7 @@
 use App\Dtos\Accounting\FiscalYearData;
 use App\Enums\Identity\RoleName;
 use App\Interfaces\Accounting\FiscalPeriodServiceInterface;
+use App\Models\Accounting\JournalEntry;
 use App\Models\Appointments\Doctor;
 use App\Models\Appointments\Patient;
 use App\Models\Identity\User;
@@ -94,4 +95,11 @@ it('pays per completed visit, shows doctors only their own row, and puts the com
     $items = collect($this->getJson("/api/v1/hr/payslips/{$mine['id']}")->json('data.items'));
     expect($items->firstWhere('type', 'commission')['amount']['amount'] ?? null)->toBe('2.500')
         ->and($slips->firstWhere('employee.id', $other->id))->not->toBeNull();
+
+    // Approving posts the salary journal from the stored lines; the commission counts as pay.
+    earnAs(RoleName::Accountant);
+    $this->postJson("/api/v1/hr/payroll-runs/{$run}/approve")->assertOk()->assertJsonPath('data.status', 'approved');
+    $accrual = JournalEntry::query()->with('lines')->findOrFail($this->getJson("/api/v1/hr/payroll-runs/{$run}")->json('data.accrual_journal_entry_id'));
+    expect(round($accrual->lines->sum(fn ($line): float => (float) $line->debit), 3))
+        ->toBe(round($accrual->lines->sum(fn ($line): float => (float) $line->credit), 3));
 });

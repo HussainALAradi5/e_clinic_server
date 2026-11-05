@@ -18,6 +18,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  */
 interface OnlinePaymentServiceInterface
 {
+    /** @return LengthAwarePaginator<int, OnlinePayment>|CursorPaginator<int, OnlinePayment> */
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function find(string $id): OnlinePayment;

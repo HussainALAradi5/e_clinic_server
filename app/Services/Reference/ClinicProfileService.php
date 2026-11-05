@@ -67,6 +67,6 @@ final class ClinicProfileService implements ClinicProfileServiceInterface
         $attachment = $this->current()->{$image->value};
         $bytes = $attachment !== null ? $this->files->disk()->get($attachment->path) : null;
 
-        return $bytes === null || $attachment === null ? null : ['bytes' => $bytes, 'mime' => $attachment->mime_type];
+        return $bytes === null ? null : ['bytes' => $bytes, 'mime' => $attachment->mime_type];
     }
 }

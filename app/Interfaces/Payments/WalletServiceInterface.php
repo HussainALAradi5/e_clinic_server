@@ -18,7 +18,11 @@ interface WalletServiceInterface
 {
     public function balance(Patient $patient): Money;
 
-    /** The patient's balance movements, newest first. */
+    /**
+     * The patient's balance movements, newest first.
+     *
+     * @return LengthAwarePaginator<int, PatientWalletEntry>|CursorPaginator<int, PatientWalletEntry>
+     */
     public function entries(Patient $patient, ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     /** Money paid in at the desk; cash needs the receiver's open drawer. Retried requests return the first entry. */

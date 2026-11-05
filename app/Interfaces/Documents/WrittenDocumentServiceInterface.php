@@ -14,6 +14,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface WrittenDocumentServiceInterface
 {
+    /** @return LengthAwarePaginator<int, WrittenDocument>|CursorPaginator<int, WrittenDocument> */
     public function listWritten(ListQuery $query): LengthAwarePaginator|CursorPaginator;
 
     public function findWritten(string $id): WrittenDocument;

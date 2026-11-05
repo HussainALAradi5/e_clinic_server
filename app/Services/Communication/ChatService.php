@@ -303,9 +303,9 @@ final class ChatService implements ChatServiceInterface
         });
         $this->withSenderRoles($conversation, $message->newCollection([$message->load(self::MESSAGE_RELATIONS)]));
         // event(), not broadcast(): broadcast() sends when its result is destroyed, which is after rescue() returned.
-        $muted = $conversation->participants
+        $muted = array_values($conversation->participants
             ->filter(fn (ConversationParticipant $p): bool => $p->isMutedAt($now))
-            ->pluck('user_id')->values()->all();
+            ->map(fn (ConversationParticipant $p): string => (string) $p->user_id)->all());
         rescue(fn () => event(new MessageSent($message, $members, $muted)), report: true);
         $this->notify('chat.mention', $mentions, $conversation, $me, ['excerpt' => mb_strimwidth((string) $data->body, 0, 80, '…')]);
 

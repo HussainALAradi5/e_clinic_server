@@ -93,6 +93,10 @@ interface ChatServiceInterface
     /** Unread messages over all my chats (the badge on the Chat menu). */
     public function unreadTotal(User $me): int;
 
-    /** Active staff (not me) whose name, phone, email or staff no. matches every word of the search, a page at a time. */
+    /**
+     * Active staff (not me) whose name, phone, email or staff no. matches every word of the search, a page at a time.
+     *
+     * @return LengthAwarePaginator<int, User>
+     */
     public function contacts(User $me, ContactSearch $query): LengthAwarePaginator;
 }

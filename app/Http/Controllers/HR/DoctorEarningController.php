@@ -31,7 +31,7 @@ final class DoctorEarningController
     {
         $request->validate(['year' => ['nullable', 'integer', 'between:2020,2100'], 'month' => ['nullable', 'integer', 'between:1,12']]);
         $default = CarbonImmutable::now()->subMonthNoOverflow();
-        $from = CarbonImmutable::create($request->integer('year', $default->year), $request->integer('month', $default->month), 1)->startOfMonth();
+        $from = $default->setDate($request->integer('year', $default->year), $request->integer('month', $default->month), 1)->startOfMonth();
         $to = $from->endOfMonth();
         $query = Doctor::query()->with('person');
         if (! ($request->user()?->can('payroll.read_all') ?? false)) {
