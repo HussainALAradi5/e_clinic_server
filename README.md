@@ -18,6 +18,10 @@ double-entry accounting, staff chat and support tickets — for a staff app and 
 Live updates (chat, Online / Offline, tickets) work on the demo too: Reverb runs inside the same free container
 and Apache passes `wss://e-clinic-api.onrender.com/app/…` to it (`Dockerfile`, `scripts/render-start.sh`).
 
+If the demo accounts are missing, the API fills them in by itself on start-up (`clinic:needs-seed`; about an hour on
+the free instance). To rebuild the demo from scratch, set `RESET_DEMO` to any word in Render's environment and
+redeploy: it wipes and reloads the database once for that word (`clinic:reset-demo`), and a new word resets again.
+
 Free Render instances sleep when idle: the first visit can take about a minute to wake the API. Demo accounts
 (one per role: patient, receptionist, doctor, nurse, pharmacist, cashier, accountant, HR, admin) are available on
 request.
