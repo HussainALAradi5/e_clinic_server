@@ -34,7 +34,8 @@ as_web php artisan migrate --force
 # A database without users (new, or a free Render database that was replaced) gets the reference data and the demo
 # data in the background — about an hour on the free instance. SEED_ON_EMPTY=never keeps it empty (to restore a
 # dump instead).
-if [ "${SEED_ON_EMPTY:-true}" != "never" ] && [ "$(as_web php artisan tinker --execute 'echo \App\Models\Identity\User::query()->count();' 2>/dev/null | tail -n1)" = "0" ]; then
+if [ "${SEED_ON_EMPTY:-true}" != "never" ] && as_web php artisan clinic:database-empty; then
+  echo "Empty database: seeding the reference and demo data in the background."
   (as_web php artisan db:seed --force > /proc/1/fd/1 2>&1 &)
 fi
 
