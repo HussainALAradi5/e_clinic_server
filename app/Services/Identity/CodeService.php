@@ -73,13 +73,15 @@ final class CodeService implements CodeServiceInterface
     {
         [$alias, $code] = $this->parse($payload);
         $fields = Config::get("codes.entities.{$alias}.public");
-        if (! is_array($fields)) {
-            throw new InvalidScanCodeException;
-        }
 
         /** @var class-string<Model> $model */
         $model = Config::string("codes.entities.{$alias}.model");
         $record = $model::query()->where('code', $code)->firstOrFail();
+
+        // Genuine, but for clinic staff only (a check-in code, a staff card…): say what it is, show nothing else.
+        if (! is_array($fields)) {
+            return new ScanResultData($alias, '', $code, [], hidden: true);
+        }
 
         return new ScanResultData($alias, (string) $record->getKey(), $code, $this->summary($record, $fields));
     }

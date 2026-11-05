@@ -49,7 +49,13 @@ it('verifies public documents without exposing private entities', function () {
     $person = Person::factory()->create();
     $codes = app(CodeServiceInterface::class);
 
-    $this->getJson('/api/v1/public/verify/'.$codes->payloadFor('person', $person->code))->assertUnprocessable();
+    // Genuine but private: confirmed, nothing about the record is shown.
+    $this->getJson('/api/v1/public/verify/'.$codes->payloadFor('person', $person->code))
+        ->assertOk()->assertJsonPath('data.valid', true)->assertJsonPath('data.hidden', true)
+        ->assertJsonPath('data.entity', 'person')->assertJsonPath('data.id', '')->assertJsonPath('data.summary', [])
+        ->assertJsonPath('data.document', null);
+    $forged = substr($codes->payloadFor('person', $person->code), 0, -1).'x';
+    $this->getJson('/api/v1/public/verify/'.$forged)->assertUnprocessable();
 
     $attachment = Attachment::query()->create([
         'attachable_type' => 'person', 'attachable_id' => $person->id, 'category' => 'payslip', 'original_name' => 'p.pdf',

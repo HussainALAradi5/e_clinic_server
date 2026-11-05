@@ -9,6 +9,7 @@ use App\Enums\Documents\DocumentType;
 /**
  * What a scanned code points to; `document` is the DocumentType whose PDF the reader may open (`GET /documents/
  * {document}/{id}/file`, still checked against their rights), null when the record has no document.
+ * `hidden`: a genuine code whose record is for clinic staff only (public check) — no id, details or document.
  */
 final readonly class ScanResultData
 {
@@ -21,6 +22,7 @@ final readonly class ScanResultData
         public string $code,
         public array $summary,
         public bool $valid = true,
+        public bool $hidden = false,
     ) {}
 
     /**
@@ -30,7 +32,8 @@ final readonly class ScanResultData
     {
         return [
             'entity' => $this->entity, 'id' => $this->id, 'code' => $this->code, 'valid' => $this->valid, 'summary' => $this->summary,
-            'document' => DocumentType::forCodeEntity($this->entity)?->value,
+            'hidden' => $this->hidden,
+            'document' => $this->hidden ? null : DocumentType::forCodeEntity($this->entity)?->value,
         ];
     }
 }
