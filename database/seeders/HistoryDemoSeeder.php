@@ -63,6 +63,7 @@ use App\Models\Pharmacy\PrescriptionItem;
 use App\Models\Reference\Company;
 use App\Models\Transactions\CashSession;
 use App\Utilities\HR\WorkCalendar;
+use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Pharmacy\Qty;
 use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\MoneyHelper;
@@ -495,6 +496,11 @@ final class HistoryDemoSeeder extends Seeder
             }
             $method = $roll <= 42 ? PaymentMethod::Cash : ($roll <= 66 ? PaymentMethod::Card : ($roll <= 78 ? PaymentMethod::BenefitPay : PaymentMethod::BankTransfer));
             $due = $share === null ? $invoice->balance_due : $invoice->balance_due->multipliedBy($share, RoundingMode::DOWN);
+            // Insured without a claim (none could be made): the desk still takes only the patient's share.
+            $split = InsuranceCoverage::split($invoice, CarbonImmutable::now());
+            if ($split->covered && $due->isGreaterThan($split->patientDue)) {
+                $due = $split->patientDue;
+            }
             $amount = $roll > 82 ? $due->dividedBy(2, RoundingMode::DOWN) : $due;
             if (! $amount->isPositive()) {
                 continue; // Fully covered by the insurer.

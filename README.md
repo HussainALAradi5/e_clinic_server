@@ -35,7 +35,7 @@ request.
 | | |
 |---|---|
 | Framework | Laravel 12 (PHP 8.2+), Sanctum tokens, spatie/laravel-permission, Laravel Reverb |
-| Database | SQLite locally, PostgreSQL in production |
+| Database | PostgreSQL (SQLite works too for a quick try; the tests use in-memory SQLite) |
 | Structure | Layer first: `app/Models`, `Services`, `Http/Controllers`, `Http/Requests`, `Http/Resources`, `Enums`, `Dtos` …, each with module folders; `app/Modules/<Module>` holds the service provider and routes |
 | Quality | 250+ Pest tests, PHPStan level 8 (Larastan), Laravel Pint |
 
@@ -45,12 +45,29 @@ request.
 composer install
 cp .env.example .env
 php artisan key:generate
-php artisan migrate --seed          # demo clinic: staff of every role, patients, a year of visits, invoices …
+php artisan migrate --seed          # demo clinic: staff of every role, patients, a year of visits, invoices … (~10 min)
 php artisan webpush:keys            # optional: browser notifications (put the keys in .env)
 php artisan serve                   # API on http://127.0.0.1:8000
 php artisan queue:work              # notifications, reminders, exports
 php artisan reverb:start --port=8080   # live chat and tickets
 ```
+
+### Local database (PostgreSQL)
+
+Create an empty database (`createdb -h 127.0.0.1 -U postgres e_clinic`, or in pgAdmin), then in `.env`:
+
+```dotenv
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=e_clinic
+DB_USERNAME=postgres
+DB_PASSWORD=
+```
+
+Run `php artisan migrate --seed`. Everything done on the local web or phone app is in that database at once.
+Encrypted fields (names, national ids …) are readable only with the `APP_KEY` / `BLIND_INDEX_KEY` they were written
+with, so a copy of another server's database (for example the Render demo's) needs that server's keys.
 
 ## Tests
 

@@ -31,6 +31,7 @@ use App\Models\Identity\User;
 use App\Models\Payments\Invoice;
 use App\Models\Payments\Payment;
 use App\Models\Reference\Company;
+use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Shared\ClinicClock;
 use App\Utilities\Shared\MoneyHelper;
 use Brick\Math\RoundingMode;
@@ -82,7 +83,8 @@ final class BillingDemoSeeder extends Seeder
                 // Billed already.
             }
         }
-        $drafts = Invoice::query()->where('status', InvoiceStatus::Draft->value)->orderBy('created_at')->get()->values();
+        // The id breaks ties between drafts of the same second, so SQLite and PostgreSQL pick the same ones.
+        $drafts = Invoice::query()->where('status', InvoiceStatus::Draft->value)->orderBy('created_at')->orderBy('id')->get()->values();
         if ($drafts->count() < 4) {
             Auth::forgetUser();
 
@@ -191,10 +193,17 @@ final class BillingDemoSeeder extends Seeder
         return User::query()->whereHas('person', fn ($q) => $q->where('email', $name.DemoSeeder::EMAIL_DOMAIN))->first();
     }
 
+    /** Takes the amount (the whole balance by default); on an insured invoice at most the patient's share, as the desk does. */
     private function pay(PaymentServiceInterface $payments, Invoice $invoice, PaymentMethod $method, ?string $amount = null, ?string $card = null): Payment
     {
+        $take = $amount === null ? $invoice->balance_due : MoneyHelper::of($amount);
+        $split = InsuranceCoverage::split($invoice, CarbonImmutable::now());
+        if ($split->covered && $take->isGreaterThan($split->patientDue)) {
+            $take = $split->patientDue;
+        }
+
         return $payments->record(
-            new RecordPaymentData($invoice->id, $amount ?? MoneyHelper::toDb($invoice->balance_due), $method, null, $card),
+            new RecordPaymentData($invoice->id, MoneyHelper::toDb($take), $method, null, $card),
             (string) Str::uuid(),
         );
     }
