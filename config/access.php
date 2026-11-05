@@ -49,11 +49,11 @@ return [
         'fiscal' => ['module' => 'accounting', 'actions' => ['close', 'reopen'], 'ownership' => '`created_by` = user'],
         'inventory' => ['module' => 'pharmacy', 'actions' => ['adjust', 'export', 'receive'], 'ownership' => '`created_by` = user'],
         'invoices' => ['module' => 'payments', 'actions' => ['cancel', 'issue'], 'ownership' => '`patient_id` = the user\'s id or created / received by the user'],
-        'journal' => ['module' => 'accounting', 'actions' => ['post', 'reverse'], 'ownership' => '`created_by` = user'],
+        'journal' => ['module' => 'accounting', 'actions' => ['post', 'reverse', 'export'], 'ownership' => '`created_by` = user'],
         'leaves' => ['module' => 'hr', 'actions' => ['approve', 'manage_types', 'request', 'export'], 'ownership' => '`employee_id` = the user\'s id (own attendance, payslips, leave requests)'],
         'medications' => ['module' => 'pharmacy', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
         'notifications' => ['module' => 'identity', 'actions' => ['export'], 'ownership' => '`person_id` = the user\'s id (own inbox / own log)'],
-        'orders' => ['module' => 'appointments', 'actions' => ['perform'], 'ownership' => '`patient_id` = the user\'s id or `ordered_by` / `performed_by` = the user\'s id'],
+        'orders' => ['module' => 'appointments', 'actions' => ['perform', 'export'], 'ownership' => '`patient_id` = the user\'s id or `ordered_by` / `performed_by` = the user\'s id'],
         'patients' => ['module' => 'appointments', 'actions' => ['export', 'force_create', 'import', 'view_medical', 'view_history'], 'ownership' => '`id` = the user\'s id (portal patient) or patients with an appointment / treatment with the user as provider'],
         'payments' => ['module' => 'payments', 'actions' => ['void'], 'ownership' => '`patient_id` = the user\'s id or created / received by the user'],
         'payroll' => ['module' => 'hr', 'actions' => ['approve', 'pay', 'export'], 'ownership' => '`employee_id` = the user\'s id (own attendance, payslips, leave requests)'],
@@ -70,9 +70,9 @@ return [
         'staff_requests' => ['module' => 'hr', 'actions' => ['review', 'export'], 'ownership' => '`employee_id` = the user\'s id (own late excuse and overtime requests)'],
         'services' => ['module' => 'payments', 'actions' => ['export', 'import'], 'ownership' => '`created_by` = user'],
         'specialties' => ['module' => 'appointments', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
-        'tickets' => ['module' => 'identity', 'actions' => ['resolve'], 'ownership' => '`requester_id` = the user\'s id'],
+        'tickets' => ['module' => 'identity', 'actions' => ['resolve', 'export'], 'ownership' => '`requester_id` = the user\'s id'],
         'transactions' => ['module' => 'transactions', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
-        'treatments' => ['module' => 'appointments', 'actions' => ['override_priority'], 'ownership' => '`patient_id` = the user\'s id or `doctor_id` = the user\'s id'],
+        'treatments' => ['module' => 'appointments', 'actions' => ['override_priority', 'export'], 'ownership' => '`patient_id` = the user\'s id or `doctor_id` = the user\'s id'],
         'users' => ['module' => 'identity', 'actions' => ['change_status', 'export', 'import'], 'ownership' => '`id` = the user\'s id (own person record)'],
     ],
 
@@ -121,7 +121,7 @@ return [
                 'staff_requests' => ['read_own', 'create', 'write'],
                 'payroll' => ['read_own'],
             ],
-            'actions' => ['wallet.deposit', 'codes.generate', 'codes.scan', 'appointments.cancel', 'appointments.check_in', 'invoices.issue', 'refunds.request', 'cash_sessions.operate', 'attendance.self', 'leaves.request', 'people.export', 'people.import', 'companies.export', 'appointments.export'],
+            'actions' => ['wallet.deposit', 'codes.generate', 'codes.scan', 'appointments.cancel', 'appointments.check_in', 'invoices.issue', 'refunds.request', 'cash_sessions.operate', 'attendance.self', 'leaves.request', 'people.export', 'people.import', 'companies.export', 'appointments.export', 'treatments.export'],
         ],
         'doctor' => [
             'access' => [
@@ -154,7 +154,7 @@ return [
                 'payroll' => ['read_own'],
             ],
             // Doctors prescribe; they do not hand out or give medicines (the pharmacy dispenses, nurses administer).
-            'actions' => ['patients.view_medical', 'patients.view_history', 'appointments.treat', 'orders.perform', 'codes.generate', 'codes.scan', 'attendance.self', 'leaves.request'],
+            'actions' => ['patients.view_medical', 'patients.view_history', 'appointments.treat', 'orders.perform', 'codes.generate', 'codes.scan', 'attendance.self', 'leaves.request', 'treatments.export', 'orders.export'],
         ],
         // The staff nurse: her own patients (the sessions she gives), allergies and blood group to give medicine
         // safely — not their health, surgical or family history, nor past visit notes (doctors only).
@@ -184,7 +184,7 @@ return [
                 'staff_requests' => ['read_own', 'create', 'write'],
                 'payroll' => ['read_own'],
             ],
-            'actions' => ['patients.view_medical', 'appointments.check_in', 'appointments.treat', 'dispensing.administer', 'orders.perform', 'codes.generate', 'codes.scan', 'attendance.self', 'leaves.request'],
+            'actions' => ['patients.view_medical', 'appointments.check_in', 'appointments.treat', 'dispensing.administer', 'orders.perform', 'codes.generate', 'codes.scan', 'attendance.self', 'leaves.request', 'orders.export'],
         ],
         'pharmacist' => [
             'access' => [
@@ -218,7 +218,7 @@ return [
                 'staff_requests' => ['read_own', 'create', 'write'],
                 'payroll' => ['read_own'],
             ],
-            'actions' => ['tickets.resolve', 'attendance.self', 'leaves.request'],
+            'actions' => ['tickets.resolve', 'attendance.self', 'leaves.request', 'tickets.export'],
         ],
         'hr_manager' => [
             'access' => [
@@ -277,7 +277,7 @@ return [
                 'leaves' => ['read_own', 'create', 'write'],
                 'staff_requests' => ['read_own', 'create', 'write'],
             ],
-            'actions' => ['wallet.deposit', 'wallet.withdraw', 'wallet.adjust', 'appointment_fees.waive', 'codes.generate', 'claims.decide', 'claims.remit', 'fiscal.close', 'journal.post', 'journal.reverse', 'reports.export', 'transactions.export', 'expenses.approve', 'expenses.pay', 'invoices.cancel', 'payments.void', 'refunds.approve', 'cash_sessions.supervise', 'payroll.approve', 'payroll.pay', 'audit.export', 'attendance.self', 'leaves.request', 'companies.export', 'companies.import', 'accounts.export', 'services.export', 'services.import', 'inventory.export', 'dispensing.export', 'payroll.export'],
+            'actions' => ['wallet.deposit', 'wallet.withdraw', 'wallet.adjust', 'appointment_fees.waive', 'codes.generate', 'claims.decide', 'claims.remit', 'fiscal.close', 'journal.post', 'journal.reverse', 'reports.export', 'transactions.export', 'expenses.approve', 'expenses.pay', 'invoices.cancel', 'payments.void', 'refunds.approve', 'cash_sessions.supervise', 'payroll.approve', 'payroll.pay', 'audit.export', 'attendance.self', 'leaves.request', 'companies.export', 'companies.import', 'accounts.export', 'services.export', 'services.import', 'inventory.export', 'dispensing.export', 'payroll.export', 'journal.export'],
         ],
         'cashier' => [
             'access' => [
