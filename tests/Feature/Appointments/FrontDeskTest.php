@@ -45,22 +45,22 @@ function booking(Doctor $doctor, string $patientId, array $overrides = []): arra
 
 function book(array $payload): TestResponse
 {
-    return test()->postJson('/api/v1/appointments', $payload, ['Idempotency-Key' => (string) Str::uuid()]);
+    return test()->postJson('/appointments', $payload, ['Idempotency-Key' => (string) Str::uuid()]);
 }
 
 it('registers a patient once: a new person, then the same person again is reported, not duplicated', function () {
     receptionist();
     $payload = ['person' => ['first_name' => 'Maryam', 'last_name' => 'Ali', 'gender' => 'female', 'date_of_birth' => '1995-05-05', 'phone' => '+97336550000', 'national_id' => '950505123']];
 
-    $id = $this->postJson('/api/v1/patients', $payload)->assertCreated()
+    $id = $this->postJson('/patients', $payload)->assertCreated()
         ->assertJsonPath('data.full_name', 'Maryam Ali')
         ->assertJsonMissingPath('data.allergies')
         ->json('data.id');
 
-    $this->postJson('/api/v1/patients', $payload)->assertStatus(409)
+    $this->postJson('/patients', $payload)->assertStatus(409)
         ->assertJsonPath('error_code', 'PATIENT_ALREADY_REGISTERED')->assertJsonPath('meta.patient_id', $id);
-    $this->getJson('/api/v1/patients?national_id=950505123')->assertOk()->assertJsonPath('data.0.id', $id);
-    $this->getJson('/api/v1/patients?search=maryam')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/patients?national_id=950505123')->assertOk()->assertJsonPath('data.0.id', $id);
+    $this->getJson('/patients?search=maryam')->assertOk()->assertJsonCount(1, 'data');
 });
 
 it('offers free slots inside working hours and books with the doctor\'s price and default room', function () {
@@ -69,7 +69,7 @@ it('offers free slots inside working hours and books with the doctor\'s price an
     $doctor = FrontDesk::doctor(['default_room_id' => $room->id]);
     $patient = FrontDesk::patient();
 
-    $slots = $this->getJson("/api/v1/appointments/available-slots?provider_id={$doctor->id}&date=2026-11-02&type=consultation")->assertOk()->json('data');
+    $slots = $this->getJson("/appointments/available-slots?provider_id={$doctor->id}&date=2026-11-02&type=consultation")->assertOk()->json('data');
     expect($slots)->toHaveCount(16)->and($slots[0]['start_time'])->toBe('08:00')->and($slots[15]['end_time'])->toBe('12:00');
 
     book(booking($doctor, $patient->id))->assertCreated()
@@ -78,7 +78,7 @@ it('offers free slots inside working hours and books with the doctor\'s price an
         ->assertJsonPath('data.room.code', 'R-101')
         ->assertJsonPath('data.billable_service.price.amount', '15.000');
 
-    $after = collect($this->getJson("/api/v1/appointments/available-slots?provider_id={$doctor->id}&date=2026-11-02&type=consultation")->json('data'));
+    $after = collect($this->getJson("/appointments/available-slots?provider_id={$doctor->id}&date=2026-11-02&type=consultation")->json('data'));
     expect($after)->toHaveCount(15)->and($after->pluck('start_time'))->not->toContain('09:00');
 });
 
@@ -107,9 +107,9 @@ it('keeps rooms to one booking at a time and only of a matching type', function 
     book(booking(FrontDesk::doctor(), FrontDesk::patient()->id, ['room_id' => $room->id]))->assertStatus(409)->assertJsonPath('error_code', 'ROOM_UNAVAILABLE');
     book(booking(FrontDesk::doctor(), FrontDesk::patient()->id, ['room_id' => $xray->id]))->assertStatus(409)->assertJsonPath('error_code', 'ROOM_UNAVAILABLE');
 
-    $this->deleteJson("/api/v1/rooms/{$room->id}")->assertForbidden(); // receptionist cannot delete rooms
+    $this->deleteJson("/rooms/{$room->id}")->assertForbidden(); // receptionist cannot delete rooms
     Sanctum::actingAs(User::factory()->withRole(RoleName::Admin->value)->withTwoFactor()->create());
-    $this->deleteJson("/api/v1/rooms/{$room->id}")->assertStatus(409)->assertJsonPath('error_code', 'ROOM_IN_USE');
+    $this->deleteJson("/rooms/{$room->id}")->assertStatus(409)->assertJsonPath('error_code', 'ROOM_IN_USE');
 });
 
 it('walks a visit through check-in, start and completion following the state machine', function () {
@@ -117,20 +117,20 @@ it('walks a visit through check-in, start and completion following the state mac
     $doctor = FrontDesk::doctor();
     $id = book(booking($doctor, FrontDesk::patient()->id, ['scheduled_date' => '2026-11-01', 'start_time' => '10:00']))->json('data.id');
 
-    $this->patchJson("/api/v1/appointments/{$id}/start")->assertForbidden(); // receptionists do not treat
+    $this->patchJson("/appointments/{$id}/start")->assertForbidden(); // receptionists do not treat
     // Check-in opens an hour before the start (08:00 is two hours early), on the visit's day.
-    $this->patchJson("/api/v1/appointments/{$id}/check-in")->assertStatus(409)->assertJsonPath('error_code', 'INVALID_STATE_TRANSITION')
+    $this->patchJson("/appointments/{$id}/check-in")->assertStatus(409)->assertJsonPath('error_code', 'INVALID_STATE_TRANSITION')
         ->assertJsonPath('message', 'Check-in opens 1 hour before the appointment, on its day.');
     $this->travelTo(CarbonImmutable::parse('2026-11-01 09:05', 'Asia/Bahrain'));
-    $this->patchJson("/api/v1/appointments/{$id}/check-in")->assertOk()->assertJsonPath('data.status', 'checked_in')->assertJsonPath('data.allowed_transitions', ['in_progress']);
-    $this->patchJson("/api/v1/appointments/{$id}/cancel", ['reason' => 'x', 'cancelled_by' => 'clinic'])->assertStatus(409)->assertJsonPath('error_code', 'INVALID_STATE_TRANSITION');
+    $this->patchJson("/appointments/{$id}/check-in")->assertOk()->assertJsonPath('data.status', 'checked_in')->assertJsonPath('data.allowed_transitions', ['in_progress']);
+    $this->patchJson("/appointments/{$id}/cancel", ['reason' => 'x', 'cancelled_by' => 'clinic'])->assertStatus(409)->assertJsonPath('error_code', 'INVALID_STATE_TRANSITION');
 
     Sanctum::actingAs($doctor->employee->user);
-    $this->patchJson("/api/v1/appointments/{$id}/start")->assertOk()->assertJsonPath('data.status', 'in_progress');
-    $this->patchJson("/api/v1/appointments/{$id}/complete", ['follow_up_in_days' => 14])->assertOk()
+    $this->patchJson("/appointments/{$id}/start")->assertOk()->assertJsonPath('data.status', 'in_progress');
+    $this->patchJson("/appointments/{$id}/complete", ['follow_up_in_days' => 14])->assertOk()
         ->assertJsonPath('data.status', 'completed')->assertJsonPath('data.follow_up_suggested_date', '2026-11-15');
 
-    $history = $this->getJson("/api/v1/appointments/{$id}/history")->assertOk()->json('data');
+    $history = $this->getJson("/appointments/{$id}/history")->assertOk()->json('data');
     expect(array_column(array_column($history, 'new_values'), 'status'))->toBe(['confirmed', 'checked_in', 'in_progress', 'completed']);
 });
 
@@ -140,25 +140,25 @@ it('reschedules into a new linked booking and cancels with a reason; patients on
     $patient = FrontDesk::patient();
     $id = book(booking($doctor, $patient->id))->json('data.id');
 
-    $new = $this->postJson("/api/v1/appointments/{$id}/reschedule", ['scheduled_date' => '2026-11-02', 'start_time' => '09:15'])
+    $new = $this->postJson("/appointments/{$id}/reschedule", ['scheduled_date' => '2026-11-02', 'start_time' => '09:15'])
         ->assertCreated()->assertJsonPath('data.rescheduled_from.id', $id)->json('data.id');
     expect(Appointment::query()->find($id)->status->value)->toBe('rescheduled');
 
-    $this->patchJson("/api/v1/appointments/{$new}/cancel", ['reason' => 'Travelling', 'cancelled_by' => 'patient'])->assertOk()->assertJsonPath('data.status', 'cancelled');
+    $this->patchJson("/appointments/{$new}/cancel", ['reason' => 'Travelling', 'cancelled_by' => 'patient'])->assertOk()->assertJsonPath('data.status', 'cancelled');
 
     // The patient's own portal account: too late inside the 2-hour window.
     $soon = book(booking($doctor, $patient->id, ['scheduled_date' => '2026-11-01', 'start_time' => '09:30']))->json('data.id');
     $portal = User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create();
     grantPermissions($portal, 'appointments.write', 'appointments.cancel');
     Sanctum::actingAs($portal);
-    $this->patchJson("/api/v1/appointments/{$soon}/cancel", ['reason' => 'Late', 'cancelled_by' => 'patient'])->assertStatus(409)->assertJsonPath('error_code', 'CANCELLATION_WINDOW_EXPIRED');
+    $this->patchJson("/appointments/{$soon}/cancel", ['reason' => 'Late', 'cancelled_by' => 'patient'])->assertStatus(409)->assertJsonPath('error_code', 'CANCELLATION_WINDOW_EXPIRED');
 });
 
 it('marks overdue confirmed bookings as no-shows', function () {
     receptionist();
     $id = book(booking(FrontDesk::doctor(), FrontDesk::patient()->id, ['scheduled_date' => '2026-11-01', 'start_time' => '08:15']))->json('data.id');
 
-    $this->patchJson("/api/v1/appointments/{$id}/no-show")->assertStatus(409);
+    $this->patchJson("/appointments/{$id}/no-show")->assertStatus(409);
     $this->travel(31)->minutes();
     expect(app(AppointmentServiceInterface::class)->markDueNoShows())->toBe(1)
         ->and(Appointment::query()->find($id)->status->value)->toBe('no_show');
@@ -171,16 +171,16 @@ it('replaces a weekly schedule only when no booking is left outside, and holiday
     book(booking($doctor, FrontDesk::patient()->id, ['start_time' => '11:00']))->assertCreated();
 
     $morning = fn (string $end) => ['effective_from' => '2026-11-02', 'blocks' => collect(range(0, 6))->map(fn (int $d) => ['day_of_week' => $d, 'start_time' => '08:00', 'end_time' => $end])->all()];
-    $this->putJson("/api/v1/providers/{$doctor->id}/schedules", $morning('10:00'))->assertStatus(409)->assertJsonPath('error_code', 'SCHEDULE_HAS_APPOINTMENTS');
-    $this->putJson("/api/v1/providers/{$doctor->id}/schedules", ['effective_from' => '2026-11-02', 'blocks' => [
+    $this->putJson("/providers/{$doctor->id}/schedules", $morning('10:00'))->assertStatus(409)->assertJsonPath('error_code', 'SCHEDULE_HAS_APPOINTMENTS');
+    $this->putJson("/providers/{$doctor->id}/schedules", ['effective_from' => '2026-11-02', 'blocks' => [
         ['day_of_week' => 1, 'start_time' => '08:00', 'end_time' => '10:00'], ['day_of_week' => 1, 'start_time' => '09:30', 'end_time' => '12:00'],
     ]])->assertStatus(409)->assertJsonPath('error_code', 'SCHEDULE_OVERLAP');
-    $this->putJson("/api/v1/providers/{$doctor->id}/schedules", $morning('12:30'))->assertOk()->assertJsonCount(7, 'data');
+    $this->putJson("/providers/{$doctor->id}/schedules", $morning('12:30'))->assertOk()->assertJsonCount(7, 'data');
 
-    $this->postJson('/api/v1/schedules/holidays', ['date' => '2026-11-02', 'type' => 'holiday', 'reason' => 'National day'])->assertStatus(409);
-    $this->postJson('/api/v1/schedules/holidays', ['date' => '2026-11-02', 'type' => 'holiday', 'reason' => 'National day', 'cancel_affected' => true])->assertCreated();
+    $this->postJson('/schedules/holidays', ['date' => '2026-11-02', 'type' => 'holiday', 'reason' => 'National day'])->assertStatus(409);
+    $this->postJson('/schedules/holidays', ['date' => '2026-11-02', 'type' => 'holiday', 'reason' => 'National day', 'cancel_affected' => true])->assertCreated();
     expect(Appointment::query()->first()->status->value)->toBe('cancelled');
-    $this->getJson("/api/v1/appointments/available-slots?provider_id={$doctor->id}&date=2026-11-02&type=consultation")->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson("/appointments/available-slots?provider_id={$doctor->id}&date=2026-11-02&type=consultation")->assertOk()->assertJsonCount(0, 'data');
 });
 
 it('shows people by role: a doctor their own patients and staff, HR staff only, a patient only themself', function () {
@@ -190,16 +190,16 @@ it('shows people by role: a doctor their own patients and staff, HR staff only, 
     $hr = FrontDesk::employee(UserType::Hr, RoleName::HrManager);
     receptionist();
     book(booking($doctor, $mine->id))->assertCreated();
-    $seen = fn (): array => collect(test()->getJson('/api/v1/people?per_page=100')->assertOk()->json('data'))->pluck('id')->all();
+    $seen = fn (): array => collect(test()->getJson('/people?per_page=100')->assertOk()->json('data'))->pluck('id')->all();
 
     Sanctum::actingAs(User::query()->findOrFail($doctor->id));
     expect($seen())->toContain($doctor->id, $hr->id, $mine->id)->not->toContain($other->id);
-    $this->putJson("/api/v1/people/{$other->id}", ['version' => 1, 'first_name' => 'X'])->assertForbidden();
+    $this->putJson("/people/{$other->id}", ['version' => 1, 'first_name' => 'X'])->assertForbidden();
 
     Sanctum::actingAs(User::query()->findOrFail($hr->id));
     expect($seen())->toContain($doctor->id, $hr->id)->not->toContain($mine->id)->not->toContain($other->id);
-    $this->putJson("/api/v1/people/{$mine->id}", ['version' => 1, 'first_name' => 'X'])->assertNotFound();
-    $this->putJson("/api/v1/people/{$doctor->id}", ['version' => 1, 'first_name' => 'Omar'])->assertOk();
+    $this->putJson("/people/{$mine->id}", ['version' => 1, 'first_name' => 'X'])->assertNotFound();
+    $this->putJson("/people/{$doctor->id}", ['version' => 1, 'first_name' => 'Omar'])->assertOk();
 
     Sanctum::actingAs(User::factory()->state(['id' => $mine->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
     expect($seen())->toBe([$mine->id]);
@@ -239,12 +239,12 @@ it('tells coming, today, past and missed visits apart, and filters by them', fun
     Appointment::query()->whereKey($past)->update(['scheduled_date' => '2026-10-20', 'status' => 'completed']);
     Appointment::query()->whereKey($missed)->update(['scheduled_date' => '2026-10-21', 'status' => 'no_show']);
 
-    $this->getJson("/api/v1/appointments/{$coming}")->assertOk()->assertJsonPath('data.timing', 'coming');
-    $ids = fn (string $timing) => collect($this->getJson("/api/v1/appointments?timing={$timing}")->assertOk()->json('data'))->pluck('id')->all();
+    $this->getJson("/appointments/{$coming}")->assertOk()->assertJsonPath('data.timing', 'coming');
+    $ids = fn (string $timing) => collect($this->getJson("/appointments?timing={$timing}")->assertOk()->json('data'))->pluck('id')->all();
     expect($ids('today'))->toBe([$today])
         ->and($ids('coming'))->toBe([$coming])
         ->and($ids('past'))->toBe([$past])
         ->and($ids('missed'))->toBe([$missed]);
-    $this->getJson('/api/v1/appointments')->assertOk()->assertJsonCount(4, 'data');
-    $this->getJson('/api/v1/appointments?timing=later')->assertStatus(422);
+    $this->getJson('/appointments')->assertOk()->assertJsonCount(4, 'data');
+    $this->getJson('/appointments?timing=later')->assertStatus(422);
 });

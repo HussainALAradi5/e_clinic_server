@@ -35,13 +35,13 @@ it('lists audit entries for a required date range with cursor pagination', funct
     Sanctum::actingAs($admin);
     Person::factory()->count(3)->create();
 
-    $this->getJson('/api/v1/audit-logs')->assertStatus(422);
-    $this->getJson('/api/v1/audit-logs?from=2026-01-01&to=2026-12-31')->assertStatus(422)->assertJsonValidationErrors('date_to', 'errors');
+    $this->getJson('/audit-logs')->assertStatus(422);
+    $this->getJson('/audit-logs?from=2026-01-01&to=2026-12-31')->assertStatus(422)->assertJsonValidationErrors('date_to', 'errors');
 
     $today = now('Asia/Bahrain')->toDateString();
-    $page = $this->getJson("/api/v1/audit-logs?date_from={$today}&date_to={$today}&action=created&per_page=2")->assertOk();
+    $page = $this->getJson("/audit-logs?date_from={$today}&date_to={$today}&action=created&per_page=2")->assertOk();
     expect($page->json('data'))->toHaveCount(2)->and($page->json('meta.next_cursor'))->toBeString();
-    $this->getJson('/api/v1/audit-logs?date_range=today&cursor='.$page->json('meta.next_cursor').'&per_page=2&action=created')->assertOk();
+    $this->getJson('/audit-logs?date_range=today&cursor='.$page->json('meta.next_cursor').'&per_page=2&action=created')->assertOk();
 });
 
 it('shows the history of one record through a whitelisted alias', function () {
@@ -50,10 +50,10 @@ it('shows the history of one record through a whitelisted alias', function () {
     $role = Role::create(['name' => 'tmp', 'display_name' => 'Tmp', 'guard_name' => 'sanctum']);
     $role->update(['display_name' => 'Temporary']);
 
-    $this->getJson("/api/v1/audit-logs/role/{$role->id}")->assertOk()->assertJsonCount(2, 'data')
+    $this->getJson("/audit-logs/role/{$role->id}")->assertOk()->assertJsonCount(2, 'data')
         ->assertJsonPath('data.0.action', 'updated')->assertJsonPath('data.0.auditable_type', 'role')
         ->assertJsonPath('data.0.user.id', $admin->id);
-    $this->getJson("/api/v1/audit-logs/invoice_x/{$role->id}")->assertNotFound();
+    $this->getJson("/audit-logs/invoice_x/{$role->id}")->assertNotFound();
 });
 
 it('limits read_own to the entries of the signed-in user', function () {
@@ -62,6 +62,6 @@ it('limits read_own to the entries of the signed-in user', function () {
     $me = actingWith('audit.read_own');
     Person::factory()->create();
 
-    $rows = $this->getJson('/api/v1/audit-logs?date_range=today')->assertOk()->json('data');
+    $rows = $this->getJson('/audit-logs?date_range=today')->assertOk()->json('data');
     expect(collect($rows)->pluck('user.id')->unique()->all())->toBe([$me->id]);
 });

@@ -48,9 +48,10 @@ final class ApiExceptionRenderer
         $exceptions->render(fn (Throwable $e, Request $request): ?JsonResponse => self::isApi($request) ? self::render($e, $request) : null);
     }
 
+    /** The API is served at the root, so every request gets JSON errors except the local Telescope pages. */
     public static function isApi(Request $request): bool
     {
-        return $request->is('api/*') || $request->expectsJson();
+        return ! $request->is('telescope', 'telescope/*') || $request->expectsJson();
     }
 
     public static function render(Throwable $e, Request $request): JsonResponse

@@ -42,14 +42,14 @@ function onlinePost(string $url, array $payload = []): TestResponse
 function onlineInvoice(Patient $patient): string
 {
     Sanctum::actingAs(User::factory()->withRole(RoleName::Receptionist->value)->create());
-    $visit = onlinePost('/api/v1/appointments', [
+    $visit = onlinePost('/appointments', [
         'patient_id' => $patient->id, 'provider_id' => FrontDesk::doctor()->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-01', 'start_time' => '08:30', 'source' => 'walk_in',
     ])->assertCreated()->json('data.id');
-    test()->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
-    $draft = test()->postJson('/api/v1/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $visit])->assertOk()->json('data.id');
+    test()->patchJson("/appointments/{$visit}/check-in")->assertOk();
+    $draft = test()->postJson('/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $visit])->assertOk()->json('data.id');
 
-    return onlinePost("/api/v1/billing/invoices/{$draft}/issue")->assertOk()->json('data.id');
+    return onlinePost("/billing/invoices/{$draft}/issue")->assertOk()->json('data.id');
 }
 
 function actAsPatient(Patient $patient): void
@@ -64,7 +64,7 @@ function payOnFakeCheckout(string $checkoutUrl, bool $pay): string
 {
     $charge = basename((string) parse_url($checkoutUrl, PHP_URL_PATH));
     $back = (string) FakeGateway::decide($charge, $pay);
-    $return = test()->get(substr($back, strpos($back, '/api/v1/')))->assertRedirect();
+    $return = test()->get((string) parse_url($back, PHP_URL_PATH).'?'.parse_url($back, PHP_URL_QUERY))->assertRedirect();
 
     return (string) $return->headers->get('Location');
 }
@@ -74,63 +74,63 @@ it('lets a patient pay their invoice online; the money is booked only once the g
     $invoice = onlineInvoice($patient);
     actAsPatient($patient);
 
-    onlinePost("/api/v1/billing/invoices/{$invoice}/online-payments", ['amount' => '20.000'])
+    onlinePost("/billing/invoices/{$invoice}/online-payments", ['amount' => '20.000'])
         ->assertUnprocessable()->assertJsonPath('error_code', 'ONLINE_PAYMENT_AMOUNT');
-    $online = onlinePost("/api/v1/billing/invoices/{$invoice}/online-payments")->assertCreated()
+    $online = onlinePost("/billing/invoices/{$invoice}/online-payments")->assertCreated()
         ->assertJsonPath('data.status', 'initiated')
         ->assertJsonPath('data.amount.amount', '15.000')
         ->json('data');
     expect($online['code'])->toStartWith('OPY-')->and($online['checkout_url'])->toContain('/payments/fake-checkout/');
     // Nothing is booked yet.
-    $this->getJson("/api/v1/billing/invoices/{$invoice}")->assertJsonPath('data.balance_due.amount', '15.000');
+    $this->getJson("/billing/invoices/{$invoice}")->assertJsonPath('data.balance_due.amount', '15.000');
 
     $landing = payOnFakeCheckout($online['checkout_url'], true);
     expect($landing)->toContain('/portal/invoices?online='.$online['id'].'&status=captured');
 
     actAsPatient($patient);
-    $this->getJson("/api/v1/billing/online-payments/{$online['id']}")->assertOk()->assertJsonPath('data.status', 'captured')->assertJsonPath('data.checkout_url', null);
-    $this->getJson("/api/v1/billing/invoices/{$invoice}")->assertJsonPath('data.status', 'paid')->assertJsonPath('data.payments.0.method', 'online');
+    $this->getJson("/billing/online-payments/{$online['id']}")->assertOk()->assertJsonPath('data.status', 'captured')->assertJsonPath('data.checkout_url', null);
+    $this->getJson("/billing/invoices/{$invoice}")->assertJsonPath('data.status', 'paid')->assertJsonPath('data.payments.0.method', 'online');
 });
 
 it('books nothing for a declined payment and refuses unsigned webhooks', function () {
     $patient = FrontDesk::patient();
     $invoice = onlineInvoice($patient);
     actAsPatient($patient);
-    $online = onlinePost("/api/v1/billing/invoices/{$invoice}/online-payments")->json('data');
+    $online = onlinePost("/billing/invoices/{$invoice}/online-payments")->json('data');
 
     expect(payOnFakeCheckout($online['checkout_url'], false))->toContain('status=failed');
-    $this->postJson('/api/v1/payments/webhooks/tap', ['id' => 'chg_x', 'status' => 'CAPTURED'], ['hashstring' => 'forged'])->assertUnauthorized();
+    $this->postJson('/payments/webhooks/tap', ['id' => 'chg_x', 'status' => 'CAPTURED'], ['hashstring' => 'forged'])->assertUnauthorized();
 
     actAsPatient($patient);
-    $this->getJson("/api/v1/billing/invoices/{$invoice}")->assertJsonPath('data.balance_due.amount', '15.000');
+    $this->getJson("/billing/invoices/{$invoice}")->assertJsonPath('data.balance_due.amount', '15.000');
 });
 
 it('takes a signed webhook as a cue to look again, and puts a surplus on the balance when the desk was faster', function () {
     $patient = FrontDesk::patient();
     $invoice = onlineInvoice($patient);
     actAsPatient($patient);
-    $online = onlinePost("/api/v1/billing/invoices/{$invoice}/online-payments")->json('data');
+    $online = onlinePost("/billing/invoices/{$invoice}/online-payments")->json('data');
     $charge = OnlinePayment::query()->findOrFail($online['id'])->charge_id;
 
     // Meanwhile the patient pays 5.000 at the desk; then the online 15.000 is captured.
     Sanctum::actingAs(User::factory()->withRole(RoleName::Cashier->value)->create());
-    onlinePost('/api/v1/billing/payments', ['invoice_id' => $invoice, 'amount' => '5.000', 'method' => 'card'])->assertCreated();
+    onlinePost('/billing/payments', ['invoice_id' => $invoice, 'amount' => '5.000', 'method' => 'card'])->assertCreated();
     FakeGateway::decide($charge, true);
     $signature = hash_hmac('sha256', $charge.'CAPTURED', FakeGateway::SECRET);
-    $this->postJson('/api/v1/payments/webhooks/tap', ['id' => $charge, 'status' => 'CAPTURED'], ['hashstring' => $signature])->assertOk();
+    $this->postJson('/payments/webhooks/tap', ['id' => $charge, 'status' => 'CAPTURED'], ['hashstring' => $signature])->assertOk();
 
-    $this->getJson("/api/v1/billing/invoices/{$invoice}")->assertJsonPath('data.status', 'paid');
-    $this->getJson("/api/v1/billing/patients/{$patient->id}/wallet")->assertJsonPath('meta.balance.amount', '5.000');
+    $this->getJson("/billing/invoices/{$invoice}")->assertJsonPath('data.status', 'paid');
+    $this->getJson("/billing/patients/{$patient->id}/wallet")->assertJsonPath('meta.balance.amount', '5.000');
 });
 
 it('gives up on attempts left on the payment page and keeps patients to their own invoices', function () {
     $patient = FrontDesk::patient();
     $invoice = onlineInvoice($patient);
     actAsPatient(FrontDesk::patient());
-    onlinePost("/api/v1/billing/invoices/{$invoice}/online-payments")->assertNotFound();
+    onlinePost("/billing/invoices/{$invoice}/online-payments")->assertNotFound();
 
     actAsPatient($patient);
-    onlinePost("/api/v1/billing/invoices/{$invoice}/online-payments")->assertCreated();
+    onlinePost("/billing/invoices/{$invoice}/online-payments")->assertCreated();
     $this->travel(31)->minutes();
     expect(app(OnlinePaymentServiceInterface::class)->expireStale())->toBe(1);
 });

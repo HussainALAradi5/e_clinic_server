@@ -41,26 +41,26 @@ it('sums up the month next to the one before, for report readers only', function
     $doctor = FrontDesk::doctor();
     $patient = FrontDesk::patient();
     sumAs(RoleName::Receptionist);
-    $visit = sumPost('/api/v1/appointments', [
+    $visit = sumPost('/appointments', [
         'patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-01', 'start_time' => '08:30', 'source' => 'walk_in',
     ])->json('data.id');
-    $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
+    $this->patchJson("/appointments/{$visit}/check-in")->assertOk();
     Sanctum::actingAs(User::query()->findOrFail($doctor->id));
-    $this->patchJson("/api/v1/appointments/{$visit}/start")->assertOk();
-    $this->patchJson("/api/v1/appointments/{$visit}/complete", [])->assertOk();
+    $this->patchJson("/appointments/{$visit}/start")->assertOk();
+    $this->patchJson("/appointments/{$visit}/complete", [])->assertOk();
     sumAs(RoleName::Receptionist);
-    $draft = $this->getJson("/api/v1/billing/invoices?filter[patient_id][eq]={$patient->id}")->json('data.0.id');
-    sumPost("/api/v1/billing/invoices/{$draft}/issue")->assertOk();
+    $draft = $this->getJson("/billing/invoices?filter[patient_id][eq]={$patient->id}")->json('data.0.id');
+    sumPost("/billing/invoices/{$draft}/issue")->assertOk();
     sumAs(RoleName::Cashier);
-    sumPost('/api/v1/billing/payments', ['invoice_id' => $draft, 'amount' => '10.000', 'method' => 'card'])->assertCreated();
+    sumPost('/billing/payments', ['invoice_id' => $draft, 'amount' => '10.000', 'method' => 'card'])->assertCreated();
 
     $this->travelTo(CarbonImmutable::parse('2026-12-01 05:00:00', 'UTC'));
     sumAs(RoleName::Receptionist);
-    $this->getJson('/api/v1/accounting/month-summary?year=2026&month=11')->assertForbidden();
+    $this->getJson('/accounting/month-summary?year=2026&month=11')->assertForbidden();
 
     sumAs(RoleName::Accountant);
-    $summary = $this->getJson('/api/v1/accounting/month-summary?year=2026&month=11')->assertOk()->json('data');
+    $summary = $this->getJson('/accounting/month-summary?year=2026&month=11')->assertOk()->json('data');
     expect($summary['period'])->toBe(['from' => '2026-11-01', 'to' => '2026-11-30'])
         ->and($summary['current']['revenue']['amount'])->toBe('15.000')
         ->and($summary['current']['net_result']['amount'])->toBe('15.000')

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Accounting API (prefix /api/v1/accounting) — chart of accounts, fiscal years, journal, reports
+| Accounting API (prefix /accounting) — chart of accounts, fiscal years, journal, reports
 |--------------------------------------------------------------------------
 */
 

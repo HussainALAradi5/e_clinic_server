@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * GET /api/v1/files?t=…&expires=…&signature=… — streams a private file through a signed, short-lived link
+ * GET /files?t=…&expires=…&signature=… — streams a private file through a signed, short-lived link
  * (route middleware `signed`). The token is encrypted, so the storage path is never visible.
  */
 final class FileController

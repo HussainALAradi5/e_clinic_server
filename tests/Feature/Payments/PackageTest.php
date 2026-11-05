@@ -45,7 +45,7 @@ function pkgAs(RoleName $role): User
 function pkgVisit(Patient $patient, string $time): Appointment
 {
     pkgAs(RoleName::Receptionist);
-    $id = pkgPost('/api/v1/appointments', [
+    $id = pkgPost('/appointments', [
         'patient_id' => $patient->id, 'provider_id' => FrontDesk::doctor()->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-01', 'start_time' => $time, 'source' => 'walk_in',
     ])->assertCreated()->json('data.id');
@@ -57,10 +57,10 @@ function pkgVisit(Patient $patient, string $time): Appointment
 function pkgComplete(Appointment $visit): void
 {
     pkgAs(RoleName::Receptionist);
-    test()->patchJson("/api/v1/appointments/{$visit->id}/check-in")->assertOk();
+    test()->patchJson("/appointments/{$visit->id}/check-in")->assertOk();
     Sanctum::actingAs(User::query()->findOrFail($visit->provider_id));
-    test()->patchJson("/api/v1/appointments/{$visit->id}/start")->assertOk();
-    test()->patchJson("/api/v1/appointments/{$visit->id}/complete", [])->assertOk();
+    test()->patchJson("/appointments/{$visit->id}/start")->assertOk();
+    test()->patchJson("/appointments/{$visit->id}/complete", [])->assertOk();
 }
 
 /** The accountant puts a package of [sessions] consultations for [price] on sale; returns its id. */
@@ -68,7 +68,7 @@ function pkgCatalog(string $serviceId, int $sessions = 3, string $price = '36.00
 {
     pkgAs(RoleName::Accountant);
 
-    return test()->postJson('/api/v1/billing/packages', [
+    return test()->postJson('/billing/packages', [
         'name' => 'Consultation pack', 'covered_service_id' => $serviceId, 'sessions' => $sessions, 'price' => $price, 'validity_days' => 30,
     ])->assertCreated()->json('data.id');
 }
@@ -77,11 +77,11 @@ function pkgCatalog(string $serviceId, int $sessions = 3, string $price = '36.00
 function pkgSellAndPay(Patient $patient, string $packageId): array
 {
     pkgAs(RoleName::Receptionist);
-    $sold = pkgPost("/api/v1/billing/patients/{$patient->id}/packages", ['package_id' => $packageId])->assertCreated()
+    $sold = pkgPost("/billing/patients/{$patient->id}/packages", ['package_id' => $packageId])->assertCreated()
         ->assertJsonPath('data.status', 'awaiting_payment')->json('data');
-    $invoice = pkgPost("/api/v1/billing/invoices/{$sold['invoice']['id']}/issue")->assertOk()->json('data');
+    $invoice = pkgPost("/billing/invoices/{$sold['invoice']['id']}/issue")->assertOk()->json('data');
     pkgAs(RoleName::Cashier);
-    pkgPost('/api/v1/billing/payments', ['invoice_id' => $invoice['id'], 'amount' => $invoice['balance_due']['amount'], 'method' => 'card'])->assertCreated();
+    pkgPost('/billing/payments', ['invoice_id' => $invoice['id'], 'amount' => $invoice['balance_due']['amount'], 'method' => 'card'])->assertCreated();
 
     return $sold;
 }
@@ -93,23 +93,23 @@ it('sells a package on the invoice, activates it once paid, then uses sessions i
 
     $sold = pkgSellAndPay($patient, $package);
     pkgAs(RoleName::Receptionist);
-    $this->getJson("/api/v1/billing/patient-packages?filter[patient_id][eq]={$patient->id}")->assertOk()
+    $this->getJson("/billing/patient-packages?filter[patient_id][eq]={$patient->id}")->assertOk()
         ->assertJsonPath('data.0.status', 'active')
         ->assertJsonPath('data.0.sessions_left', 3)
         ->assertJsonPath('data.0.expires_on', '2026-12-01');
 
     pkgComplete($first);
     pkgAs(RoleName::Receptionist);
-    $this->getJson("/api/v1/billing/patient-packages?filter[patient_id][eq]={$patient->id}")->assertJsonPath('data.0.sessions_used', 1);
+    $this->getJson("/billing/patient-packages?filter[patient_id][eq]={$patient->id}")->assertJsonPath('data.0.sessions_used', 1);
     // Only the package's own invoice exists: the visit was not billed.
-    $this->getJson("/api/v1/billing/invoices?filter[patient_id][eq]={$patient->id}")->assertJsonCount(1, 'data');
+    $this->getJson("/billing/invoices?filter[patient_id][eq]={$patient->id}")->assertJsonCount(1, 'data');
     $credited = JournalEntryLine::query()->whereHas('account', fn ($q) => $q->where('code', '2510'))->sum('debit');
     expect((string) $credited)->toStartWith('12');
 
     // At check-in, billing it by hand is refused: the package covers it.
     $second = pkgVisit($patient, '09:00');
-    $this->patchJson("/api/v1/appointments/{$second->id}/check-in")->assertOk();
-    $this->postJson('/api/v1/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $second->id])
+    $this->patchJson("/appointments/{$second->id}/check-in")->assertOk();
+    $this->postJson('/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $second->id])
         ->assertStatus(409)->assertJsonPath('error_code', 'PACKAGE_COVERED');
 });
 
@@ -118,12 +118,12 @@ it('keeps unpaid packages inactive, so visits before payment are billed as usual
     $visit = pkgVisit($patient, '08:30');
     $package = pkgCatalog($visit->billable_service_id);
     pkgAs(RoleName::Receptionist);
-    pkgPost("/api/v1/billing/patients/{$patient->id}/packages", ['package_id' => $package])->assertCreated();
+    pkgPost("/billing/patients/{$patient->id}/packages", ['package_id' => $package])->assertCreated();
 
     pkgComplete($visit);
     pkgAs(RoleName::Receptionist);
-    $draft = $this->getJson("/api/v1/billing/invoices?filter[patient_id][eq]={$patient->id}&filter[status][eq]=draft")->json('data.0.id');
-    $this->getJson("/api/v1/billing/invoices/{$draft}")->assertJsonCount(2, 'data.items');
+    $draft = $this->getJson("/billing/invoices?filter[patient_id][eq]={$patient->id}&filter[status][eq]=draft")->json('data.0.id');
+    $this->getJson("/billing/invoices/{$draft}")->assertJsonCount(2, 'data.items');
 });
 
 it('splits the price into sessions that add up exactly, and forfeits unused sessions when it expires', function () {
@@ -147,14 +147,14 @@ it('lets only the catalog managers change packages, refuses packages off sale an
     $package = pkgCatalog($visit->billable_service_id);
 
     pkgAs(RoleName::Receptionist);
-    $this->postJson('/api/v1/billing/packages', ['name' => 'X', 'covered_service_id' => $visit->billable_service_id, 'sessions' => 3, 'price' => '1', 'validity_days' => 30])->assertForbidden();
+    $this->postJson('/billing/packages', ['name' => 'X', 'covered_service_id' => $visit->billable_service_id, 'sessions' => 3, 'price' => '1', 'validity_days' => 30])->assertForbidden();
 
     pkgAs(RoleName::Accountant);
-    $this->putJson("/api/v1/billing/packages/{$package}", ['name' => 'Consultation pack', 'covered_service_id' => $visit->billable_service_id, 'sessions' => 1, 'price' => '36', 'validity_days' => 30])->assertUnprocessable();
-    $this->putJson("/api/v1/billing/packages/{$package}", ['name' => 'Consultation pack', 'covered_service_id' => $visit->billable_service_id, 'sessions' => 3, 'price' => '36', 'validity_days' => 30, 'is_active' => false])->assertOk();
+    $this->putJson("/billing/packages/{$package}", ['name' => 'Consultation pack', 'covered_service_id' => $visit->billable_service_id, 'sessions' => 1, 'price' => '36', 'validity_days' => 30])->assertUnprocessable();
+    $this->putJson("/billing/packages/{$package}", ['name' => 'Consultation pack', 'covered_service_id' => $visit->billable_service_id, 'sessions' => 3, 'price' => '36', 'validity_days' => 30, 'is_active' => false])->assertOk();
     pkgAs(RoleName::Receptionist);
-    pkgPost("/api/v1/billing/patients/{$patient->id}/packages", ['package_id' => $package])->assertStatus(409)->assertJsonPath('error_code', 'PACKAGE_NOT_ON_SALE');
+    pkgPost("/billing/patients/{$patient->id}/packages", ['package_id' => $package])->assertStatus(409)->assertJsonPath('error_code', 'PACKAGE_NOT_ON_SALE');
 
     Sanctum::actingAs(User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
-    $this->getJson('/api/v1/billing/patient-packages')->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson('/billing/patient-packages')->assertOk()->assertJsonCount(0, 'data');
 });

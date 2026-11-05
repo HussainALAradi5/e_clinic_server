@@ -11,7 +11,7 @@ double-entry accounting, staff chat and support tickets — for a staff app and 
 | | Address |
 |---|---|
 | Web app (staff and patient portal) | https://e-clinic-web.onrender.com |
-| API | https://e-clinic-api.onrender.com/api/v1 |
+| API | https://e-clinic-api.onrender.com |
 
 Free Render instances sleep when idle: the first visit can take about a minute to wake the API. Demo accounts
 (one per role: patient, receptionist, doctor, nurse, pharmacist, cashier, accountant, HR, admin) are available on
@@ -47,7 +47,7 @@ cp .env.example .env
 php artisan key:generate
 php artisan migrate --seed          # demo clinic: staff of every role, patients, a year of visits, invoices …
 php artisan webpush:keys            # optional: browser notifications (put the keys in .env)
-php artisan serve                   # API on http://127.0.0.1:8000/api/v1
+php artisan serve                   # API on http://127.0.0.1:8000
 php artisan queue:work              # notifications, reminders, exports
 php artisan reverb:start --port=8080   # live chat and tickets
 ```

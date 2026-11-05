@@ -20,7 +20,7 @@ beforeEach(function () {
         }
     };
 
-    Route::middleware('api')->prefix('api/v1/_test')->group(function () use ($controller): void {
+    Route::middleware('api')->prefix('_test')->group(function () use ($controller): void {
         Route::get('ok', fn () => $controller->show());
         Route::get('conflict', fn () => throw new InvalidStateTransitionException(context: ['from' => 'paid']));
         Route::post('validate', fn (Request $r) => $r->validate(['name' => 'required']));
@@ -31,7 +31,7 @@ beforeEach(function () {
 });
 
 it('wraps success responses and echoes the request id with security headers', function () {
-    $this->getJson('/api/v1/_test/ok', ['X-Request-Id' => 'req-12345678'])
+    $this->getJson('/_test/ok', ['X-Request-Id' => 'req-12345678'])
         ->assertCreated()
         ->assertExactJson(['success' => true, 'message' => 'Created.', 'data' => ['id' => 'x']])
         ->assertHeader('X-Request-Id', 'req-12345678')
@@ -40,7 +40,7 @@ it('wraps success responses and echoes the request id with security headers', fu
 });
 
 it('renders domain exceptions in the error envelope', function () {
-    $response = $this->getJson('/api/v1/_test/conflict')->assertStatus(409);
+    $response = $this->getJson('/_test/conflict')->assertStatus(409);
 
     expect($response->json())
         ->success->toBeFalse()
@@ -51,35 +51,35 @@ it('renders domain exceptions in the error envelope', function () {
 });
 
 it('maps framework exceptions to stable codes', function () {
-    $this->postJson('/api/v1/_test/validate')->assertStatus(422)
+    $this->postJson('/_test/validate')->assertStatus(422)
         ->assertJsonPath('error_code', 'VALIDATION_FAILED')
         ->assertJsonStructure(['errors' => ['name']]);
-    $this->getJson('/api/v1/_test/auth')->assertStatus(401)->assertJsonPath('error_code', 'UNAUTHENTICATED');
+    $this->getJson('/_test/auth')->assertStatus(401)->assertJsonPath('error_code', 'UNAUTHENTICATED');
     // A plain browser call (no Accept: json) is not redirected to a login page that does not exist.
-    $this->get('/api/v1/_test/auth')->assertStatus(401)->assertJsonPath('error_code', 'UNAUTHENTICATED');
-    $this->getJson('/api/v1/_test/missing')->assertStatus(404)->assertJsonPath('error_code', 'NOT_FOUND');
+    $this->get('/_test/auth')->assertStatus(401)->assertJsonPath('error_code', 'UNAUTHENTICATED');
+    $this->getJson('/_test/missing')->assertStatus(404)->assertJsonPath('error_code', 'NOT_FOUND');
 });
 
 it('checks permission expressions on routes', function () {
     $user = actingWith('invoices.write');
 
-    $this->getJson('/api/v1/_test/access')->assertForbidden()->assertJsonPath('error_code', 'FORBIDDEN');
+    $this->getJson('/_test/access')->assertForbidden()->assertJsonPath('error_code', 'FORBIDDEN');
 
     grantPermissions($user, 'invoices.issue');
-    $this->getJson('/api/v1/_test/access')->assertOk();
+    $this->getJson('/_test/access')->assertOk();
 });
 
 it('enforces the Idempotency-Key contract', function () {
     Sanctum::actingAs(User::factory()->create());
     $key = (string) Str::uuid();
 
-    $this->postJson('/api/v1/_test/pay', ['amount' => '1.000'])->assertStatus(428)->assertJsonPath('error_code', 'IDEMPOTENCY_KEY_REQUIRED');
+    $this->postJson('/_test/pay', ['amount' => '1.000'])->assertStatus(428)->assertJsonPath('error_code', 'IDEMPOTENCY_KEY_REQUIRED');
 
-    $first = $this->postJson('/api/v1/_test/pay', ['amount' => '1.000'], ['Idempotency-Key' => $key])->assertCreated();
-    $this->postJson('/api/v1/_test/pay', ['amount' => '1.000'], ['Idempotency-Key' => $key])
+    $first = $this->postJson('/_test/pay', ['amount' => '1.000'], ['Idempotency-Key' => $key])->assertCreated();
+    $this->postJson('/_test/pay', ['amount' => '1.000'], ['Idempotency-Key' => $key])
         ->assertCreated()
         ->assertHeader('Idempotent-Replayed', 'true')
         ->assertJsonPath('n', $first->json('n'));
-    $this->postJson('/api/v1/_test/pay', ['amount' => '2.000'], ['Idempotency-Key' => $key])
+    $this->postJson('/_test/pay', ['amount' => '2.000'], ['Idempotency-Key' => $key])
         ->assertStatus(409)->assertJsonPath('error_code', 'IDEMPOTENCY_KEY_REUSED');
 });

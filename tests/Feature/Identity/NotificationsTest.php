@@ -22,22 +22,22 @@ it('delivers in-app notifications to the inbox in the person language', function
 
     notify($user->person->refresh());
 
-    $this->getJson('/api/v1/notifications/mine')
+    $this->getJson('/notifications/mine')
         ->assertOk()
         ->assertJsonPath('meta.unread_count', 1)
         ->assertJsonPath('data.0.status', 'delivered')
         ->assertJsonPath('data.0.locale', 'ar')
         ->assertJsonPath('data.0.body', 'اكتملت مهمتك "Audit Export" بنجاح.');
 
-    $id = $this->getJson('/api/v1/notifications/mine')->json('data.0.id');
-    $this->patchJson("/api/v1/notifications/{$id}/read")->assertOk()->assertJsonPath('data.read_at', fn ($v) => $v !== null);
-    $this->getJson('/api/v1/notifications/mine?unread=1')->assertJsonCount(0, 'data')->assertJsonPath('meta.unread_count', 0);
+    $id = $this->getJson('/notifications/mine')->json('data.0.id');
+    $this->patchJson("/notifications/{$id}/read")->assertOk()->assertJsonPath('data.read_at', fn ($v) => $v !== null);
+    $this->getJson('/notifications/mine?unread=1')->assertJsonCount(0, 'data')->assertJsonPath('meta.unread_count', 0);
 
     notify($user->person, at: now()->toImmutable()->addSecond());
     app(NotificationServiceInterface::class)->dispatchDue();
     $this->travel(2)->seconds();
     app(NotificationServiceInterface::class)->dispatchDue();
-    $this->patchJson('/api/v1/notifications/mine/read-all')->assertOk()->assertJsonPath('data.updated', 1);
+    $this->patchJson('/notifications/mine/read-all')->assertOk()->assertJsonPath('data.updated', 1);
 });
 
 it('does not read other users notifications', function () {
@@ -45,7 +45,7 @@ it('does not read other users notifications', function () {
     notify($other->person);
 
     actingWith();
-    $this->patchJson('/api/v1/notifications/'.Notification::query()->sole()->id.'/read')->assertNotFound();
+    $this->patchJson('/notifications/'.Notification::query()->sole()->id.'/read')->assertNotFound();
 });
 
 it('sends SMS through the driver, honours opt-outs and de-duplicates', function () {
@@ -69,16 +69,16 @@ it('shows the delivery log with masked destinations, resends and cancels', funct
     $queued = notify($person, [NotificationChannel::Sms], now()->toImmutable()->addDay())->first();
 
     $viewer = actingWith('notifications.read_all', 'notifications.write');
-    $this->getJson("/api/v1/notifications?filter[person_id][eq]={$person->id}")
+    $this->getJson("/notifications?filter[person_id][eq]={$person->id}")
         ->assertOk()->assertJsonCount(2, 'data')
         ->assertJsonPath('data.0.destination', fn (string $d) => str_starts_with($d, '*') && str_ends_with($d, substr($person->phone, -4)));
 
-    $this->postJson("/api/v1/notifications/{$sent->id}/resend")->assertStatus(409)->assertJsonPath('error_code', 'NOTIFICATION_NOT_RESENDABLE');
-    $this->patchJson("/api/v1/notifications/{$queued->id}/cancel")->assertOk()->assertJsonPath('data.status', 'cancelled');
-    $this->patchJson("/api/v1/notifications/{$queued->id}/cancel")->assertStatus(409);
-    $this->postJson("/api/v1/notifications/{$queued->id}/resend")->assertCreated()->assertJsonPath('data.status', 'sent');
+    $this->postJson("/notifications/{$sent->id}/resend")->assertStatus(409)->assertJsonPath('error_code', 'NOTIFICATION_NOT_RESENDABLE');
+    $this->patchJson("/notifications/{$queued->id}/cancel")->assertOk()->assertJsonPath('data.status', 'cancelled');
+    $this->patchJson("/notifications/{$queued->id}/cancel")->assertStatus(409);
+    $this->postJson("/notifications/{$queued->id}/resend")->assertCreated()->assertJsonPath('data.status', 'sent');
 
-    $this->postJson('/api/v1/notifications/bulk', ['action' => 'cancel', 'ids' => [$sent->id]])
+    $this->postJson('/notifications/bulk', ['action' => 'cancel', 'ids' => [$sent->id]])
         ->assertOk()->assertJsonPath('data.failed.0.code', 'NOTIFICATION_NOT_CANCELLABLE');
     expect($viewer)->toBeInstanceOf(User::class);
 });
@@ -88,10 +88,10 @@ it('accepts signed delivery webhooks only', function () {
     $sent = notify(Person::factory()->create(), [NotificationChannel::Sms])->first()->refresh();
     $body = json_encode(['message_id' => $sent->provider_message_id, 'status' => 'delivered']);
 
-    $this->call('POST', '/api/v1/webhooks/notifications/log', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_X_SIGNATURE' => 'bad'], $body)
+    $this->call('POST', '/webhooks/notifications/log', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_X_SIGNATURE' => 'bad'], $body)
         ->assertStatus(401)->assertJsonPath('error_code', 'INVALID_WEBHOOK_SIGNATURE');
 
-    $this->call('POST', '/api/v1/webhooks/notifications/log', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_X_SIGNATURE' => hash_hmac('sha256', (string) $body, 'shh')], $body)
+    $this->call('POST', '/webhooks/notifications/log', [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json', 'HTTP_X_SIGNATURE' => hash_hmac('sha256', (string) $body, 'shh')], $body)
         ->assertOk();
     expect($sent->refresh()->status)->toBe(NotificationStatus::Delivered);
 });
@@ -99,13 +99,13 @@ it('accepts signed delivery webhooks only', function () {
 it('registers push devices and forgets them on sign-out of all devices', function () {
     $user = actingWith();
 
-    $this->postJson('/api/v1/notifications/devices', ['token' => 'fcm-1', 'app' => 'staff', 'platform' => 'android', 'device_name' => 'Pixel 8'])->assertCreated();
-    $this->postJson('/api/v1/notifications/devices', ['token' => 'fcm-2', 'app' => 'staff', 'platform' => 'ios'])->assertCreated();
-    $this->deleteJson('/api/v1/notifications/devices/fcm-2')->assertNoContent();
+    $this->postJson('/notifications/devices', ['token' => 'fcm-1', 'app' => 'staff', 'platform' => 'android', 'device_name' => 'Pixel 8'])->assertCreated();
+    $this->postJson('/notifications/devices', ['token' => 'fcm-2', 'app' => 'staff', 'platform' => 'ios'])->assertCreated();
+    $this->deleteJson('/notifications/devices/fcm-2')->assertNoContent();
 
     expect(notify($user->person, [NotificationChannel::Push])->first()?->destination)->toBe('staff');
 
     $user->createToken('web');
-    $this->postJson('/api/v1/auth/logout-all')->assertOk();
+    $this->postJson('/auth/logout-all')->assertOk();
     expect(DeviceToken::query()->count())->toBe(0);
 });

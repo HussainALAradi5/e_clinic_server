@@ -45,7 +45,7 @@ it('imports staff accounts, invited once the whole file is saved', function () {
     signInAs(RoleName::Admin);
     $header = ['First name', 'Last name', 'Gender', 'Date of birth', 'Mobile', 'Email', 'Account type', 'Roles'];
 
-    $this->post('/api/v1/users/import', sheet([
+    $this->post('/users/import', sheet([
         $header,
         ['Sara', 'Ali', 'Female', '1990-01-02', '+97336001111', 'sara@example.com', 'Doctor', 'doctor, Cashier'],
         ['Omar', 'Saleh', 'Male', '1991-03-04', '+97336002222', 'omar@example.com', 'Patient', 'Patient'],
@@ -55,7 +55,7 @@ it('imports staff accounts, invited once the whole file is saved', function () {
         ->assertJsonPath('meta.rows.0.column', 'Account type');
     Notification::assertNothingSent();
 
-    $this->post('/api/v1/users/import', sheet([
+    $this->post('/users/import', sheet([
         $header,
         ['Sara', 'Ali', 'Female', '1990-01-02', '+97336001111', 'sara@example.com', 'Doctor', 'doctor, Cashier'],
         ['Omar', 'Saleh', 'Male', '1991-03-04', '+97336002222', 'omar@example.com', 'Receptionist', 'Nurse, unknown'],
@@ -65,7 +65,7 @@ it('imports staff accounts, invited once the whole file is saved', function () {
     expect(User::query()->where('user_type', UserType::Doctor)->count())->toBe(0); // all or nothing
     Notification::assertNothingSent();
 
-    $this->post('/api/v1/users/import', sheet([
+    $this->post('/users/import', sheet([
         $header,
         ['Sara', 'Ali', 'Female', '1990-01-02', '+97336001111', 'sara@example.com', 'Doctor', 'doctor, Cashier'],
     ]), ['Accept' => 'application/json'])->assertOk()->assertJsonPath('data.created', 1);
@@ -78,7 +78,7 @@ it('imports staff accounts, invited once the whole file is saved', function () {
 it('imports custom roles with the rights of the role they are based on', function () {
     signInAs(RoleName::Admin);
 
-    $this->post('/api/v1/roles/import', sheet([
+    $this->post('/roles/import', sheet([
         ['Key', 'Display name', 'Based on'],
         ['senior_nurse', 'Senior nurse', 'Nurse'],
         ['night_desk', 'Night desk', null],
@@ -90,19 +90,19 @@ it('imports custom roles with the rights of the role they are based on', functio
         ->and($senior->is_system)->toBeFalse()
         ->and(Role::findByName('night_desk', 'sanctum')->permissions)->toHaveCount(0);
 
-    $this->post('/api/v1/roles/import', sheet([['Key', 'Display name'], ['dup', 'A'], ['dup', 'B']]), ['Accept' => 'application/json'])
+    $this->post('/roles/import', sheet([['Key', 'Display name'], ['dup', 'A'], ['dup', 'B']]), ['Accept' => 'application/json'])
         ->assertStatus(422)->assertJsonPath('meta.rows.0.row', 3);
 });
 
 it('offers import on users and roles only to the roles that create them', function () {
     signInAs(RoleName::Admin);
-    $this->getJson('/api/v1/meta/resources/users')->assertJsonPath('data.importable', true);
-    $this->getJson('/api/v1/meta/resources/roles')->assertJsonPath('data.importable', true);
+    $this->getJson('/meta/resources/users')->assertJsonPath('data.importable', true);
+    $this->getJson('/meta/resources/roles')->assertJsonPath('data.importable', true);
 
     signInAs(RoleName::HrManager);
-    $this->getJson('/api/v1/meta/resources/users')->assertJsonPath('data.importable', true);
-    $this->get('/api/v1/roles/import/template', ['Accept' => 'application/json'])->assertNotFound(); // roles are admin-only
+    $this->getJson('/meta/resources/users')->assertJsonPath('data.importable', true);
+    $this->get('/roles/import/template', ['Accept' => 'application/json'])->assertNotFound(); // roles are admin-only
 
     signInAs(RoleName::Receptionist);
-    $this->get('/api/v1/users/import/template', ['Accept' => 'application/json'])->assertNotFound(); // cannot even read users
+    $this->get('/users/import/template', ['Accept' => 'application/json'])->assertNotFound(); // cannot even read users
 });

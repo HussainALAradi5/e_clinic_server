@@ -22,28 +22,28 @@ it('turns phone and browser notifications off and on with the push opt-out', fun
     $user = User::factory()->create();
     Sanctum::actingAs($user);
 
-    $this->getJson('/api/v1/notifications/settings')->assertOk()
+    $this->getJson('/notifications/settings')->assertOk()
         ->assertJsonPath('data.push', true)->assertJsonPath('data.web_push_key', 'test-public-key');
 
-    $this->putJson('/api/v1/notifications/settings', ['push' => false])->assertOk()->assertJsonPath('data.push', false);
+    $this->putJson('/notifications/settings', ['push' => false])->assertOk()->assertJsonPath('data.push', false);
     expect($user->person->refresh()->notification_opt_out)->toBe(['push']);
 
-    $this->putJson('/api/v1/notifications/settings', ['push' => true])->assertOk()->assertJsonPath('data.push', true);
+    $this->putJson('/notifications/settings', ['push' => true])->assertOk()->assertJsonPath('data.push', true);
     expect($user->person->refresh()->notification_opt_out)->toBe([]);
-    $this->putJson('/api/v1/notifications/settings', [])->assertStatus(422);
+    $this->putJson('/notifications/settings', [])->assertStatus(422);
 });
 
 it('keeps one subscription per browser and forgets it on unsubscribe; only https endpoints', function () {
     $user = User::factory()->create();
     Sanctum::actingAs($user);
 
-    $this->postJson('/api/v1/notifications/web-push', browserSubscription())->assertCreated();
-    $this->postJson('/api/v1/notifications/web-push', browserSubscription())->assertCreated();
+    $this->postJson('/notifications/web-push', browserSubscription())->assertCreated();
+    $this->postJson('/notifications/web-push', browserSubscription())->assertCreated();
     expect(PushSubscription::query()->where('user_id', $user->id)->count())->toBe(1);
 
-    $this->postJson('/api/v1/notifications/web-push', browserSubscription('http://push.example.test/x'))->assertStatus(422);
+    $this->postJson('/notifications/web-push', browserSubscription('http://push.example.test/x'))->assertStatus(422);
 
-    $this->deleteJson('/api/v1/notifications/web-push', ['endpoint' => 'https://push.example.test/send/abc'])->assertNoContent();
+    $this->deleteJson('/notifications/web-push', ['endpoint' => 'https://push.example.test/send/abc'])->assertNoContent();
     expect(PushSubscription::query()->count())->toBe(0);
 });
 

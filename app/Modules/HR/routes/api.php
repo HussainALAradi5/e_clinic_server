@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Human Resources API (prefix /api/v1/hr) — Departments, Shifts, Employees, Attendance, Leaves, Payroll
+| Human Resources API (prefix /hr) — Departments, Shifts, Employees, Attendance, Leaves, Payroll
 |--------------------------------------------------------------------------
 */
 

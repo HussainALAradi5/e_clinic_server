@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Pharmacy API (prefix /api/v1/pharmacy) — medications, prescriptions, dispensing, inventory
+| Pharmacy API (prefix /pharmacy) — medications, prescriptions, dispensing, inventory
 |--------------------------------------------------------------------------
 */
 

@@ -42,17 +42,17 @@ function earnAs(RoleName $role): User
 function earnVisit(Doctor $doctor, Patient $patient, string $time): void
 {
     earnAs(RoleName::Receptionist);
-    $id = earnPost('/api/v1/appointments', [
+    $id = earnPost('/appointments', [
         'patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-01', 'start_time' => $time, 'source' => 'walk_in',
     ])->assertCreated()->json('data.id');
-    test()->patchJson("/api/v1/appointments/{$id}/check-in")->assertOk();
+    test()->patchJson("/appointments/{$id}/check-in")->assertOk();
     Sanctum::actingAs(User::query()->findOrFail($doctor->id));
-    test()->patchJson("/api/v1/appointments/{$id}/start")->assertOk();
-    test()->patchJson("/api/v1/appointments/{$id}/complete", [])->assertOk();
+    test()->patchJson("/appointments/{$id}/start")->assertOk();
+    test()->patchJson("/appointments/{$id}/complete", [])->assertOk();
     earnAs(RoleName::Receptionist);
-    $draft = test()->getJson("/api/v1/billing/invoices?filter[patient_id][eq]={$patient->id}&filter[status][eq]=draft")->json('data.0.id');
-    earnPost("/api/v1/billing/invoices/{$draft}/issue")->assertOk();
+    $draft = test()->getJson("/billing/invoices?filter[patient_id][eq]={$patient->id}&filter[status][eq]=draft")->json('data.0.id');
+    earnPost("/billing/invoices/{$draft}/issue")->assertOk();
 }
 
 it('pays a doctor a share of the revenue booked to them, and lets only salary managers set it', function () {
@@ -61,12 +61,12 @@ it('pays a doctor a share of the revenue booked to them, and lets only salary ma
     earnVisit($doctor, FrontDesk::patient(), '09:00');
 
     earnAs(RoleName::Receptionist);
-    $this->putJson("/api/v1/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'percent', 'commission_value' => '20'])->assertForbidden();
+    $this->putJson("/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'percent', 'commission_value' => '20'])->assertForbidden();
     earnAs(RoleName::HrManager);
-    $this->putJson("/api/v1/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'percent', 'commission_value' => '120'])->assertUnprocessable();
-    $this->putJson("/api/v1/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'percent', 'commission_value' => '20'])->assertOk();
+    $this->putJson("/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'percent', 'commission_value' => '120'])->assertUnprocessable();
+    $this->putJson("/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'percent', 'commission_value' => '20'])->assertOk();
 
-    $row = collect($this->getJson('/api/v1/hr/doctor-earnings?year=2026&month=11')->assertOk()->json('data'))->firstWhere('doctor.id', $doctor->id);
+    $row = collect($this->getJson('/hr/doctor-earnings?year=2026&month=11')->assertOk()->json('data'))->firstWhere('doctor.id', $doctor->id);
     expect($row['revenue']['amount'])->toBe('30.000')
         ->and($row['visits'])->toBe(2)
         ->and($row['commission']['amount'])->toBe('6.000');
@@ -77,29 +77,29 @@ it('pays per completed visit, shows doctors only their own row, and puts the com
     $other = FrontDesk::doctor();
     earnVisit($doctor, FrontDesk::patient(), '08:30');
     earnAs(RoleName::HrManager);
-    $this->putJson("/api/v1/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'per_visit', 'commission_value' => '2.500'])->assertOk();
+    $this->putJson("/hr/doctors/{$doctor->id}/commission", ['commission_type' => 'per_visit', 'commission_value' => '2.500'])->assertOk();
 
     Sanctum::actingAs(User::query()->findOrFail($doctor->id));
-    $this->getJson('/api/v1/hr/doctor-earnings?year=2026&month=11')->assertOk()
+    $this->getJson('/hr/doctor-earnings?year=2026&month=11')->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.doctor.id', $doctor->id)
         ->assertJsonPath('data.0.commission.amount', '2.500');
 
     $this->travelTo(CarbonImmutable::parse('2026-12-02 05:00:00', 'UTC'));
     earnAs(RoleName::HrManager);
-    $run = $this->postJson('/api/v1/hr/payroll-runs', ['year' => 2026, 'month' => 11])->assertCreated()->json('data.id');
-    $this->postJson("/api/v1/hr/payroll-runs/{$run}/calculate")->assertOk();
-    $slips = collect($this->getJson("/api/v1/hr/payslips?filter[payroll_run_id][eq]={$run}&per_page=50")->assertOk()->json('data'));
+    $run = $this->postJson('/hr/payroll-runs', ['year' => 2026, 'month' => 11])->assertCreated()->json('data.id');
+    $this->postJson("/hr/payroll-runs/{$run}/calculate")->assertOk();
+    $slips = collect($this->getJson("/hr/payslips?filter[payroll_run_id][eq]={$run}&per_page=50")->assertOk()->json('data'));
     $mine = $slips->firstWhere('employee.id', $doctor->id) ?? $slips->firstWhere('employee_id', $doctor->id);
     expect($mine)->not->toBeNull();
-    $items = collect($this->getJson("/api/v1/hr/payslips/{$mine['id']}")->json('data.items'));
+    $items = collect($this->getJson("/hr/payslips/{$mine['id']}")->json('data.items'));
     expect($items->firstWhere('type', 'commission')['amount']['amount'] ?? null)->toBe('2.500')
         ->and($slips->firstWhere('employee.id', $other->id))->not->toBeNull();
 
     // Approving posts the salary journal from the stored lines; the commission counts as pay.
     earnAs(RoleName::Accountant);
-    $this->postJson("/api/v1/hr/payroll-runs/{$run}/approve")->assertOk()->assertJsonPath('data.status', 'approved');
-    $accrual = JournalEntry::query()->with('lines')->findOrFail($this->getJson("/api/v1/hr/payroll-runs/{$run}")->json('data.accrual_journal_entry_id'));
+    $this->postJson("/hr/payroll-runs/{$run}/approve")->assertOk()->assertJsonPath('data.status', 'approved');
+    $accrual = JournalEntry::query()->with('lines')->findOrFail($this->getJson("/hr/payroll-runs/{$run}")->json('data.accrual_journal_entry_id'));
     expect(round($accrual->lines->sum(fn ($line): float => (float) $line->debit), 3))
         ->toBe(round($accrual->lines->sum(fn ($line): float => (float) $line->credit), 3));
 });

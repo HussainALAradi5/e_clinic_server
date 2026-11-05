@@ -53,37 +53,37 @@ function portalPost(string $url, array $payload): TestResponse
 function portalCompletedVisit(Doctor $doctor, Patient $patient): void
 {
     Sanctum::actingAs(User::factory()->withRole(RoleName::Receptionist->value)->create());
-    $id = portalPost('/api/v1/appointments', [
+    $id = portalPost('/appointments', [
         'patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-01', 'start_time' => '08:15', 'source' => 'walk_in',
     ])->assertCreated()->json('data.id');
-    test()->patchJson("/api/v1/appointments/{$id}/check-in")->assertOk();
+    test()->patchJson("/appointments/{$id}/check-in")->assertOk();
     portalSignIn($doctor->id);
-    test()->patchJson("/api/v1/appointments/{$id}/start")->assertOk();
-    test()->patchJson("/api/v1/appointments/{$id}/complete", [])->assertOk();
+    test()->patchJson("/appointments/{$id}/start")->assertOk();
+    test()->patchJson("/appointments/{$id}/complete", [])->assertOk();
 }
 
 it('books for the signed-in patient only, at least two hours ahead, and cancels only their own bookings', function () {
     $doctor = FrontDesk::doctor();
     $other = FrontDesk::patient();
     Sanctum::actingAs(User::factory()->withRole(RoleName::Receptionist->value)->create());
-    $othersBooking = portalPost('/api/v1/appointments', [
+    $othersBooking = portalPost('/appointments', [
         'patient_id' => $other->id, 'provider_id' => $doctor->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-02', 'start_time' => '09:00', 'source' => 'phone',
     ])->assertCreated()->json('data.id');
-    $this->getJson('/api/v1/portal/profile')->assertForbidden();
+    $this->getJson('/portal/profile')->assertForbidden();
 
     $patient = portalPatient();
-    $this->getJson('/api/v1/doctors')->assertOk()->assertJsonPath('data.0.id', $doctor->id)->assertJsonMissingPath('data.0.phone');
+    $this->getJson('/doctors')->assertOk()->assertJsonPath('data.0.id', $doctor->id)->assertJsonMissingPath('data.0.phone');
     // 08:00 now: online slots start two hours later.
-    $this->getJson("/api/v1/portal/slots?doctor_id={$doctor->id}&date=2026-11-01&type=consultation")
+    $this->getJson("/portal/slots?doctor_id={$doctor->id}&date=2026-11-01&type=consultation")
         ->assertOk()->assertJsonPath('data.0.start_time', '10:00');
-    portalPost('/api/v1/portal/appointments', ['doctor_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00'])
+    portalPost('/portal/appointments', ['doctor_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00'])
         ->assertStatus(422)->assertJsonPath('error_code', 'BOOKING_WINDOW_EXCEEDED');
-    portalPost('/api/v1/portal/appointments', ['doctor_id' => $doctor->id, 'type' => 'procedure', 'scheduled_date' => '2026-11-02', 'start_time' => '10:00'])
+    portalPost('/portal/appointments', ['doctor_id' => $doctor->id, 'type' => 'procedure', 'scheduled_date' => '2026-11-02', 'start_time' => '10:00'])
         ->assertStatus(422)->assertJsonValidationErrors('type');
 
-    $own = portalPost('/api/v1/portal/appointments', [
+    $own = portalPost('/portal/appointments', [
         'doctor_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-02', 'start_time' => '10:00',
         'reason' => 'Knee pain', 'patient_id' => $other->id,
     ])->assertCreated()
@@ -91,26 +91,26 @@ it('books for the signed-in patient only, at least two hours ahead, and cancels 
         ->json('data.id');
 
     // The staff endpoints take any patient id or search everyone: a patient's portal rights do not open them.
-    portalPost('/api/v1/appointments', [
+    portalPost('/appointments', [
         'patient_id' => $other->id, 'provider_id' => $doctor->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-03', 'start_time' => '09:00', 'source' => 'walk_in',
     ])->assertForbidden();
-    $this->postJson('/api/v1/people/duplicates', ['first_name' => 'Any', 'last_name' => 'One', 'date_of_birth' => '1990-01-01'])->assertForbidden();
+    $this->postJson('/people/duplicates', ['first_name' => 'Any', 'last_name' => 'One', 'date_of_birth' => '1990-01-01'])->assertForbidden();
 
-    $this->getJson('/api/v1/appointments')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $own);
-    $this->get("/api/v1/codes/appointment/{$own}")->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
-    $this->get("/api/v1/codes/appointment/{$othersBooking}")->assertNotFound();
+    $this->getJson('/appointments')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $own);
+    $this->get("/codes/appointment/{$own}")->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
+    $this->get("/codes/appointment/{$othersBooking}")->assertNotFound();
 
-    $this->patchJson("/api/v1/portal/appointments/{$othersBooking}/cancel", ['reason' => 'Not mine'])->assertNotFound();
+    $this->patchJson("/portal/appointments/{$othersBooking}/cancel", ['reason' => 'Not mine'])->assertNotFound();
     // Tomorrow's visit: too close to change online — the patient calls reception.
-    $this->getJson("/api/v1/appointments/{$own}")->assertOk()->assertJsonPath('data.patient_can_change', false);
-    $this->patchJson("/api/v1/portal/appointments/{$own}/cancel", ['reason' => 'Feeling better'])
+    $this->getJson("/appointments/{$own}")->assertOk()->assertJsonPath('data.patient_can_change', false);
+    $this->patchJson("/portal/appointments/{$own}/cancel", ['reason' => 'Feeling better'])
         ->assertStatus(409)->assertJsonPath('error_code', 'CANCELLATION_WINDOW_EXPIRED');
     // Three days or more ahead: the patient cancels online.
-    $later = portalPost('/api/v1/portal/appointments', [
+    $later = portalPost('/portal/appointments', [
         'doctor_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-05', 'start_time' => '10:00',
     ])->assertCreated()->assertJsonPath('data.patient_can_change', true)->json('data.id');
-    $this->patchJson("/api/v1/portal/appointments/{$later}/cancel", ['reason' => 'Feeling better'])->assertOk()
+    $this->patchJson("/portal/appointments/{$later}/cancel", ['reason' => 'Feeling better'])->assertOk()
         ->assertJsonPath('data.status', 'cancelled')->assertJsonPath('data.cancelled_by', 'patient');
 });
 
@@ -128,15 +128,15 @@ it('lets patients update how to reach them and shows released results (with thei
     ]);
 
     Sanctum::actingAs(User::factory()->withRole(RoleName::Admin->value)->create());
-    $upload = fn (ClinicalOrder $order): string => $this->post('/api/v1/attachments', [
+    $upload = fn (ClinicalOrder $order): string => $this->post('/attachments', [
         'files' => [UploadedFile::fake()->createWithContent('result.pdf', "%PDF-1.4\nresult\n%%EOF")],
         'attachable_type' => 'clinical_order', 'attachable_id' => $order->id, 'category' => 'lab_result',
     ], ['Accept' => 'application/json'])->assertCreated()->json('data.saved.0.id');
     [$releasedFile, $pendingFile] = [$upload($result), $upload($pending)];
 
     Sanctum::actingAs(User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
-    $profile = $this->getJson('/api/v1/portal/profile')->assertOk()->assertJsonMissingPath('data.notes')->json('data');
-    $this->putJson('/api/v1/portal/profile', [
+    $profile = $this->getJson('/portal/profile')->assertOk()->assertJsonMissingPath('data.notes')->json('data');
+    $this->putJson('/portal/profile', [
         'version' => $profile['version'], 'person_version' => $profile['person']['version'],
         'phone' => '+97333112233', 'emergency_contacts' => [['name' => 'Sara Yousif', 'relation' => 'Sister', 'phone' => '+97336001122'], ['phone' => '+97339002233']],
         'first_name' => 'Changed',
@@ -144,27 +144,27 @@ it('lets patients update how to reach them and shows released results (with thei
         ->assertJsonPath('data.phone', '+97333112233')->assertJsonPath('data.emergency_contacts.0.name', 'Sara Yousif')->assertJsonPath('data.emergency_contacts.1.name', null)
         ->assertJsonPath('data.person.first_name', $profile['person']['first_name']);
 
-    $this->getJson("/api/v1/clinical-orders/{$result->id}")->assertOk()
+    $this->getJson("/clinical-orders/{$result->id}")->assertOk()
         ->assertJsonPath('data.report', 'All within the normal range.')->assertJsonMissingPath('data.clinical_notes');
-    $this->getJson("/api/v1/clinical-orders/{$pending->id}")->assertOk()->assertJsonMissingPath('data.report');
+    $this->getJson("/clinical-orders/{$pending->id}")->assertOk()->assertJsonMissingPath('data.report');
     // Result files are medical: released to the patient with the completed result only.
-    $this->getJson("/api/v1/attachments/{$releasedFile}/download")->assertOk();
-    $this->getJson("/api/v1/attachments/{$pendingFile}/download")->assertForbidden();
+    $this->getJson("/attachments/{$releasedFile}/download")->assertOk();
+    $this->getJson("/attachments/{$pendingFile}/download")->assertForbidden();
 
     // The visit's draft stays at the desk until it is issued.
-    $this->getJson('/api/v1/billing/invoices')->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson('/billing/invoices')->assertOk()->assertJsonCount(0, 'data');
     Sanctum::actingAs(User::factory()->withRole(RoleName::Receptionist->value)->create());
-    $draft = $this->getJson("/api/v1/billing/invoices?filter[patient_id][eq]={$patient->id}")->json('data.0.id');
-    portalPost("/api/v1/billing/invoices/{$draft}/issue", [])->assertOk();
+    $draft = $this->getJson("/billing/invoices?filter[patient_id][eq]={$patient->id}")->json('data.0.id');
+    portalPost("/billing/invoices/{$draft}/issue", [])->assertOk();
     portalSignIn($patient->id);
-    $this->getJson('/api/v1/billing/invoices')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.status', 'issued');
+    $this->getJson('/billing/invoices')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.status', 'issued');
 });
 
 it('keeps at most three emergency contacts, each with a valid phone; empty clears them', function () {
     $patient = FrontDesk::patient();
     Sanctum::actingAs(User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
-    $profile = fn () => $this->getJson('/api/v1/portal/profile')->assertOk()->json('data');
-    $save = fn (array $contacts) => $this->putJson('/api/v1/portal/profile', [
+    $profile = fn () => $this->getJson('/portal/profile')->assertOk()->json('data');
+    $save = fn (array $contacts) => $this->putJson('/portal/profile', [
         'version' => $profile()['version'], 'person_version' => $profile()['person']['version'], 'emergency_contacts' => $contacts,
     ]);
     $contact = fn (string $phone) => ['name' => 'Contact', 'phone' => $phone];

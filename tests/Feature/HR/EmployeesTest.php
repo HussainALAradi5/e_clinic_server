@@ -54,19 +54,19 @@ it('keeps the department tree free of cycles and refuses to delete departments t
     $clinical = department('CLIN');
     $nursing = department('NURS', $clinical->id);
 
-    $this->getJson('/api/v1/hr/departments/tree')->assertOk()->assertJsonPath('data.0.code', 'CLIN')->assertJsonPath('data.0.children.0.code', 'NURS');
-    $this->putJson("/api/v1/hr/departments/{$clinical->id}", ['parent_id' => $nursing->id])->assertStatus(422)->assertJsonPath('error_code', 'DEPARTMENT_CYCLE');
-    $this->postJson('/api/v1/hr/departments', ['code' => 'NURS', 'name' => 'Again'])->assertStatus(422);
+    $this->getJson('/hr/departments/tree')->assertOk()->assertJsonPath('data.0.code', 'CLIN')->assertJsonPath('data.0.children.0.code', 'NURS');
+    $this->putJson("/hr/departments/{$clinical->id}", ['parent_id' => $nursing->id])->assertStatus(422)->assertJsonPath('error_code', 'DEPARTMENT_CYCLE');
+    $this->postJson('/hr/departments', ['code' => 'NURS', 'name' => 'Again'])->assertStatus(422);
 
-    $this->postJson('/api/v1/hr/employees', hirePayload($nursing->id))->assertCreated();
-    $this->deleteJson("/api/v1/hr/departments/{$clinical->id}")->assertStatus(409)->assertJsonPath('error_code', 'DEPARTMENT_HAS_EMPLOYEES');
+    $this->postJson('/hr/employees', hirePayload($nursing->id))->assertCreated();
+    $this->deleteJson("/hr/departments/{$clinical->id}")->assertStatus(409)->assertJsonPath('error_code', 'DEPARTMENT_HAS_EMPLOYEES');
 });
 
 it('hires a new person as employee + invited account with one shared id', function () {
     hrAdmin();
     $dept = department();
 
-    $response = $this->postJson('/api/v1/hr/employees', hirePayload($dept->id))->assertCreated()
+    $response = $this->postJson('/hr/employees', hirePayload($dept->id))->assertCreated()
         ->assertJsonPath('data.full_name', 'Huda Karim')
         ->assertJsonPath('data.account.user_type', 'medical_staff')
         ->assertJsonPath('data.account.roles', ['nurse'])
@@ -77,12 +77,12 @@ it('hires a new person as employee + invited account with one shared id', functi
     expect(Person::query()->find($id))->not->toBeNull()->and(User::query()->find($id)->hasRole('nurse'))->toBeTrue();
     Notification::assertSentTo(User::query()->find($id), ResetPasswordNotification::class);
 
-    $this->postJson('/api/v1/hr/employees', hirePayload($dept->id, ['person' => ['phone' => '+97336999999', 'email' => 'other@example.com']]))
+    $this->postJson('/hr/employees', hirePayload($dept->id, ['person' => ['phone' => '+97336999999', 'email' => 'other@example.com']]))
         ->assertStatus(409)->assertJsonPath('error_code', 'ALREADY_EMPLOYEE');
-    $this->getJson('/api/v1/hr/employees?search=karim')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/hr/employees?search=karim')->assertOk()->assertJsonCount(1, 'data');
     // Every word counts, across first and last name.
-    $this->getJson('/api/v1/hr/employees?search='.urlencode('huda  karim'))->assertOk()->assertJsonCount(1, 'data');
-    $this->getJson('/api/v1/hr/employees?search='.urlencode('huda nobody'))->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson('/hr/employees?search='.urlencode('huda  karim'))->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/hr/employees?search='.urlencode('huda nobody'))->assertOk()->assertJsonCount(0, 'data');
 });
 
 it('reuses an existing person and gives staff who never sign in an inactive account without email', function () {
@@ -90,40 +90,40 @@ it('reuses an existing person and gives staff who never sign in an inactive acco
     $dept = department();
     $person = Person::factory()->create(['email' => null]);
 
-    $this->postJson('/api/v1/hr/employees', [...hirePayload($dept->id), 'person' => null, 'person_id' => $person->id, 'can_login' => false, 'user_type' => 'cashier', 'roles' => ['cashier']])
+    $this->postJson('/hr/employees', [...hirePayload($dept->id), 'person' => null, 'person_id' => $person->id, 'can_login' => false, 'user_type' => 'cashier', 'roles' => ['cashier']])
         ->assertCreated()->assertJsonPath('data.id', $person->id)->assertJsonPath('data.account.status', 'inactive');
     Notification::assertNothingSent();
 });
 
 it('hides salary without view_salary and lets nobody change salary without manage_salary', function () {
     hrAdmin();
-    $id = $this->postJson('/api/v1/hr/employees', hirePayload(department()->id))->json('data.id');
+    $id = $this->postJson('/hr/employees', hirePayload(department()->id))->json('data.id');
 
     $hr = User::factory()->withTwoFactor()->create();
     grantPermissions($hr, 'employees.read_all', 'employees.write');
     Sanctum::actingAs($hr);
-    $this->getJson("/api/v1/hr/employees/{$id}")->assertOk()->assertJsonMissingPath('data.basic_salary');
-    $this->putJson("/api/v1/hr/employees/{$id}", ['version' => 1, 'basic_salary' => '900'])->assertForbidden();
-    $this->putJson("/api/v1/hr/employees/{$id}", ['version' => 1, 'job_title' => 'Senior nurse'])->assertOk()->assertJsonPath('data.job_title', 'Senior nurse');
-    $this->putJson("/api/v1/hr/employees/{$id}", ['version' => 1, 'job_title' => 'Stale'])->assertStatus(409)->assertJsonPath('error_code', 'CONCURRENT_MODIFICATION');
+    $this->getJson("/hr/employees/{$id}")->assertOk()->assertJsonMissingPath('data.basic_salary');
+    $this->putJson("/hr/employees/{$id}", ['version' => 1, 'basic_salary' => '900'])->assertForbidden();
+    $this->putJson("/hr/employees/{$id}", ['version' => 1, 'job_title' => 'Senior nurse'])->assertOk()->assertJsonPath('data.job_title', 'Senior nurse');
+    $this->putJson("/hr/employees/{$id}", ['version' => 1, 'job_title' => 'Stale'])->assertStatus(409)->assertJsonPath('error_code', 'CONCURRENT_MODIFICATION');
 });
 
 it('suspends, reactivates and terminates — the account follows and terminated staff are read-only', function () {
     hrAdmin();
-    $id = $this->postJson('/api/v1/hr/employees', hirePayload(department()->id))->json('data.id');
+    $id = $this->postJson('/hr/employees', hirePayload(department()->id))->json('data.id');
     User::query()->find($id)->forceFill(['password' => 'Secret-Pass-2026!'])->save();
 
-    $this->patchJson("/api/v1/hr/employees/{$id}/status", ['status' => 'suspended', 'reason' => 'Investigation'])->assertOk()->assertJsonPath('data.account.status', 'inactive');
-    $this->patchJson("/api/v1/hr/employees/{$id}/status", ['status' => 'active', 'reason' => 'Cleared'])->assertOk()->assertJsonPath('data.account.status', 'active');
+    $this->patchJson("/hr/employees/{$id}/status", ['status' => 'suspended', 'reason' => 'Investigation'])->assertOk()->assertJsonPath('data.account.status', 'inactive');
+    $this->patchJson("/hr/employees/{$id}/status", ['status' => 'active', 'reason' => 'Cleared'])->assertOk()->assertJsonPath('data.account.status', 'active');
 
-    $this->postJson("/api/v1/hr/employees/{$id}/salary-components", ['type' => 'allowance', 'name' => 'Housing', 'amount' => '150', 'effective_from' => '2026-02-01'])
+    $this->postJson("/hr/employees/{$id}/salary-components", ['type' => 'allowance', 'name' => 'Housing', 'amount' => '150', 'effective_from' => '2026-02-01'])
         ->assertCreated()->assertJsonPath('data.amount.amount', '150.000');
 
-    $this->postJson("/api/v1/hr/employees/{$id}/terminate", ['termination_date' => '2026-01-01', 'reason' => 'resignation'])->assertStatus(422);
-    $this->postJson("/api/v1/hr/employees/{$id}/terminate", ['termination_date' => '2026-09-30', 'reason' => 'resignation'])
+    $this->postJson("/hr/employees/{$id}/terminate", ['termination_date' => '2026-01-01', 'reason' => 'resignation'])->assertStatus(422);
+    $this->postJson("/hr/employees/{$id}/terminate", ['termination_date' => '2026-09-30', 'reason' => 'resignation'])
         ->assertOk()->assertJsonPath('data.status', 'terminated')->assertJsonPath('data.account.status', 'inactive');
     expect(User::query()->find($id)->status)->toBe(UserStatus::Inactive);
 
     $version = Employee::query()->find($id)->version;
-    $this->putJson("/api/v1/hr/employees/{$id}", ['version' => $version, 'job_title' => 'x'])->assertStatus(409)->assertJsonPath('error_code', 'EMPLOYEE_TERMINATED');
+    $this->putJson("/hr/employees/{$id}", ['version' => $version, 'job_title' => 'x'])->assertStatus(409)->assertJsonPath('error_code', 'EMPLOYEE_TERMINATED');
 });

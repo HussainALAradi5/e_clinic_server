@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Transactions API (prefix /api/v1/finance) — cash drawer shifts and expenses
+| Transactions API (prefix /finance) — cash drawer shifts and expenses
 |--------------------------------------------------------------------------
 */
 

@@ -73,10 +73,10 @@ it('prescribes a treatment, holds urgent plans to 24 hours and books sessions wi
     $patient = FrontDesk::patient();
     signedIn($doctor->id);
 
-    postKeyed('/api/v1/treatments', plan($doctor, $patient->id, ['priority' => 'urgent', 'sessions' => [sessionAt($therapist->id, '2026-11-03', '09:00')]]))
+    postKeyed('/treatments', plan($doctor, $patient->id, ['priority' => 'urgent', 'sessions' => [sessionAt($therapist->id, '2026-11-03', '09:00')]]))
         ->assertUnprocessable()->assertJsonPath('error_code', 'PRIORITY_DEADLINE_MISSED');
 
-    $treatment = postKeyed('/api/v1/treatments', plan($doctor, $patient->id, ['priority' => 'urgent', 'sessions' => [sessionAt($therapist->id, '2026-11-01', '14:00', $room->id)]]))
+    $treatment = postKeyed('/treatments', plan($doctor, $patient->id, ['priority' => 'urgent', 'sessions' => [sessionAt($therapist->id, '2026-11-01', '14:00', $room->id)]]))
         ->assertCreated()
         ->assertJsonPath('data.code', fn (string $c) => str_starts_with($c, 'TRT-'))
         ->assertJsonPath('data.status', 'pending')
@@ -91,16 +91,16 @@ it('prescribes a treatment, holds urgent plans to 24 hours and books sessions wi
 
     // Reception books the rest; the fourth is refused (plan of 3).
     deskUser();
-    $this->getJson('/api/v1/appointments/providers?type=treatment_session')->assertOk()->assertJsonCount(2, 'data')->assertJsonFragment(['id' => $therapist->id, 'is_doctor' => false]);
-    $this->getJson('/api/v1/appointments/providers?type=consultation')->assertOk()->assertJsonCount(1, 'data');
-    $this->getJson('/api/v1/treatments/'.$treatment['id'])->assertOk()->assertJsonMissingPath('data.diagnosis');
-    postKeyed("/api/v1/treatments/{$treatment['id']}/sessions", sessionAt($therapist->id, '2026-11-02', '10:00'))->assertCreated()->assertJsonPath('data.session_number', 2);
-    postKeyed("/api/v1/treatments/{$treatment['id']}/sessions", sessionAt($therapist->id, '2026-11-04', '10:00'))->assertCreated()->assertJsonPath('data.session_number', 3);
-    postKeyed("/api/v1/treatments/{$treatment['id']}/sessions", sessionAt($therapist->id, '2026-11-05', '10:00'))
+    $this->getJson('/appointments/providers?type=treatment_session')->assertOk()->assertJsonCount(2, 'data')->assertJsonFragment(['id' => $therapist->id, 'is_doctor' => false]);
+    $this->getJson('/appointments/providers?type=consultation')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/treatments/'.$treatment['id'])->assertOk()->assertJsonMissingPath('data.diagnosis');
+    postKeyed("/treatments/{$treatment['id']}/sessions", sessionAt($therapist->id, '2026-11-02', '10:00'))->assertCreated()->assertJsonPath('data.session_number', 2);
+    postKeyed("/treatments/{$treatment['id']}/sessions", sessionAt($therapist->id, '2026-11-04', '10:00'))->assertCreated()->assertJsonPath('data.session_number', 3);
+    postKeyed("/treatments/{$treatment['id']}/sessions", sessionAt($therapist->id, '2026-11-05', '10:00'))
         ->assertUnprocessable()->assertJsonPath('error_code', 'SESSION_LIMIT_REACHED');
 
     // A public booking cannot sneak in a treatment session.
-    postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $therapist->id, 'type' => 'treatment_session', 'scheduled_date' => '2026-11-02', 'start_time' => '11:00', 'source' => 'phone'])
+    postKeyed('/appointments', ['patient_id' => $patient->id, 'provider_id' => $therapist->id, 'type' => 'treatment_session', 'scheduled_date' => '2026-11-02', 'start_time' => '11:00', 'source' => 'phone'])
         ->assertUnprocessable();
 });
 
@@ -112,17 +112,17 @@ it('finds treatments by any text shown in the list — the patient, the doctor o
     signedIn($doctor->id);
     $doctorName = $doctor->person->last_name;
 
-    $mine = postKeyed('/api/v1/treatments', plan($doctor, $patient->id, ['title' => 'Shoulder rehab']))->assertCreated()->json('data.id');
-    postKeyed('/api/v1/treatments', plan($doctor, $other->id, ['title' => 'Wound dressing', 'type' => 'wound_care']))->assertCreated();
+    $mine = postKeyed('/treatments', plan($doctor, $patient->id, ['title' => 'Shoulder rehab']))->assertCreated()->json('data.id');
+    postKeyed('/treatments', plan($doctor, $other->id, ['title' => 'Wound dressing', 'type' => 'wound_care']))->assertCreated();
 
-    $ids = fn (string $term): array => array_column($this->getJson('/api/v1/treatments?search='.urlencode($term))->assertOk()->json('data'), 'id');
+    $ids = fn (string $term): array => array_column($this->getJson('/treatments?search='.urlencode($term))->assertOk()->json('data'), 'id');
     expect($ids('zaynab'))->toBe([$mine])
         ->and($ids('Shoulder'))->toBe([$mine])
         ->and($ids($doctorName))->toHaveCount(2)
         // The type is a filter, not text: searching its value finds nothing.
         ->and($ids('wound_care'))->toBe([]);
 
-    $this->getJson('/api/v1/meta/resources/treatments')->assertOk()
+    $this->getJson('/meta/resources/treatments')->assertOk()
         ->assertJsonPath('data.search', true)
         ->assertJsonPath('data.search_hint', ['Code', 'Patient', 'Treatment', 'Doctor']);
 });
@@ -133,7 +133,7 @@ it('tracks attendance from the sessions, alerts after two misses and completes t
     $therapist = FrontDesk::therapist();
     $patient = FrontDesk::patient();
     signedIn($doctor->id);
-    $id = postKeyed('/api/v1/treatments', plan($doctor, $patient->id, ['planned_sessions' => 2, 'sessions' => [
+    $id = postKeyed('/treatments', plan($doctor, $patient->id, ['planned_sessions' => 2, 'sessions' => [
         sessionAt($therapist->id, '2026-11-01', '09:00'), sessionAt($therapist->id, '2026-11-01', '11:00'),
     ]]))->assertCreated()->json('data.id');
     [$one, $two] = Appointment::query()->where('treatment_id', $id)->orderBy('session_number')->get()->all();
@@ -141,42 +141,42 @@ it('tracks attendance from the sessions, alerts after two misses and completes t
     // 09:00 missed, 11:00 missed → two absences in a row.
     $this->travelTo(CarbonImmutable::parse('2026-11-01 08:30:00', 'UTC'));
     deskUser();
-    $this->patchJson("/api/v1/appointments/{$one->id}/no-show")->assertOk();
-    $this->patchJson("/api/v1/appointments/{$two->id}/no-show")->assertOk();
+    $this->patchJson("/appointments/{$one->id}/no-show")->assertOk();
+    $this->patchJson("/appointments/{$two->id}/no-show")->assertOk();
     Event::assertDispatched(TreatmentAttendanceAlert::class, fn (TreatmentAttendanceAlert $e) => $e->consecutiveAbsences === 2);
 
-    $this->getJson("/api/v1/treatments/{$id}")->assertOk()
+    $this->getJson("/treatments/{$id}")->assertOk()
         ->assertJsonPath('data.progress.absent_sessions', 2)
         ->assertJsonPath('data.progress.attendance_rate', 0)
         ->assertJsonPath('data.progress.consecutive_absences', 2)
         ->assertJsonPath('data.progress.remaining_sessions', 2);
-    $this->getJson('/api/v1/treatments/queue')->assertOk()->assertJsonPath('data.0.id', $id);
+    $this->getJson('/treatments/queue')->assertOk()->assertJsonPath('data.0.id', $id);
 
     // Missed numbers are reused; attending both completes the plan.
-    $three = postKeyed("/api/v1/treatments/{$id}/sessions", sessionAt($therapist->id, '2026-11-01', '13:00'))->assertCreated()->assertJsonPath('data.session_number', 1)->json('data.id');
-    $four = postKeyed("/api/v1/treatments/{$id}/sessions", sessionAt($therapist->id, '2026-11-01', '14:00'))->assertCreated()->assertJsonPath('data.session_number', 2)->json('data.id');
-    $this->getJson('/api/v1/treatments/queue')->assertOk()->assertJsonCount(0, 'data');
+    $three = postKeyed("/treatments/{$id}/sessions", sessionAt($therapist->id, '2026-11-01', '13:00'))->assertCreated()->assertJsonPath('data.session_number', 1)->json('data.id');
+    $four = postKeyed("/treatments/{$id}/sessions", sessionAt($therapist->id, '2026-11-01', '14:00'))->assertCreated()->assertJsonPath('data.session_number', 2)->json('data.id');
+    $this->getJson('/treatments/queue')->assertOk()->assertJsonCount(0, 'data');
 
     // Check-in opens an hour before each session.
     $this->travelTo(CarbonImmutable::parse('2026-11-01 13:30', 'Asia/Bahrain'));
     foreach ([$three, $four] as $session) {
-        $this->patchJson("/api/v1/appointments/{$session}/check-in")->assertOk();
+        $this->patchJson("/appointments/{$session}/check-in")->assertOk();
     }
     signedIn($therapist->id);
     foreach ([$three, $four] as $session) {
-        $this->patchJson("/api/v1/appointments/{$session}/start")->assertOk();
-        $this->patchJson("/api/v1/appointments/{$session}/complete")->assertOk();
+        $this->patchJson("/appointments/{$session}/start")->assertOk();
+        $this->patchJson("/appointments/{$session}/complete")->assertOk();
         if ($session === $three) {
-            $this->getJson("/api/v1/treatments/{$id}")->assertJsonPath('data.status', 'in_progress')->assertJsonPath('data.start_date', '2026-11-01');
+            $this->getJson("/treatments/{$id}")->assertJsonPath('data.status', 'in_progress')->assertJsonPath('data.start_date', '2026-11-01');
         }
     }
-    $this->getJson("/api/v1/treatments/{$id}")->assertOk()
+    $this->getJson("/treatments/{$id}")->assertOk()
         ->assertJsonPath('data.status', 'completed')
         ->assertJsonPath('data.progress.attended_sessions', 2)
         ->assertJsonPath('data.progress.attendance_rate', 50);
-    $this->getJson("/api/v1/treatments/{$id}/sessions")->assertOk()->assertJsonCount(4, 'data')->assertJsonPath('data.2.duration_minutes', 45);
+    $this->getJson("/treatments/{$id}/sessions")->assertOk()->assertJsonCount(4, 'data')->assertJsonPath('data.2.duration_minutes', 45);
     deskUser();
-    postKeyed("/api/v1/treatments/{$id}/sessions", sessionAt($therapist->id, '2026-11-02', '09:00'))->assertStatus(409)->assertJsonPath('error_code', 'TREATMENT_NOT_OPEN');
+    postKeyed("/treatments/{$id}/sessions", sessionAt($therapist->id, '2026-11-02', '09:00'))->assertStatus(409)->assertJsonPath('error_code', 'TREATMENT_NOT_OPEN');
 });
 
 it('cancels a plan with its booked sessions and keeps the priority change reason in the audit trail', function () {
@@ -184,16 +184,16 @@ it('cancels a plan with its booked sessions and keeps the priority change reason
     $therapist = FrontDesk::therapist();
     $patient = FrontDesk::patient();
     signedIn($doctor->id);
-    $treatment = postKeyed('/api/v1/treatments', plan($doctor, $patient->id, ['sessions' => [sessionAt($therapist->id, '2026-11-03', '09:00')]]))->json('data');
+    $treatment = postKeyed('/treatments', plan($doctor, $patient->id, ['sessions' => [sessionAt($therapist->id, '2026-11-03', '09:00')]]))->json('data');
 
-    $this->patchJson("/api/v1/treatments/{$treatment['id']}/priority", ['priority' => 'high', 'reason' => 'Pain worse'])->assertOk()->assertJsonPath('data.priority', 'high');
+    $this->patchJson("/treatments/{$treatment['id']}/priority", ['priority' => 'high', 'reason' => 'Pain worse'])->assertOk()->assertJsonPath('data.priority', 'high');
     $this->assertDatabaseHas('audit_logs', ['auditable_id' => $treatment['id'], 'action' => 'updated']);
-    $this->putJson("/api/v1/treatments/{$treatment['id']}", ['version' => 1, 'planned_sessions' => 6])->assertStatus(409)->assertJsonPath('error_code', 'CONCURRENT_MODIFICATION');
-    $this->putJson("/api/v1/treatments/{$treatment['id']}", ['version' => 2, 'planned_sessions' => 6])->assertOk()->assertJsonPath('data.planned_sessions', 6);
+    $this->putJson("/treatments/{$treatment['id']}", ['version' => 1, 'planned_sessions' => 6])->assertStatus(409)->assertJsonPath('error_code', 'CONCURRENT_MODIFICATION');
+    $this->putJson("/treatments/{$treatment['id']}", ['version' => 2, 'planned_sessions' => 6])->assertOk()->assertJsonPath('data.planned_sessions', 6);
 
-    $this->patchJson("/api/v1/treatments/{$treatment['id']}/cancel", ['reason' => 'Patient moved abroad'])->assertOk()->assertJsonPath('data.status', 'cancelled');
+    $this->patchJson("/treatments/{$treatment['id']}/cancel", ['reason' => 'Patient moved abroad'])->assertOk()->assertJsonPath('data.status', 'cancelled');
     expect(Appointment::query()->where('treatment_id', $treatment['id'])->sole()->status->value)->toBe('cancelled');
-    $this->putJson("/api/v1/treatments/{$treatment['id']}", ['version' => 4, 'title' => 'x'])->assertStatus(409)->assertJsonPath('error_code', 'TREATMENT_NOT_OPEN');
+    $this->putJson("/treatments/{$treatment['id']}", ['version' => 4, 'title' => 'x'])->assertStatus(409)->assertJsonPath('error_code', 'TREATMENT_NOT_OPEN');
 });
 
 it('runs an X-ray order from the work list to an abnormal result with images', function () {
@@ -204,9 +204,9 @@ it('runs an X-ray order from the work list to an abnormal result with images', f
     $consult = FrontDesk::service();
     signedIn($doctor->id);
 
-    $this->postJson('/api/v1/clinical-orders', ['type' => 'xray', 'patient_id' => $patient->id, 'billable_service_id' => $consult->id, 'priority' => 'high'], ['Idempotency-Key' => (string) Str::uuid()])
+    $this->postJson('/clinical-orders', ['type' => 'xray', 'patient_id' => $patient->id, 'billable_service_id' => $consult->id, 'priority' => 'high'], ['Idempotency-Key' => (string) Str::uuid()])
         ->assertUnprocessable()->assertJsonStructure(['errors' => ['billable_service_id']]);
-    $order = postKeyed('/api/v1/clinical-orders', ['type' => 'xray', 'patient_id' => $patient->id, 'billable_service_id' => $xray->id, 'body_part' => 'Chest PA', 'clinical_notes' => 'Cough 3 weeks', 'priority' => 'high'])
+    $order = postKeyed('/clinical-orders', ['type' => 'xray', 'patient_id' => $patient->id, 'billable_service_id' => $xray->id, 'body_part' => 'Chest PA', 'clinical_notes' => 'Cough 3 weeks', 'priority' => 'high'])
         ->assertCreated()
         ->assertJsonPath('data.code', fn (string $c) => str_starts_with($c, 'ORD-'))
         ->assertJsonPath('data.ordered_by', $doctor->id)
@@ -214,23 +214,23 @@ it('runs an X-ray order from the work list to an abnormal result with images', f
         ->json('data');
 
     $tech = signedIn(FrontDesk::employee(UserType::MedicalStaff, RoleName::Nurse)->id);
-    $this->getJson('/api/v1/clinical-orders/worklist?types[]=xray')->assertOk()->assertJsonPath('data.0.id', $order['id']);
-    $this->patchJson("/api/v1/clinical-orders/{$order['id']}/start", ['room_id' => FrontDesk::room('R-9')->id])->assertStatus(409)->assertJsonPath('error_code', 'ROOM_UNAVAILABLE');
-    $this->patchJson("/api/v1/clinical-orders/{$order['id']}/start", ['room_id' => $room->id])->assertOk()->assertJsonPath('data.status', 'in_progress')->assertJsonPath('data.performer.id', $tech->id);
-    $this->patchJson("/api/v1/clinical-orders/{$order['id']}/complete", ['report' => 'Right lower lobe opacity.', 'is_abnormal' => true])
+    $this->getJson('/clinical-orders/worklist?types[]=xray')->assertOk()->assertJsonPath('data.0.id', $order['id']);
+    $this->patchJson("/clinical-orders/{$order['id']}/start", ['room_id' => FrontDesk::room('R-9')->id])->assertStatus(409)->assertJsonPath('error_code', 'ROOM_UNAVAILABLE');
+    $this->patchJson("/clinical-orders/{$order['id']}/start", ['room_id' => $room->id])->assertOk()->assertJsonPath('data.status', 'in_progress')->assertJsonPath('data.performer.id', $tech->id);
+    $this->patchJson("/clinical-orders/{$order['id']}/complete", ['report' => 'Right lower lobe opacity.', 'is_abnormal' => true])
         ->assertUnprocessable()->assertJsonPath('error_code', 'ORDER_RESULT_MISSING');
 
     Attachment::query()->create([
         'attachable_type' => 'clinical_order', 'attachable_id' => $order['id'], 'category' => 'xray_image', 'original_name' => 'chest.png',
         'mime_type' => 'image/png', 'size_bytes' => 10, 'disk' => 'local', 'path' => 'x', 'sha256' => str_repeat('a', 64),
     ]);
-    $this->patchJson("/api/v1/clinical-orders/{$order['id']}/complete", ['report' => 'Right lower lobe opacity.', 'is_abnormal' => true, 'reported_by' => $doctor->id])
+    $this->patchJson("/clinical-orders/{$order['id']}/complete", ['report' => 'Right lower lobe opacity.', 'is_abnormal' => true, 'reported_by' => $doctor->id])
         ->assertOk()->assertJsonPath('data.status', 'completed')->assertJsonPath('data.is_abnormal', true)->assertJsonCount(1, 'data.attachments');
     $this->assertDatabaseHas('notifications', ['template' => 'order.abnormal', 'person_id' => $doctor->id]);
 
     deskUser();
-    $this->getJson("/api/v1/clinical-orders/{$order['id']}")->assertOk()->assertJsonMissingPath('data.report')->assertJsonMissingPath('data.attachments');
-    $this->getJson("/api/v1/patients/{$patient->id}/timeline")->assertOk()->assertJsonFragment(['kind' => 'order']);
+    $this->getJson("/clinical-orders/{$order['id']}")->assertOk()->assertJsonMissingPath('data.report')->assertJsonMissingPath('data.attachments');
+    $this->getJson("/patients/{$patient->id}/timeline")->assertOk()->assertJsonFragment(['kind' => 'order']);
 });
 
 it('closes an internal referral when the referred visit is completed and checks outside referrals', function () {
@@ -239,67 +239,67 @@ it('closes an internal referral when the referred visit is completed and checks 
     $patient = FrontDesk::patient();
     signedIn($gp->id);
 
-    postKeyed('/api/v1/clinical-orders', ['type' => 'referral', 'patient_id' => $patient->id, 'priority' => 'medium'])
+    postKeyed('/clinical-orders', ['type' => 'referral', 'patient_id' => $patient->id, 'priority' => 'medium'])
         ->assertUnprocessable()->assertJsonPath('error_code', 'REFERRAL_TARGET_MISSING');
     $insurer = Company::query()->create(['type' => 'insurer', 'name' => 'Gulf Insurance', 'country_code' => 'BH']);
-    postKeyed('/api/v1/clinical-orders', ['type' => 'referral', 'patient_id' => $patient->id, 'priority' => 'medium', 'referred_to_company_id' => $insurer->id])
+    postKeyed('/clinical-orders', ['type' => 'referral', 'patient_id' => $patient->id, 'priority' => 'medium', 'referred_to_company_id' => $insurer->id])
         ->assertUnprocessable()->assertJsonStructure(['errors' => ['referred_to_company_id']]);
-    $referral = postKeyed('/api/v1/clinical-orders', ['type' => 'referral', 'patient_id' => $patient->id, 'priority' => 'high', 'referred_to_doctor_id' => $cardio->id, 'clinical_notes' => 'Palpitations'])
+    $referral = postKeyed('/clinical-orders', ['type' => 'referral', 'patient_id' => $patient->id, 'priority' => 'high', 'referred_to_doctor_id' => $cardio->id, 'clinical_notes' => 'Palpitations'])
         ->assertCreated()->json('data.id');
 
     deskUser();
-    $visit = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $cardio->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'referral'])->json('data.id');
-    $other = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $gp->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->json('data.id');
-    $this->patchJson("/api/v1/clinical-orders/{$referral}/referral-appointment", ['appointment_id' => $other])->assertUnprocessable();
-    $this->patchJson("/api/v1/clinical-orders/{$referral}/referral-appointment", ['appointment_id' => $visit])->assertOk()->assertJsonPath('data.status', 'in_progress');
+    $visit = postKeyed('/appointments', ['patient_id' => $patient->id, 'provider_id' => $cardio->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'referral'])->json('data.id');
+    $other = postKeyed('/appointments', ['patient_id' => $patient->id, 'provider_id' => $gp->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->json('data.id');
+    $this->patchJson("/clinical-orders/{$referral}/referral-appointment", ['appointment_id' => $other])->assertUnprocessable();
+    $this->patchJson("/clinical-orders/{$referral}/referral-appointment", ['appointment_id' => $visit])->assertOk()->assertJsonPath('data.status', 'in_progress');
 
     $this->travelTo(CarbonImmutable::parse('2026-11-01 09:30', 'Asia/Bahrain'));
-    $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
+    $this->patchJson("/appointments/{$visit}/check-in")->assertOk();
     signedIn($cardio->id);
-    $this->patchJson("/api/v1/appointments/{$visit}/start")->assertOk();
-    $this->patchJson("/api/v1/appointments/{$visit}/complete")->assertOk();
-    $this->getJson("/api/v1/clinical-orders/{$referral}")->assertOk()->assertJsonPath('data.status', 'completed');
+    $this->patchJson("/appointments/{$visit}/start")->assertOk();
+    $this->patchJson("/appointments/{$visit}/complete")->assertOk();
+    $this->getJson("/clinical-orders/{$referral}")->assertOk()->assertJsonPath('data.status', 'completed');
 });
 
 it('documents a visit: vitals at check-in, SOAP notes and ICD-10, signed by the provider, then only addenda', function () {
     $doctor = FrontDesk::doctor();
     $patient = FrontDesk::patient();
     deskUser();
-    $visit = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->json('data.id');
-    $this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertForbidden();
-    $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
+    $visit = postKeyed('/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->json('data.id');
+    $this->getJson("/appointments/{$visit}/medical-record")->assertForbidden();
+    $this->patchJson("/appointments/{$visit}/check-in")->assertOk();
 
     // A nurse sees only her own patients: another provider's visit is not hers to open.
     deskUser(RoleName::Nurse);
-    $this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertNotFound();
+    $this->getJson("/appointments/{$visit}/medical-record")->assertNotFound();
 
     signedIn($doctor->id);
-    $this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertOk()->assertJsonPath('data.exists', false);
-    $this->putJson("/api/v1/appointments/{$visit}/medical-record", ['vitals' => ['temperature_c' => 38.2, 'pulse_bpm' => 96, 'weight_kg' => 80, 'height_cm' => 180, 'spo2_percent' => 97]])
+    $this->getJson("/appointments/{$visit}/medical-record")->assertOk()->assertJsonPath('data.exists', false);
+    $this->putJson("/appointments/{$visit}/medical-record", ['vitals' => ['temperature_c' => 38.2, 'pulse_bpm' => 96, 'weight_kg' => 80, 'height_cm' => 180, 'spo2_percent' => 97]])
         ->assertOk()->assertJsonPath('data.vitals.bmi', 24.7)->assertJsonPath('data.version', 1);
-    $j069 = $this->getJson('/api/v1/icd10?search=upper respiratory')->assertOk()->assertJsonPath('data.0.code', 'J06.9')->json('data.0.id');
-    $r509 = $this->getJson('/api/v1/icd10?search=R50')->assertOk()->assertJsonPath('data.0.code', 'R50.9')->json('data.0.id');
-    $this->getJson('/api/v1/icd10?search=حمى')->assertOk()->assertJsonPath('data.0.code', 'R50.9');
+    $j069 = $this->getJson('/icd10?search=upper respiratory')->assertOk()->assertJsonPath('data.0.code', 'J06.9')->json('data.0.id');
+    $r509 = $this->getJson('/icd10?search=R50')->assertOk()->assertJsonPath('data.0.code', 'R50.9')->json('data.0.id');
+    $this->getJson('/icd10?search=حمى')->assertOk()->assertJsonPath('data.0.code', 'R50.9');
 
-    $this->patchJson("/api/v1/appointments/{$visit}/start")->assertOk();
-    $this->putJson("/api/v1/appointments/{$visit}/medical-record", [
+    $this->patchJson("/appointments/{$visit}/start")->assertOk();
+    $this->putJson("/appointments/{$visit}/medical-record", [
         'version' => 1, 'chief_complaint' => 'Fever and sore throat', 'assessment' => 'Viral URTI', 'plan' => 'Fluids, paracetamol',
         'diagnoses' => [['icd10_code_id' => $j069, 'is_primary' => true], ['icd10_code_id' => $r509, 'is_primary' => true]],
     ])->assertUnprocessable()->assertJsonStructure(['errors' => ['diagnoses']]);
-    $this->putJson("/api/v1/appointments/{$visit}/medical-record", [
+    $this->putJson("/appointments/{$visit}/medical-record", [
         'version' => 1, 'chief_complaint' => 'Fever and sore throat', 'assessment' => 'Viral URTI', 'plan' => 'Fluids, paracetamol',
         'diagnoses' => [['icd10_code_id' => $j069], ['icd10_code_id' => $r509]],
     ])->assertOk()->assertJsonPath('data.diagnoses.0.code', 'J06.9')->assertJsonPath('data.diagnoses.0.is_primary', true)->assertJsonPath('data.vitals.pulse_bpm', 96);
 
     deskUser(RoleName::Nurse);
-    $this->postJson("/api/v1/appointments/{$visit}/medical-record/sign")->assertNotFound();
-    $this->getJson("/api/v1/patients/{$patient->id}")->assertNotFound();
+    $this->postJson("/appointments/{$visit}/medical-record/sign")->assertNotFound();
+    $this->getJson("/patients/{$patient->id}")->assertNotFound();
 
     signedIn($doctor->id);
-    $this->postJson("/api/v1/appointments/{$visit}/medical-record/addenda", ['text' => 'x'])->assertStatus(409)->assertJsonPath('error_code', 'MEDICAL_RECORD_NOT_SIGNED');
-    $this->postJson("/api/v1/appointments/{$visit}/medical-record/sign")->assertOk()->assertJsonPath('data.is_signed', true)->assertJsonPath('data.signed_by.id', $doctor->id);
-    $this->putJson("/api/v1/appointments/{$visit}/medical-record", ['version' => 3, 'plan' => 'Antibiotics'])->assertStatus(409)->assertJsonPath('error_code', 'MEDICAL_RECORD_SIGNED');
-    $this->postJson("/api/v1/appointments/{$visit}/medical-record/addenda", ['text' => 'Throat swab negative.'])->assertCreated()->assertJsonPath('data.addenda.0.text', 'Throat swab negative.');
+    $this->postJson("/appointments/{$visit}/medical-record/addenda", ['text' => 'x'])->assertStatus(409)->assertJsonPath('error_code', 'MEDICAL_RECORD_NOT_SIGNED');
+    $this->postJson("/appointments/{$visit}/medical-record/sign")->assertOk()->assertJsonPath('data.is_signed', true)->assertJsonPath('data.signed_by.id', $doctor->id);
+    $this->putJson("/appointments/{$visit}/medical-record", ['version' => 3, 'plan' => 'Antibiotics'])->assertStatus(409)->assertJsonPath('error_code', 'MEDICAL_RECORD_SIGNED');
+    $this->postJson("/appointments/{$visit}/medical-record/addenda", ['text' => 'Throat swab negative.'])->assertCreated()->assertJsonPath('data.addenda.0.text', 'Throat swab negative.');
     expect(DB::table('medical_records')->value('assessment'))->not->toContain('Viral');
 });
 
@@ -309,28 +309,28 @@ it('requires a valid consent before a procedure that needs one, and revoking it 
     $doctor->forceFill(['consultation_service_id' => $procedure->id])->save();
     $patient = FrontDesk::patient();
     deskUser();
-    $visit = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->json('data.id');
-    $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
+    $visit = postKeyed('/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->json('data.id');
+    $this->patchJson("/appointments/{$visit}/check-in")->assertOk();
 
     signedIn($doctor->id);
-    $this->patchJson("/api/v1/appointments/{$visit}/start")->assertUnprocessable()->assertJsonPath('error_code', 'CONSENT_REQUIRED')->assertJsonPath('meta.consent_type', 'procedure');
+    $this->patchJson("/appointments/{$visit}/start")->assertUnprocessable()->assertJsonPath('error_code', 'CONSENT_REQUIRED')->assertJsonPath('meta.consent_type', 'procedure');
 
     $consent = [
         'type' => 'procedure', 'appointment_id' => $visit, 'description' => 'Excision of skin lesion; risks: bleeding, infection, scar.',
         'signed_by_name' => $patient->person->full_name, 'signer_relationship' => 'self', 'explained_by' => $doctor->id, 'signed_at' => '2026-11-01T07:55:00+03:00',
     ];
-    $this->postJson("/api/v1/patients/{$patient->id}/consents", [...$consent, 'type' => 'general_treatment'])->assertUnprocessable()->assertJsonStructure(['errors' => ['type']]);
-    $id = $this->postJson("/api/v1/patients/{$patient->id}/consents", $consent)->assertCreated()
+    $this->postJson("/patients/{$patient->id}/consents", [...$consent, 'type' => 'general_treatment'])->assertUnprocessable()->assertJsonStructure(['errors' => ['type']]);
+    $id = $this->postJson("/patients/{$patient->id}/consents", $consent)->assertCreated()
         ->assertJsonPath('data.code', fn (string $c) => str_starts_with($c, 'CNS-'))->assertJsonPath('data.is_valid', true)->assertJsonPath('data.scope.kind', 'appointment')->json('data.id');
-    $this->patchJson("/api/v1/appointments/{$visit}/start")->assertOk();
+    $this->patchJson("/appointments/{$visit}/start")->assertOk();
 
-    $this->patchJson("/api/v1/consents/{$id}/revoke", ['reason' => 'Patient changed their mind'])->assertOk()->assertJsonPath('data.is_valid', false);
-    $this->getJson("/api/v1/patients/{$patient->id}/consents")->assertOk()->assertJsonCount(1, 'data');
+    $this->patchJson("/consents/{$id}/revoke", ['reason' => 'Patient changed their mind'])->assertOk()->assertJsonPath('data.is_valid', false);
+    $this->getJson("/patients/{$patient->id}/consents")->assertOk()->assertJsonCount(1, 'data');
 
     $child = FrontDesk::patient();
     $child->person->forceFill(['date_of_birth' => '2016-05-05'])->save();
     deskUser();
-    $this->postJson("/api/v1/patients/{$child->id}/consents", [...$consent, 'type' => 'general_treatment', 'appointment_id' => null, 'signed_by_name' => 'Child'])
+    $this->postJson("/patients/{$child->id}/consents", [...$consent, 'type' => 'general_treatment', 'appointment_id' => null, 'signed_by_name' => 'Child'])
         ->assertUnprocessable()->assertJsonStructure(['errors' => ['signer_relationship']]);
 });
 
@@ -341,42 +341,42 @@ it('opens a patient\'s whole history to the doctors caring for them, keeps writi
     $notMine = FrontDesk::patient();
     $admin = User::factory()->withRole(RoleName::Admin->value)->create();
     deskUser();
-    $omarsVisit = postKeyed('/api/v1/appointments', ['patient_id' => $shared->id, 'provider_id' => $omar->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->assertCreated()->json('data.id');
-    $sarasVisit = postKeyed('/api/v1/appointments', ['patient_id' => $shared->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'phone'])->assertCreated()->json('data.id');
-    postKeyed('/api/v1/appointments', ['patient_id' => $notMine->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->assertCreated();
+    $omarsVisit = postKeyed('/appointments', ['patient_id' => $shared->id, 'provider_id' => $omar->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'phone'])->assertCreated()->json('data.id');
+    $sarasVisit = postKeyed('/appointments', ['patient_id' => $shared->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'phone'])->assertCreated()->json('data.id');
+    postKeyed('/appointments', ['patient_id' => $notMine->id, 'provider_id' => $sara->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->assertCreated();
     $this->travelTo(CarbonImmutable::parse('2026-11-01 09:30', 'Asia/Bahrain'));
     foreach ([$omarsVisit, $sarasVisit] as $visit) {
-        $this->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
+        $this->patchJson("/appointments/{$visit}/check-in")->assertOk();
     }
     signedIn($sara->id);
-    $this->patchJson("/api/v1/appointments/{$sarasVisit}/start")->assertOk();
-    $this->putJson("/api/v1/appointments/{$sarasVisit}/medical-record", ['chief_complaint' => 'Chest pain', 'assessment' => 'Musculoskeletal'])->assertOk();
+    $this->patchJson("/appointments/{$sarasVisit}/start")->assertOk();
+    $this->putJson("/appointments/{$sarasVisit}/medical-record", ['chief_complaint' => 'Chest pain', 'assessment' => 'Musculoskeletal'])->assertOk();
 
     // Omar sees his patient's visit with Sara and her notes, but cannot write in them.
     signedIn($omar->id);
-    $this->getJson("/api/v1/appointments/{$sarasVisit}/medical-record")->assertOk()->assertJsonPath('data.assessment', 'Musculoskeletal');
-    $this->putJson("/api/v1/appointments/{$sarasVisit}/medical-record", ['version' => 1, 'plan' => 'Mine now'])->assertForbidden();
-    expect(collect($this->getJson("/api/v1/patients/{$shared->id}/timeline")->assertOk()->json('data'))->pluck('id'))->toContain($sarasVisit);
+    $this->getJson("/appointments/{$sarasVisit}/medical-record")->assertOk()->assertJsonPath('data.assessment', 'Musculoskeletal');
+    $this->putJson("/appointments/{$sarasVisit}/medical-record", ['version' => 1, 'plan' => 'Mine now'])->assertForbidden();
+    expect(collect($this->getJson("/patients/{$shared->id}/timeline")->assertOk()->json('data'))->pluck('id'))->toContain($sarasVisit);
 
     // Family history is kept by the care team, shown with medical rights.
-    $version = $this->getJson("/api/v1/patients/{$shared->id}")->json('data.version');
-    $this->putJson("/api/v1/patients/{$shared->id}/medical-history", ['version' => $version, 'family_history' => 'Father: type 2 diabetes', 'surgical_history' => 'Appendectomy 2010'])
+    $version = $this->getJson("/patients/{$shared->id}")->json('data.version');
+    $this->putJson("/patients/{$shared->id}/medical-history", ['version' => $version, 'family_history' => 'Father: type 2 diabetes', 'surgical_history' => 'Appendectomy 2010'])
         ->assertOk()->assertJsonPath('data.family_history', 'Father: type 2 diabetes')->assertJsonPath('data.surgical_history', 'Appendectomy 2010');
 
     // Sara's other patient is closed to Omar until he breaks the glass with a reason; it is audited and the admin told.
-    $this->getJson("/api/v1/patients/{$notMine->id}")->assertNotFound();
+    $this->getJson("/patients/{$notMine->id}")->assertNotFound();
     $code = $notMine->person->code;
-    $this->getJson("/api/v1/patients/lookup?code={$code}")->assertOk()->assertJsonPath('data.in_care', false)->assertJsonMissingPath('data.allergies');
-    $this->postJson("/api/v1/patients/{$notMine->id}/emergency-access", ['reason' => 'short'])->assertUnprocessable();
-    $this->postJson("/api/v1/patients/{$notMine->id}/emergency-access", ['reason' => 'Collapsed in the waiting room, needs allergies'])
+    $this->getJson("/patients/lookup?code={$code}")->assertOk()->assertJsonPath('data.in_care', false)->assertJsonMissingPath('data.allergies');
+    $this->postJson("/patients/{$notMine->id}/emergency-access", ['reason' => 'short'])->assertUnprocessable();
+    $this->postJson("/patients/{$notMine->id}/emergency-access", ['reason' => 'Collapsed in the waiting room, needs allergies'])
         ->assertCreated()->assertJsonPath('data.patient.id', $notMine->id);
-    $this->getJson("/api/v1/patients/{$notMine->id}")->assertOk();
+    $this->getJson("/patients/{$notMine->id}")->assertOk();
     expect(DB::table('audit_logs')->where('action', 'emergency_access')->where('user_id', $omar->id)->exists())->toBeTrue()
         ->and(DB::table('notifications')->where('template', 'patient.emergency_access')->where('person_id', $admin->id)->exists())->toBeTrue();
 
     // The grant ends after the shift.
     $this->travel(13)->hours();
-    $this->getJson("/api/v1/patients/{$notMine->id}")->assertNotFound();
+    $this->getJson("/patients/{$notMine->id}")->assertNotFound();
 });
 
 it('shows health, surgical and family history and past visit notes to doctors only', function () {
@@ -384,23 +384,23 @@ it('shows health, surgical and family history and past visit notes to doctors on
     $patient = FrontDesk::patient();
     signedIn($doctor->id);
     deskUser();
-    $visit = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'phone'])->json('data.id');
+    $visit = postKeyed('/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '10:00', 'source' => 'phone'])->json('data.id');
     // The front desk cannot write histories (it never sees them).
-    $this->putJson("/api/v1/patients/{$patient->id}", ['family_history' => 'Father: diabetes'])->assertUnprocessable()->assertJsonValidationErrors(['family_history']);
+    $this->putJson("/patients/{$patient->id}", ['family_history' => 'Father: diabetes'])->assertUnprocessable()->assertJsonValidationErrors(['family_history']);
 
     signedIn($doctor->id);
-    $this->putJson("/api/v1/patients/{$patient->id}/medical-history", ['family_history' => 'Father: type 2 diabetes', 'surgical_history' => 'Appendectomy 2015', 'version' => $patient->refresh()->version])->assertOk();
-    $this->getJson("/api/v1/patients/{$patient->id}")->assertOk()
+    $this->putJson("/patients/{$patient->id}/medical-history", ['family_history' => 'Father: type 2 diabetes', 'surgical_history' => 'Appendectomy 2015', 'version' => $patient->refresh()->version])->assertOk();
+    $this->getJson("/patients/{$patient->id}")->assertOk()
         ->assertJsonPath('data.family_history', 'Father: type 2 diabetes')->assertJsonPath('data.surgical_history', 'Appendectomy 2015');
 
     // A nurse whose own session it is sees the patient, the allergies — but no history and no visit notes.
     $nurse = FrontDesk::employee(UserType::MedicalStaff, RoleName::Nurse);
     Appointment::query()->whereKey($visit)->update(['provider_id' => $nurse->id]);
     signedIn($nurse->id);
-    $file = $this->getJson("/api/v1/patients/{$patient->id}")->assertOk()->json('data');
+    $file = $this->getJson("/patients/{$patient->id}")->assertOk()->json('data');
     expect($file)->toHaveKey('allergies')->not->toHaveKeys(['family_history', 'surgical_history', 'chronic_conditions']);
-    expect($this->getJson("/api/v1/appointments/{$visit}/medical-record")->assertOk()->json('data'))->not->toHaveKeys(['assessment', 'diagnoses']);
-    $this->putJson("/api/v1/patients/{$patient->id}/medical-history", ['family_history' => 'x', 'version' => $patient->refresh()->version])->assertForbidden();
+    expect($this->getJson("/appointments/{$visit}/medical-record")->assertOk()->json('data'))->not->toHaveKeys(['assessment', 'diagnoses']);
+    $this->putJson("/patients/{$patient->id}/medical-history", ['family_history' => 'x', 'version' => $patient->refresh()->version])->assertForbidden();
 });
 
 it('issues sick leave at a visit for its patient, printable, verifiable and cancellable by the issuing doctor', function () {
@@ -408,37 +408,37 @@ it('issues sick leave at a visit for its patient, printable, verifiable and canc
     $other = FrontDesk::doctor();
     $patient = FrontDesk::patient();
     $desk = deskUser();
-    $visit = postKeyed('/api/v1/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->json('data.id');
+    $visit = postKeyed('/appointments', ['patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation', 'scheduled_date' => '2026-11-01', 'start_time' => '11:00', 'source' => 'phone'])->json('data.id');
     $leave = ['start_date' => '2026-11-01', 'end_date' => '2026-11-03', 'reason' => 'Acute gastroenteritis'];
 
     // Not before the patient arrives, not by another doctor, nor by a nurse.
     signedIn($doctor->id);
-    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", $leave)->assertStatus(409);
+    $this->postJson("/appointments/{$visit}/sick-leaves", $leave)->assertStatus(409);
     Appointment::query()->whereKey($visit)->update(['status' => 'in_progress']);
     deskUser(RoleName::Nurse);
-    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", $leave)->assertForbidden();
+    $this->postJson("/appointments/{$visit}/sick-leaves", $leave)->assertForbidden();
 
     signedIn($doctor->id);
-    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", [...$leave, 'start_date' => '2026-10-20'])->assertUnprocessable()->assertJsonValidationErrors(['start_date']);
-    $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", [...$leave, 'end_date' => '2026-12-31'])->assertUnprocessable()->assertJsonValidationErrors(['end_date']);
-    $issued = $this->postJson("/api/v1/appointments/{$visit}/sick-leaves", $leave)->assertCreated()
+    $this->postJson("/appointments/{$visit}/sick-leaves", [...$leave, 'start_date' => '2026-10-20'])->assertUnprocessable()->assertJsonValidationErrors(['start_date']);
+    $this->postJson("/appointments/{$visit}/sick-leaves", [...$leave, 'end_date' => '2026-12-31'])->assertUnprocessable()->assertJsonValidationErrors(['end_date']);
+    $issued = $this->postJson("/appointments/{$visit}/sick-leaves", $leave)->assertCreated()
         ->assertJsonPath('data.days', 3)->assertJsonPath('data.reason', 'Acute gastroenteritis')->assertJsonPath('data.show_reason', false)->json('data');
     expect($issued['code'])->toStartWith('SLV-');
 
     // The front desk prints it without the reason; the patient sees it with the reason.
     Sanctum::actingAs($desk);
-    $this->getJson("/api/v1/sick-leaves/{$issued['id']}")->assertOk()->assertJsonMissingPath('data.reason');
+    $this->getJson("/sick-leaves/{$issued['id']}")->assertOk()->assertJsonMissingPath('data.reason');
     Sanctum::actingAs(User::factory()->state(['id' => $patient->id, 'user_type' => UserType::Patient])->withRole(RoleName::Patient->value)->create());
-    $this->getJson('/api/v1/sick-leaves')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.reason', 'Acute gastroenteritis');
+    $this->getJson('/sick-leaves')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.reason', 'Acute gastroenteritis');
     signedIn($other->id);
-    $this->getJson("/api/v1/sick-leaves/{$issued['id']}")->assertNotFound();
+    $this->getJson("/sick-leaves/{$issued['id']}")->assertNotFound();
 
     // An employer checks it by its QR: dates only.
     $payload = app(CodeServiceInterface::class)->payloadFor('sick_leave', $issued['code']);
-    $public = $this->getJson('/api/v1/public/verify/'.$payload)->assertOk()->json('data');
+    $public = $this->getJson('/public/verify/'.$payload)->assertOk()->json('data');
     expect(json_encode($public))->toContain('2026-11-03')->not->toContain('gastroenteritis');
 
     signedIn($doctor->id);
-    $this->patchJson("/api/v1/sick-leaves/{$issued['id']}/cancel", ['reason' => 'Issued in error'])->assertOk()->assertJsonPath('data.is_cancelled', true);
-    $this->patchJson("/api/v1/sick-leaves/{$issued['id']}/cancel", ['reason' => 'Again'])->assertStatus(409);
+    $this->patchJson("/sick-leaves/{$issued['id']}/cancel", ['reason' => 'Issued in error'])->assertOk()->assertJsonPath('data.is_cancelled', true);
+    $this->patchJson("/sick-leaves/{$issued['id']}/cancel", ['reason' => 'Again'])->assertStatus(409);
 });

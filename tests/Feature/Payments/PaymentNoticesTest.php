@@ -37,14 +37,14 @@ function noticePost(string $url, array $payload = []): TestResponse
 function noticeInvoice(Patient $patient): string
 {
     Sanctum::actingAs(User::factory()->withRole(RoleName::Receptionist->value)->create());
-    $visit = noticePost('/api/v1/appointments', [
+    $visit = noticePost('/appointments', [
         'patient_id' => $patient->id, 'provider_id' => FrontDesk::doctor()->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-01', 'start_time' => '08:30', 'source' => 'walk_in',
     ])->assertCreated()->json('data.id');
-    test()->patchJson("/api/v1/appointments/{$visit}/check-in")->assertOk();
-    $draft = test()->postJson('/api/v1/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $visit])->assertOk()->json('data.id');
+    test()->patchJson("/appointments/{$visit}/check-in")->assertOk();
+    $draft = test()->postJson('/billing/invoices/charge', ['source_type' => 'appointment', 'source_id' => $visit])->assertOk()->json('data.id');
 
-    return noticePost("/api/v1/billing/invoices/{$draft}/issue")->assertOk()->json('data.id');
+    return noticePost("/billing/invoices/{$draft}/issue")->assertOk()->json('data.id');
 }
 
 function notices(string $template, string $personId): int
@@ -56,7 +56,7 @@ it('sends the patient a receipt notice for each payment they make', function () 
     $patient = FrontDesk::patient();
     $invoice = noticeInvoice($patient);
     Sanctum::actingAs(User::factory()->withRole(RoleName::Cashier->value)->create());
-    noticePost('/api/v1/billing/payments', ['invoice_id' => $invoice, 'amount' => '5.000', 'method' => 'card'])->assertCreated();
+    noticePost('/billing/payments', ['invoice_id' => $invoice, 'amount' => '5.000', 'method' => 'card'])->assertCreated();
 
     expect(notices('payment.received', $patient->id))->toBeGreaterThan(0);
     $body = DB::table('notifications')->where('template', 'payment.received')->where('person_id', $patient->id)->value('body');
@@ -80,7 +80,7 @@ it('reminds patients of their own part on schedule: first after 3 days, then wee
 
     expect(notices('payment.reminder', $patient->id))->toBeGreaterThanOrEqual(3);
     Sanctum::actingAs(User::factory()->withRole(RoleName::Receptionist->value)->create());
-    $this->getJson("/api/v1/billing/invoices/{$invoice}")->assertJsonPath('data.reminders_sent', 3);
+    $this->getJson("/billing/invoices/{$invoice}")->assertJsonPath('data.reminders_sent', 3);
 });
 
 it('never reminds a patient of the insurer share, and lets staff send one by hand at most daily', function () {
@@ -90,14 +90,14 @@ it('never reminds a patient of the insurer share, and lets staff send one by han
     BillableService::query()->update(['is_insurable' => true]);
     $invoice = noticeInvoice($patient);
 
-    $this->postJson("/api/v1/billing/invoices/{$invoice}/remind")->assertOk()->assertJsonPath('data.reminders_sent', 1);
-    $this->postJson("/api/v1/billing/invoices/{$invoice}/remind")->assertStatus(409)->assertJsonPath('error_code', 'REMINDER_NOT_ALLOWED');
+    $this->postJson("/billing/invoices/{$invoice}/remind")->assertOk()->assertJsonPath('data.reminders_sent', 1);
+    $this->postJson("/billing/invoices/{$invoice}/remind")->assertStatus(409)->assertJsonPath('error_code', 'REMINDER_NOT_ALLOWED');
     expect(DB::table('notifications')->where('template', 'payment.reminder')->value('body'))->toContain('3.000');
 
     // The co-pay is paid: only the insurer's share is left, so nobody reminds the patient.
-    noticePost('/api/v1/billing/payments', ['invoice_id' => $invoice, 'amount' => '3.000', 'method' => 'card'])->assertCreated();
+    noticePost('/billing/payments', ['invoice_id' => $invoice, 'amount' => '3.000', 'method' => 'card'])->assertCreated();
     $this->travel(2)->days();
-    $this->postJson("/api/v1/billing/invoices/{$invoice}/remind")->assertStatus(409);
+    $this->postJson("/billing/invoices/{$invoice}/remind")->assertStatus(409);
     $this->travel(10)->days();
     expect(app(PaymentReminderServiceInterface::class)->sendDue())->toBe(0);
 });

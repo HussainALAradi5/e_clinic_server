@@ -40,7 +40,7 @@ function walletPost(string $url, array $payload = [], ?string $key = null): Test
 
 function walletUrl(Patient $patient, string $path = ''): string
 {
-    return "/api/v1/billing/patients/{$patient->id}/wallet".($path === '' ? '' : "/{$path}");
+    return "/billing/patients/{$patient->id}/wallet".($path === '' ? '' : "/{$path}");
 }
 
 /** Issued invoice (15.000) of one completed consultation of the patient. */
@@ -48,18 +48,18 @@ function walletInvoice(Patient $patient): array
 {
     $doctor = FrontDesk::doctor();
     walletActAs(RoleName::Receptionist);
-    $id = walletPost('/api/v1/appointments', [
+    $id = walletPost('/appointments', [
         'patient_id' => $patient->id, 'provider_id' => $doctor->id, 'type' => 'consultation',
         'scheduled_date' => '2026-11-01', 'start_time' => '09:00', 'source' => 'walk_in',
     ])->assertCreated()->json('data.id');
-    test()->patchJson("/api/v1/appointments/{$id}/check-in")->assertOk();
+    test()->patchJson("/appointments/{$id}/check-in")->assertOk();
     Sanctum::actingAs(User::query()->findOrFail($doctor->id));
-    test()->patchJson("/api/v1/appointments/{$id}/start")->assertOk();
-    test()->patchJson("/api/v1/appointments/{$id}/complete", [])->assertOk();
+    test()->patchJson("/appointments/{$id}/start")->assertOk();
+    test()->patchJson("/appointments/{$id}/complete", [])->assertOk();
     walletActAs(RoleName::Receptionist);
-    $draft = test()->getJson("/api/v1/billing/invoices?filter[patient_id][eq]={$patient->id}")->json('data.0');
+    $draft = test()->getJson("/billing/invoices?filter[patient_id][eq]={$patient->id}")->json('data.0');
 
-    return walletPost("/api/v1/billing/invoices/{$draft['id']}/issue")->assertOk()->json('data');
+    return walletPost("/billing/invoices/{$draft['id']}/issue")->assertOk()->json('data');
 }
 
 it('takes a card deposit once per key, posts it to patient deposits and shows the balance', function () {
@@ -92,9 +92,9 @@ it('keeps deposits within the minimum, the maximum balance and the allowed metho
     walletPost(walletUrl($patient, 'deposits'), ['amount' => '5.000', 'method' => 'bank_transfer'])->assertStatus(422)->assertJsonValidationErrors('reference_number');
     walletPost(walletUrl($patient, 'deposits'), ['amount' => '5.000', 'method' => 'cash'])->assertStatus(409)->assertJsonPath('error_code', 'NO_OPEN_CASH_SESSION');
 
-    $this->postJson('/api/v1/finance/cash-sessions', ['opening_float' => '0'])->assertCreated();
+    $this->postJson('/finance/cash-sessions', ['opening_float' => '0'])->assertCreated();
     walletPost(walletUrl($patient, 'deposits'), ['amount' => '5.000', 'method' => 'cash'])->assertCreated();
-    $this->getJson('/api/v1/finance/cash-sessions/current')->assertJsonPath('data.report.expected.amount', '5.000');
+    $this->getJson('/finance/cash-sessions/current')->assertJsonPath('data.report.expected.amount', '5.000');
 });
 
 it('lets only the accountant pay money back and adjust, with reasons, limits and no negative balance', function () {
@@ -128,17 +128,17 @@ it('pays an invoice from the balance within what it holds, and a voided payment 
     $invoice = walletInvoice($patient);
     walletPost(walletUrl($patient, 'deposits'), ['amount' => '10.000', 'method' => 'card'])->assertCreated();
 
-    walletPost("/api/v1/billing/invoices/{$invoice['id']}/pay-from-balance", ['amount' => '12.000'])
+    walletPost("/billing/invoices/{$invoice['id']}/pay-from-balance", ['amount' => '12.000'])
         ->assertStatus(409)->assertJsonPath('error_code', 'WALLET_INSUFFICIENT');
-    $payment = walletPost("/api/v1/billing/invoices/{$invoice['id']}/pay-from-balance")->assertCreated()
+    $payment = walletPost("/billing/invoices/{$invoice['id']}/pay-from-balance")->assertCreated()
         ->assertJsonPath('data.method', 'patient_balance')
         ->assertJsonPath('data.amount.amount', '10.000')
         ->json('data');
-    $this->getJson("/api/v1/billing/invoices/{$invoice['id']}")->assertJsonPath('data.balance_due.amount', '5.000');
+    $this->getJson("/billing/invoices/{$invoice['id']}")->assertJsonPath('data.balance_due.amount', '5.000');
     $this->getJson(walletUrl($patient))->assertJsonPath('meta.balance.amount', '0.000');
 
     walletActAs(RoleName::Accountant);
-    $this->postJson("/api/v1/billing/payments/{$payment['id']}/void", ['reason' => 'Wrong invoice'])->assertOk();
+    $this->postJson("/billing/payments/{$payment['id']}/void", ['reason' => 'Wrong invoice'])->assertOk();
     $this->getJson(walletUrl($patient))->assertJsonPath('meta.balance.amount', '10.000')
         ->assertJsonPath('data.0.type', 'payment_reversal');
 });

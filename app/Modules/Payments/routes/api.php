@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Payments & Billing API (prefix /api/v1/billing) — service catalog, invoices, payments, refunds
+| Payments & Billing API (prefix /billing) — service catalog, invoices, payments, refunds
 |--------------------------------------------------------------------------
 */
 

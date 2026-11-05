@@ -24,7 +24,7 @@ beforeEach(function () {
             : $w->cancel($reason), needsReason: true)
         ->exportable(JsonResource::class, formats: [ExportFormat::Csv, ExportFormat::Xlsx]);
 
-    Route::middleware(['api', 'auth:sanctum'])->prefix('api/v1')->group(fn () => Route::bulkActions('widgets', 'widgets'));
+    Route::middleware(['api', 'auth:sanctum'])->group(fn () => Route::bulkActions('widgets', 'widgets'));
 });
 
 it('archives selected ids and reports per-record failures', function () {
@@ -32,7 +32,7 @@ it('archives selected ids and reports per-record failures', function () {
     $a = Widget::create(['name' => 'A']);
     $b = Widget::create(['name' => 'B']);
 
-    $this->postJson('/api/v1/widgets/bulk', ['action' => 'archive', 'ids' => [$a->id, $b->id, 'missing-id']])
+    $this->postJson('/widgets/bulk', ['action' => 'archive', 'ids' => [$a->id, $b->id, 'missing-id']])
         ->assertOk()
         ->assertJsonPath('data.requested', 3)
         ->assertJsonPath('data.succeeded', 2)
@@ -50,7 +50,7 @@ it('runs business actions on everything matching a filter, keeping failures isol
     Widget::create(['name' => 'Other', 'priority' => 2])->start();
     Widget::create(['name' => 'Excluded', 'priority' => 1]);
 
-    $this->postJson('/api/v1/widgets/bulk', [
+    $this->postJson('/widgets/bulk', [
         'action' => 'cancel',
         'reason' => 'Clinic closed',
         'filter' => ['filter' => ['status' => 'pending', 'id' => ['nin' => [Widget::where('name', 'Excluded')->value('id')]]]],
@@ -66,7 +66,7 @@ it('previews with dry_run without changing anything', function () {
     actingWith('widgets.read_all', 'widgets.delete');
     $widget = Widget::create(['name' => 'A']);
 
-    $this->postJson('/api/v1/widgets/bulk', ['action' => 'delete', 'ids' => [$widget->id], 'dry_run' => true])
+    $this->postJson('/widgets/bulk', ['action' => 'delete', 'ids' => [$widget->id], 'dry_run' => true])
         ->assertOk()->assertJsonPath('data.succeeded', 1)->assertJsonPath('data.dry_run', true);
 
     expect(Widget::count())->toBe(1);
@@ -76,11 +76,11 @@ it('refuses actions the user may not run and validates the request', function ()
     actingWith('widgets.read_all', 'widgets.write');
     $widget = Widget::create(['name' => 'A']);
 
-    $this->postJson('/api/v1/widgets/bulk', ['action' => 'start', 'ids' => [$widget->id]])
+    $this->postJson('/widgets/bulk', ['action' => 'start', 'ids' => [$widget->id]])
         ->assertForbidden()->assertJsonPath('error_code', 'BULK_ACTION_NOT_ALLOWED');
-    $this->postJson('/api/v1/widgets/bulk', ['action' => 'cancel', 'ids' => [$widget->id]])
+    $this->postJson('/widgets/bulk', ['action' => 'cancel', 'ids' => [$widget->id]])
         ->assertStatus(422)->assertJsonStructure(['errors' => ['reason']]);
-    $this->postJson('/api/v1/widgets/bulk', ['action' => 'archive', 'ids' => [$widget->id], 'filter' => ['search' => 'A']])
+    $this->postJson('/widgets/bulk', ['action' => 'archive', 'ids' => [$widget->id], 'filter' => ['search' => 'A']])
         ->assertStatus(422);
 });
 
@@ -89,7 +89,7 @@ it('only lets owners act on their own records', function () {
     $mine = Widget::create(['name' => 'Mine', 'owner_id' => $user->id]);
     $theirs = Widget::create(['name' => 'Theirs']);
 
-    $this->postJson('/api/v1/widgets/bulk', ['action' => 'archive', 'ids' => [$mine->id, $theirs->id]])
+    $this->postJson('/widgets/bulk', ['action' => 'archive', 'ids' => [$mine->id, $theirs->id]])
         ->assertOk()->assertJsonPath('data.succeeded', 1)->assertJsonPath('data.failed.0.code', 'FORBIDDEN');
 });
 
@@ -100,7 +100,7 @@ it('offers code columns as named choices built from the values in use', function
     Widget::create(['name' => 'C', 'status' => 'cancelled', 'cancellation_reason' => 'out_of_stock']);
     Widget::create(['name' => 'D', 'status' => 'pending']);
 
-    $this->getJson('/api/v1/meta/resources/widgets')
+    $this->getJson('/meta/resources/widgets')
         ->assertOk()
         ->assertJsonPath('data.filters.5.type', 'choice')
         ->assertJsonPath('data.filters.5.options', [
@@ -122,7 +122,7 @@ it('names file types in plain words', function (string $mime, string $label) {
 it('publishes the resource schema filtered by permissions', function () {
     actingWith('widgets.read_all', 'widgets.write', 'widgets.export');
 
-    $this->getJson('/api/v1/meta/resources/widgets')
+    $this->getJson('/meta/resources/widgets')
         ->assertOk()
         ->assertJsonPath('data.resource', 'widgets')
         ->assertJsonPath('data.filters.0', ['field' => 'status', 'label' => 'Status', 'type' => 'enum', 'operators' => ['eq', 'ne', 'in', 'nin'], 'enum' => 'GenericStatus'])
@@ -139,19 +139,19 @@ it('publishes the resource schema filtered by permissions', function () {
         ->assertJsonPath('data.bulk_actions.*.name', ['archive', 'unarchive', 'cancel'])
         ->assertJsonPath('data.export_formats', ['csv', 'xlsx']);
 
-    $this->getJson('/api/v1/meta/resources/unknown')->assertNotFound()->assertJsonPath('error_code', 'UNKNOWN_RESOURCE');
+    $this->getJson('/meta/resources/unknown')->assertNotFound()->assertJsonPath('error_code', 'UNKNOWN_RESOURCE');
 });
 
 it('hides resources the user cannot read', function () {
     actingWith('other.read_all');
 
-    $this->getJson('/api/v1/meta/resources/widgets')->assertNotFound();
+    $this->getJson('/meta/resources/widgets')->assertNotFound();
 });
 
 it('publishes enums with labels and transitions', function () {
     actingWith();
 
-    $this->getJson('/api/v1/meta/enums')
+    $this->getJson('/meta/enums')
         ->assertOk()
         ->assertJsonPath('data.GenericStatus.options.0', ['value' => 'pending', 'label' => 'Pending'])
         ->assertJsonPath('data.GenericStatus.transitions.pending', ['in_progress', 'cancelled'])

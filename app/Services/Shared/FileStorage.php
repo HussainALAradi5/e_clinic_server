@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 
 /**
  * Private file storage (attachments, task results). Files get random UUID paths and are only reachable through
- * short-lived signed links (`GET /api/v1/files?t=…`), so no URL ever exposes a storage path or works for long.
+ * short-lived signed links (`GET /files?t=…`), so no URL ever exposes a storage path or works for long.
  */
 final class FileStorage
 {

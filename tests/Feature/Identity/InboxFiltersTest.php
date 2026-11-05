@@ -41,7 +41,7 @@ it('filters my inbox on the server by read state, what it is about, text and dat
     inboxNotice($other, 'ticket.opened', 'Not mine', 'support_ticket', false, '2026-10-30 09:00:00');
 
     Sanctum::actingAs($me);
-    $subjects = fn (string $query): array => collect($this->getJson('/api/v1/notifications/mine'.$query)->assertOk()->json('data'))->pluck('subject')->all();
+    $subjects = fn (string $query): array => collect($this->getJson('/notifications/mine'.$query)->assertOk()->json('data'))->pluck('subject')->all();
 
     expect($subjects(''))->toHaveCount(3)->not->toContain('Not mine')
         ->and($subjects('?read=unread'))->toEqualCanonicalizing(['Ticket TKT-1 resolved', 'Omar mentioned you'])
@@ -49,7 +49,7 @@ it('filters my inbox on the server by read state, what it is about, text and dat
         ->and($subjects('?'.http_build_query(['filter' => ['and' => [['related_type' => ['eq' => 'support_ticket']]]]])))->toHaveCount(2)
         ->and($subjects('?search=mentioned'))->toBe(['Omar mentioned you'])
         ->and($subjects('?date_field=created_at&date_from=2026-10-29&date_to=2026-10-29'))->toBe(['New reply on ticket TKT-1']);
-    $this->getJson('/api/v1/notifications/mine?per_page=2')->assertOk()->assertJsonCount(2, 'data')
+    $this->getJson('/notifications/mine?per_page=2')->assertOk()->assertJsonCount(2, 'data')
         ->assertJsonPath('meta.total', 3)->assertJsonPath('meta.unread_count', 2);
-    $this->getJson('/api/v1/notifications/mine?read=maybe')->assertUnprocessable();
+    $this->getJson('/notifications/mine?read=maybe')->assertUnprocessable();
 });

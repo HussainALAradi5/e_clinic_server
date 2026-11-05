@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Reference Data API (prefix /api/v1) — Countries, Addresses, Companies
+| Reference Data API — Countries, Addresses, Companies
 |--------------------------------------------------------------------------
 */
 

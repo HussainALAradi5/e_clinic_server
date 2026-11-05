@@ -17,7 +17,7 @@ function pdf(string $name = 'report.pdf', string $body = 'hello'): UploadedFile
 
 function uploadTo(Person $person, array $files, string $category = 'insurance_document')
 {
-    return test()->post('/api/v1/attachments', [
+    return test()->post('/attachments', [
         'files' => $files,
         'attachable_type' => 'person',
         'attachable_id' => $person->id,
@@ -73,10 +73,10 @@ it('lists files of a record and gives a signed download link', function () {
     $person = Person::factory()->create();
     $id = uploadTo($person, [pdf()])->json('data.saved.0.id');
 
-    $this->getJson("/api/v1/attachments?attachable_type=person&attachable_id={$person->id}")
+    $this->getJson("/attachments?attachable_type=person&attachable_id={$person->id}")
         ->assertOk()->assertJsonPath('data.0.id', $id)->assertJsonPath('meta.total', 1);
 
-    $url = $this->getJson("/api/v1/attachments/{$id}/download")->assertOk()->json('data.url');
+    $url = $this->getJson("/attachments/{$id}/download")->assertOk()->json('data.url');
     expect($this->get($url)->assertOk()->streamedContent())->toStartWith('%PDF');
 });
 
@@ -85,13 +85,13 @@ it('gates sensitive files behind patients.view_medical and unscanned files behin
     $person = Person::factory()->create();
     $id = uploadTo($person, [pdf()], 'medical_certificate')->json('data.saved.0.id');
 
-    $this->getJson("/api/v1/attachments/{$id}/download")->assertForbidden();
+    $this->getJson("/attachments/{$id}/download")->assertForbidden();
 
     grantPermissions($user, 'patients.view_medical');
-    $this->getJson("/api/v1/attachments/{$id}/download")->assertOk();
+    $this->getJson("/attachments/{$id}/download")->assertOk();
 
     Attachment::query()->whereKey($id)->update(['scan_status' => 'pending']);
-    $this->getJson("/api/v1/attachments/{$id}/download")->assertStatus(409)->assertJsonPath('error_code', 'ATTACHMENT_NOT_READY');
+    $this->getJson("/attachments/{$id}/download")->assertStatus(409)->assertJsonPath('error_code', 'ATTACHMENT_NOT_READY');
 });
 
 it('uploads large files in resumable chunks', function () {
@@ -99,21 +99,21 @@ it('uploads large files in resumable chunks', function () {
     $person = Person::factory()->create();
     $content = "%PDF-1.4\n".str_repeat('A', 3000)."\n%%EOF";
 
-    $upload = $this->postJson('/api/v1/attachments/uploads', [
+    $upload = $this->postJson('/attachments/uploads', [
         'file_name' => 'scan.pdf', 'mime_type' => 'application/pdf', 'size_bytes' => strlen($content),
         'category' => 'lab_result', 'sha256' => hash('sha256', $content),
     ])->assertCreated()->assertJsonPath('data.received_bytes', 0)->json('data.id');
 
-    $chunk = fn (string $body, int $offset) => $this->call('PATCH', "/api/v1/attachments/uploads/{$upload}", [], [], [], [
+    $chunk = fn (string $body, int $offset) => $this->call('PATCH', "/attachments/uploads/{$upload}", [], [], [], [
         'HTTP_UPLOAD_OFFSET' => (string) $offset, 'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/offset+octet-stream',
     ], $body);
 
     $chunk(substr($content, 0, 1000), 0)->assertOk()->assertJsonPath('data.received_bytes', 1000)->assertJsonPath('data.status', 'in_progress');
     $chunk(substr($content, 1000), 0)->assertStatus(409)->assertJsonPath('error_code', 'UPLOAD_SESSION_INVALID');
-    $this->getJson("/api/v1/attachments/uploads/{$upload}")->assertJsonPath('data.received_bytes', 1000);
+    $this->getJson("/attachments/uploads/{$upload}")->assertJsonPath('data.received_bytes', 1000);
     $chunk(substr($content, 1000), 1000)->assertOk()->assertJsonPath('data.received_bytes', strlen($content));
 
-    $this->postJson("/api/v1/attachments/uploads/{$upload}/complete", ['attachable_type' => 'person', 'attachable_id' => $person->id])
+    $this->postJson("/attachments/uploads/{$upload}/complete", ['attachable_type' => 'person', 'attachable_id' => $person->id])
         ->assertCreated()
         ->assertJsonPath('data.category', 'lab_result')
         ->assertJsonPath('data.size_bytes', strlen($content))
@@ -125,10 +125,10 @@ it('zips several files in a background task', function () {
     $person = Person::factory()->create();
     $ids = collect(uploadTo($person, [pdf('a.pdf', '1'), pdf('b.pdf', '2')])->json('data.saved'))->pluck('id')->all();
 
-    $task = $this->postJson('/api/v1/attachments/zip', ['attachment_ids' => $ids])->assertStatus(202)->json('meta.task_id');
+    $task = $this->postJson('/attachments/zip', ['attachment_ids' => $ids])->assertStatus(202)->json('meta.task_id');
 
-    $this->getJson("/api/v1/tasks/{$task}")->assertJsonPath('data.status', 'completed')->assertJsonPath('data.result_summary.files', 2);
-    $url = $this->getJson("/api/v1/tasks/{$task}/download")->json('data.url');
+    $this->getJson("/tasks/{$task}")->assertJsonPath('data.status', 'completed')->assertJsonPath('data.result_summary.files', 2);
+    $url = $this->getJson("/tasks/{$task}/download")->json('data.url');
     expect($this->get($url)->assertOk()->headers->get('content-disposition'))->toContain('.zip');
 });
 
@@ -136,9 +136,9 @@ it('archives, deletes and restores attachments (also in bulk)', function () {
     actingWith(...ATTACH_RIGHTS);
     $id = uploadTo(Person::factory()->create(), [pdf()])->json('data.saved.0.id');
 
-    $this->patchJson("/api/v1/attachments/{$id}/archive")->assertOk()->assertJsonPath('data.is_archived', true);
-    $this->postJson('/api/v1/attachments/bulk', ['action' => 'unarchive', 'ids' => [$id]])->assertOk()->assertJsonPath('data.succeeded', 1);
-    $this->deleteJson("/api/v1/attachments/{$id}")->assertNoContent();
-    $this->getJson("/api/v1/attachments/{$id}")->assertNotFound();
-    $this->patchJson("/api/v1/attachments/{$id}/restore")->assertOk()->assertJsonPath('data.is_deleted', false);
+    $this->patchJson("/attachments/{$id}/archive")->assertOk()->assertJsonPath('data.is_archived', true);
+    $this->postJson('/attachments/bulk', ['action' => 'unarchive', 'ids' => [$id]])->assertOk()->assertJsonPath('data.succeeded', 1);
+    $this->deleteJson("/attachments/{$id}")->assertNoContent();
+    $this->getJson("/attachments/{$id}")->assertNotFound();
+    $this->patchJson("/attachments/{$id}/restore")->assertOk()->assertJsonPath('data.is_deleted', false);
 });

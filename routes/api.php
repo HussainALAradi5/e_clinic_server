@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| API v1 (prefix /api/v1)
+| API (served at the root: /auth/login, /patients …)
 |--------------------------------------------------------------------------
 | Shared endpoints live here; every module keeps its own routes in app/Modules/<Module>/routes/api.php.
 */

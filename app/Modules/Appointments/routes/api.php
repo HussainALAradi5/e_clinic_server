@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Appointments & Clinical API (prefix /api/v1) — Patients, Doctors & Specialties, Rooms, Schedules, Appointments,
+| Appointments & Clinical API — Patients, Doctors & Specialties, Rooms, Schedules, Appointments,
 | Treatments, Clinical orders, Medical records & Consents
 |--------------------------------------------------------------------------
 */

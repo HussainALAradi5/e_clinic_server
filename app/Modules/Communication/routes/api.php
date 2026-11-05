@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Communication API (prefix /api/v1) — staff chat and support tickets
+| Communication API — staff chat and support tickets
 |--------------------------------------------------------------------------
 | Live updates arrive over the socket (Reverb): private channels user.{id}, conversation.{id} and support.
 */

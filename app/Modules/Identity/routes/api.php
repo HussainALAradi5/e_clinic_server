@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Identity API (prefix /api/v1) — Auth, People & Users, Roles & Permissions, Audit Logs, Background Tasks,
+| Identity API — Auth, People & Users, Roles & Permissions, Audit Logs, Background Tasks,
 | Attachments, Codes, Notifications, List Views
 |--------------------------------------------------------------------------
 */

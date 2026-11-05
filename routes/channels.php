@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
-| Private broadcast channels (authorised at POST /api/v1/broadcasting/auth with the Sanctum token)
+| Private broadcast channels (authorised at POST /broadcasting/auth with the Sanctum token)
 |--------------------------------------------------------------------------
 */
 

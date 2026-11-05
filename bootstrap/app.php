@@ -18,12 +18,12 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        apiPrefix: 'api/v1',
+        apiPrefix: '',
     )
     // Listeners are registered by each module's service provider; discovery in app/Listeners would add them twice.
     ->withEvents(discover: false)
-    // Socket channel sign-in uses the API token: POST /api/v1/broadcasting/auth.
-    ->withBroadcasting(__DIR__.'/../routes/channels.php', ['prefix' => 'api/v1', 'middleware' => ['auth:sanctum']])
+    // Socket channel sign-in uses the API token: POST /broadcasting/auth.
+    ->withBroadcasting(__DIR__.'/../routes/channels.php', ['prefix' => '', 'middleware' => ['auth:sanctum']])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignRequestId::class);
         // An API without a login page: signed-out calls get 401 JSON, never a redirect (even without Accept: json).
