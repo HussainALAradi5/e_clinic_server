@@ -50,7 +50,7 @@ final class TeamDemoSeeder extends Seeder
         'nurse2' => ['Grace', 'Dela Cruz', Gender::Female, RoleName::Nurse, UserType::MedicalStaff, 'PHYSIO', 'Physiotherapist', '850', 'PH'],
         'cashier2' => ['Ali', 'Hasan', Gender::Male, RoleName::Cashier, UserType::Cashier, 'DESK', 'Cashier', '420', 'BH'],
         'reception2' => ['Zainab', 'Abdulla', Gender::Female, RoleName::Receptionist, UserType::Receptionist, 'DESK', 'Receptionist', '450', 'BH'],
-        'patient2' => ['Fatema', 'Al-Khalifa', Gender::Female, RoleName::Patient, UserType::Patient, null, null, null, 'BH'],
+        'patient2' => ['Fatima', 'Mohammed Al-Najjar', Gender::Female, RoleName::Patient, UserType::Patient, null, null, null, 'BH'],
         'patient3' => ['Joseph', 'Thomas', Gender::Male, RoleName::Patient, UserType::Patient, null, null, null, 'IN'],
     ];
 
@@ -95,7 +95,7 @@ final class TeamDemoSeeder extends Seeder
     private const NAMES = [
         [['Mohammed', 'Ahmed', 'Hussain', 'Abdulla', 'Yousif', 'Ebrahim', 'Jassim', 'Salman', 'Hamad', 'Isa'],
             ['Maryam', 'Fatema', 'Zahra', 'Noora', 'Sara', 'Aysha', 'Latifa', 'Hessa', 'Reem', 'Shaikha'],
-            ['Al-Khalifa', 'Al-Mannai', 'Al-Zayani', 'Kanoo', 'Fakhro', 'Al-Jishi', 'Al-Aradi', 'Bucheeri', 'Al-Sitri', 'Janahi', 'Al-Mulla', 'Al-Hashimi'], 'BH'],
+            ['Al-Haddad', 'Al-Najjar', 'Al-Mukhtar', 'Al-Mannai', 'Al-Zayani', 'Kanoo', 'Fakhro', 'Al-Jishi', 'Al-Aradi', 'Bucheeri', 'Al-Sitri', 'Janahi', 'Al-Mulla', 'Al-Hashimi'], 'BH'],
         [['Rahul', 'Arun', 'Vijay', 'Suresh', 'Anil', 'Faisal', 'Imran'], ['Priya', 'Anjali', 'Lakshmi', 'Divya', 'Sneha', 'Ayesha'],
             ['Nair', 'Kumar', 'Pillai', 'Sharma', 'Reddy', 'Iyer', 'Khan', 'Qureshi'], 'IN'],
         [['Jose', 'Mark', 'Paolo', 'Carlo'], ['Maria', 'Angelica', 'Kristine', 'Joy'], ['Santos', 'Reyes', 'Cruz', 'Bautista', 'Garcia', 'Mendoza'], 'PH'],

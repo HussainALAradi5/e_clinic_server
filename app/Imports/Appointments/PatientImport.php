@@ -34,7 +34,7 @@ final class PatientImport implements ImportDefinition
     {
         return [
             ...$this->people->columns(),
-            new ImportColumn('emergency_contact_name', 'Emergency contact', example: 'Ali Al Khalifa'),
+            new ImportColumn('emergency_contact_name', 'Emergency contact', example: 'Ali Al Haddad'),
             new ImportColumn('emergency_contact_phone', 'Emergency phone', example: '+973 3900 1122'),
             new ImportColumn('emergency_contact_relation', 'Relation', example: 'Spouse'),
             new ImportColumn('insurer', 'Insurer', example: 'Gulf Insurance Group', help: 'Name of an insurer from Companies.'),

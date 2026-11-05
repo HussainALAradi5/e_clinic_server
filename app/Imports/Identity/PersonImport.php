@@ -33,7 +33,7 @@ final class PersonImport implements ImportDefinition
 
         return [
             new ImportColumn('first_name', 'First name', required: true, example: 'Fatima'),
-            new ImportColumn('last_name', 'Last name', required: true, example: 'Al Khalifa'),
+            new ImportColumn('last_name', 'Last name', required: true, example: 'Al Aradi'),
             new ImportColumn('gender', 'Gender', required: true, example: Gender::Female->label(), type: ImportColumnType::Choice, options: $genders),
             new ImportColumn('date_of_birth', 'Date of birth', required: true, example: '1988-04-21', type: ImportColumnType::Date),
             new ImportColumn('phone', 'Mobile', required: true, example: '+973 3600 1234', help: 'Bahrain numbers may omit +973.'),
