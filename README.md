@@ -15,6 +15,9 @@ double-entry accounting, staff chat and support tickets — for a staff app and 
 | Web app (staff and patient portal) | https://e-clinic-web.onrender.com |
 | API | https://e-clinic-api.onrender.com |
 
+Live updates (chat, Online / Offline, tickets) work on the demo too: Reverb runs inside the same free container
+and Apache passes `wss://e-clinic-api.onrender.com/app/…` to it (`Dockerfile`, `scripts/render-start.sh`).
+
 Free Render instances sleep when idle: the first visit can take about a minute to wake the API. Demo accounts
 (one per role: patient, receptionist, doctor, nurse, pharmacist, cashier, accountant, HR, admin) are available on
 request.
