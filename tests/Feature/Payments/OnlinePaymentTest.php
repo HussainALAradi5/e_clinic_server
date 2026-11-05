@@ -2,11 +2,13 @@
 
 use App\Dtos\Accounting\FiscalYearData;
 use App\Dtos\Payments\GatewayChargeRequest;
+use App\Dtos\Reference\OnlinePaymentSettingsData;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
 use App\Interfaces\Accounting\FiscalPeriodServiceInterface;
 use App\Interfaces\Payments\OnlinePaymentServiceInterface;
 use App\Interfaces\Payments\PaymentGatewayInterface;
+use App\Interfaces\Reference\ClinicProfileServiceInterface;
 use App\Models\Appointments\Patient;
 use App\Models\Identity\User;
 use App\Models\Payments\OnlinePayment;
@@ -31,6 +33,8 @@ beforeEach(function () {
     // Sunday 1 Nov 2026, 08:00 in Bahrain.
     $this->travelTo(CarbonImmutable::parse('2026-11-01 05:00:00', 'UTC'));
     app(FiscalPeriodServiceInterface::class)->createYear(FiscalYearData::calendar(2026));
+    // Off by default (admin settings); these tests are about paying, so the clinic has switched it on.
+    app(ClinicProfileServiceInterface::class)->updateOnlinePayments(new OnlinePaymentSettingsData(true, null, null, null, false));
 });
 
 function onlinePost(string $url, array $payload = []): TestResponse
@@ -68,6 +72,17 @@ function payOnFakeCheckout(string $checkoutUrl, bool $pay): string
 
     return (string) $return->headers->get('Location');
 }
+
+it('refuses online payment while the clinic has it switched off, and tells the apps', function () {
+    $patient = FrontDesk::patient();
+    $invoice = onlineInvoice($patient);
+    app(ClinicProfileServiceInterface::class)->updateOnlinePayments(new OnlinePaymentSettingsData(false, null, null, null, false));
+    $this->getJson('/public/clinic-profile')->assertOk()->assertJsonPath('data.online_payments_enabled', false);
+    actAsPatient($patient);
+
+    onlinePost("/billing/invoices/{$invoice}/online-payments")->assertStatus(409)->assertJsonPath('error_code', 'ONLINE_PAYMENTS_DISABLED');
+    expect(OnlinePayment::query()->count())->toBe(0);
+});
 
 it('lets a patient pay their invoice online; the money is booked only once the gateway says captured', function () {
     $patient = FrontDesk::patient();
@@ -141,7 +156,7 @@ it('asks Tap for the charge with the secret key and checks its webhook signature
         'api.tap.company/v2/charges' => Http::response(['id' => 'chg_TS1', 'status' => 'INITIATED', 'amount' => 15, 'currency' => 'BHD', 'transaction' => ['url' => 'https://checkout.tap.company/x'], 'reference' => ['transaction' => 'OPY-1']]),
         'api.tap.company/v2/charges/chg_TS1' => Http::response(['id' => 'chg_TS1', 'status' => 'CAPTURED', 'amount' => 15, 'currency' => 'BHD']),
     ]);
-    $tap = new TapGateway;
+    $tap = new TapGateway(app(ClinicProfileServiceInterface::class)->onlinePayments());
 
     $charge = $tap->createCharge(new GatewayChargeRequest('15.000', 'BHD', 'OPY-1', 'Invoice', 'Ali', 'Hasan', 'ali@example.com', '+97333000000', 'https://clinic/return', 'https://clinic/webhook'));
     expect($charge->checkoutUrl)->toBe('https://checkout.tap.company/x')->and($tap->retrieveCharge('chg_TS1')->amount)->toBe('15.000');
@@ -154,5 +169,6 @@ it('asks Tap for the charge with the secret key and checks its webhook signature
     $signed = hash_hmac('sha256', 'x_idchg_TS1x_amount15.000x_currencyBHDx_gateway_referenceg1x_payment_referencep1x_statusCAPTUREDx_created1730000000000', 'sk_test_demo');
     expect($tap->isValidWebhook($payload, $signed))->toBeTrue()
         ->and($tap->isValidWebhook([...$payload, 'amount' => 1500], $signed))->toBeFalse()
-        ->and(app(PaymentGatewayInterface::class))->toBeInstanceOf(FakeGateway::class);
+        // A secret key switches the clinic from the local test checkout to Tap.
+        ->and(app(PaymentGatewayInterface::class))->toBeInstanceOf(TapGateway::class);
 });

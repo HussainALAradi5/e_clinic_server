@@ -70,11 +70,17 @@ class Conversation extends Model
     }
 
     /**
+     * The newest message, by its time. Not `latestOfMany()`: that always adds MAX() on the UUID key, which
+     * PostgreSQL refuses (SQLite allowed it); MAX() on the timestamp works on both.
+     *
      * @return HasOne<Message, $this>
      */
     public function latestMessage(): HasOne
     {
-        return $this->hasOne(Message::class)->latestOfMany();
+        return $this->hasOne(Message::class)->where('messages.created_at', function ($newest): void {
+            $newest->selectRaw('max(newest.created_at)')->from('messages as newest')
+                ->whereColumn('newest.conversation_id', 'messages.conversation_id');
+        });
     }
 
     /**

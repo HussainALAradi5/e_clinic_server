@@ -238,7 +238,7 @@ final class TeamDemoSeeder extends Seeder
                 'date_of_birth' => $clock->today()->subYears($age)->subDays(fake()->numberBetween(0, 364))->toDateString(),
                 'nationality_code' => $nationality,
                 'national_id' => fake()->unique()->numerify($nationality === 'BH' ? '9#######' : '8#######'),
-                'email' => $age < 16 ? null : fake()->unique()->userName().'@example.com',
+                'email' => $age < 16 ? null : fake()->unique()->safeEmail(), // same pool as PersonFactory: never a duplicate
                 'address_id' => $i % 4 === 3 ? null : $this->address()->id,
             ]);
         }

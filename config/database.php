@@ -100,6 +100,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            // Same zone as the app (config/app.php): a PostgreSQL server set to local time (e.g. Asia/Riyadh on a
+            // Windows install) would otherwise file every time 3 hours off.
+            'timezone' => env('DB_TIMEZONE', 'UTC'),
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 

@@ -18,11 +18,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $name
  * @property ?string $tagline
  * @property ?string $address
+ * @property ?string $country_code ISO 3166 code
  * @property ?string $phone
  * @property ?string $email
  * @property ?string $website
  * @property ?string $logo_attachment_id
  * @property ?string $stamp_attachment_id
+ * @property bool $online_payments_enabled
+ * @property ?string $tap_base_url
+ * @property ?string $tap_source
+ * @property ?string $tap_secret_key encrypted at rest; never sent to a client
  * @property bool $is_archived
  * @property bool $is_deleted
  * @property ?CarbonImmutable $created_at
@@ -32,6 +37,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ClinicProfile extends BaseModel
 {
+    /** @var list<string> */
+    protected $hidden = ['tap_secret_key'];
+
     public static function codePrefix(): string
     {
         return 'CLP';
@@ -59,6 +67,8 @@ class ClinicProfile extends BaseModel
         return [
             'is_archived' => 'boolean',
             'is_deleted' => 'boolean',
+            'online_payments_enabled' => 'boolean',
+            'tap_secret_key' => 'encrypted',
         ];
     }
 }

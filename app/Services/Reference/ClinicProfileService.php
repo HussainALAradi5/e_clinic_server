@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Reference;
 
+use App\Dtos\Payments\OnlinePaymentSettings;
 use App\Dtos\Reference\ClinicProfileData;
+use App\Dtos\Reference\OnlinePaymentSettingsData;
 use App\Enums\Identity\AttachmentCategory;
 use App\Enums\Reference\ClinicImage;
 use App\Interfaces\Reference\ClinicProfileServiceInterface;
@@ -29,7 +31,8 @@ final class ClinicProfileService implements ClinicProfileServiceInterface
     public function current(): ClinicProfile
     {
         return ClinicProfile::query()->with(['logo', 'stamp'])->where('is_deleted', false)->oldest('created_at')->first()
-            ?? ClinicProfile::query()->create(Config::array('documents.clinic'));
+            // Read back once created, so the column defaults (online payments off) are loaded too.
+            ?? ClinicProfile::query()->create(Config::array('documents.clinic'))->refresh();
     }
 
     public function update(ClinicProfileData $data): ClinicProfile
@@ -68,5 +71,37 @@ final class ClinicProfileService implements ClinicProfileServiceInterface
         $bytes = $attachment !== null ? $this->files->disk()->get($attachment->path) : null;
 
         return $bytes === null ? null : ['bytes' => $bytes, 'mime' => $attachment->mime_type];
+    }
+
+    public function onlinePayments(): OnlinePaymentSettings
+    {
+        $profile = $this->current();
+        $secret = $profile->tap_secret_key ?? (string) Config::get('services.tap.secret_key');
+
+        return new OnlinePaymentSettings(
+            enabled: $profile->online_payments_enabled,
+            driver: $secret !== '' ? 'tap' : Config::string('payments.online.driver'),
+            baseUrl: $profile->tap_base_url ?? Config::string('services.tap.base_url'),
+            source: $profile->tap_source ?? Config::string('services.tap.source'),
+            secretKey: $secret !== '' ? $secret : null,
+            webhookUrl: route('webhooks.tap'),
+            returnUrl: route('online-payments.return'),
+        );
+    }
+
+    public function updateOnlinePayments(OnlinePaymentSettingsData $data): OnlinePaymentSettings
+    {
+        $profile = $this->current();
+        $profile->online_payments_enabled = $data->enabled;
+        $profile->tap_base_url = $data->baseUrl;
+        $profile->tap_source = $data->source;
+        if ($data->clearSecretKey) {
+            $profile->tap_secret_key = null;
+        } elseif ($data->secretKey !== null) {
+            $profile->tap_secret_key = $data->secretKey;
+        }
+        $profile->save();
+
+        return $this->onlinePayments();
     }
 }

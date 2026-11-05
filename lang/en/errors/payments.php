@@ -10,6 +10,7 @@ return [
     'REMINDER_TOO_SOON' => 'A reminder went out less than :hours hours ago.',
     'ONLINE_PAYMENT_UNAVAILABLE' => 'Online payment is not available right now — nothing was charged. Please try again later or pay at the clinic.',
     'ONLINE_PAYMENT_AMOUNT' => 'Pay between :min and :max online.',
+    'ONLINE_PAYMENTS_DISABLED' => 'Online payment is not available at this clinic yet. Please pay at the clinic.',
     'COPAY_EXCEEDED' => ':insurer covers part of this invoice: take :due from the patient now (their share), or tick "patient pays the insurer\'s share too".',
     'FEE_NOT_WAIVABLE' => 'This fee is already on an issued invoice — refund it instead.',
     'FEE_ALREADY_WAIVED' => 'This fee was already waived.',

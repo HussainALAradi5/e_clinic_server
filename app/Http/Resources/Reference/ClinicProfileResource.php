@@ -25,9 +25,12 @@ final class ClinicProfileResource extends JsonResource
             'name' => $this->name,
             'tagline' => $this->tagline,
             'address' => $this->address,
+            'country_code' => $this->country_code,
             'phone' => $this->phone,
             'email' => $this->email,
             'website' => $this->website,
+            // Clients show Pay online only while the clinic has switched it on.
+            'online_payments_enabled' => $this->online_payments_enabled,
             'logo_path' => $this->logo_attachment_id !== null ? 'public/clinic-profile/logo?v='.$this->logo_attachment_id : null,
             'stamp_path' => $this->stamp_attachment_id !== null ? 'public/clinic-profile/stamp?v='.$this->stamp_attachment_id : null,
             'updated_at' => $this->updated_at?->toIso8601String(),

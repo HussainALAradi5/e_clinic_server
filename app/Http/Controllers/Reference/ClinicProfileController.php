@@ -8,7 +8,9 @@ use App\Enums\Reference\ClinicImage;
 use App\Http\Concerns\ApiResponse;
 use App\Http\Requests\Reference\ClinicImageRequest;
 use App\Http\Requests\Reference\UpdateClinicProfileRequest;
+use App\Http\Requests\Reference\UpdateOnlinePaymentSettingsRequest;
 use App\Http\Resources\Reference\ClinicProfileResource;
+use App\Http\Resources\Reference\OnlinePaymentSettingsResource;
 use App\Interfaces\Reference\ClinicProfileServiceInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -40,6 +42,17 @@ final class ClinicProfileController
     public function removeImage(ClinicImage $image): JsonResponse
     {
         return $this->ok(new ClinicProfileResource($this->profile->removeImage($image)));
+    }
+
+    /** Online payments: the switch, Tap settings and the addresses to register with Tap (admins). */
+    public function onlinePayments(): JsonResponse
+    {
+        return $this->ok(new OnlinePaymentSettingsResource($this->profile->onlinePayments()));
+    }
+
+    public function updateOnlinePayments(UpdateOnlinePaymentSettingsRequest $request): JsonResponse
+    {
+        return $this->ok(new OnlinePaymentSettingsResource($this->profile->updateOnlinePayments($request->toData())));
     }
 
     /** The logo or stamp image (404 while none is set). */

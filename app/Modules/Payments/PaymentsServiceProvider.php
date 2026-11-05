@@ -34,6 +34,7 @@ use App\Interfaces\Payments\PaymentReminderServiceInterface;
 use App\Interfaces\Payments\PaymentServiceInterface;
 use App\Interfaces\Payments\RefundServiceInterface;
 use App\Interfaces\Payments\WalletServiceInterface;
+use App\Interfaces\Reference\ClinicProfileServiceInterface;
 use App\Listeners\Payments\ChargeAppointmentFee;
 use App\Listeners\Payments\ChargeCompletedWork;
 use App\Listeners\Payments\ChargeDocumentFee;
@@ -66,10 +67,8 @@ use App\Services\Payments\WalletService;
 use App\Utilities\Shared\MoneyHelper;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use RuntimeException;
 
 /**
  * Payments & Billing module: the service catalog, patient invoices (the single billing path), payments and refunds.
@@ -94,13 +93,13 @@ final class PaymentsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        // The gateway: Tap with real (or sk_test_) keys; the local fake checkout only outside production.
+        // The gateway: Tap once a secret key is saved (admin settings or `.env`); the local fake checkout only
+        // outside production. In production without a key it is an unconfigured Tap: charges fail, webhooks are
+        // refused — and nobody gets that far while online payments are switched off.
         $this->app->singleton(PaymentGatewayInterface::class, function (): PaymentGatewayInterface {
-            if (Config::string('payments.online.driver') === 'tap') {
-                return new TapGateway;
-            }
-            if ($this->app->isProduction()) {
-                throw new RuntimeException('PAYMENT_GATEWAY=fake is not allowed in production.');
+            $settings = $this->app->make(ClinicProfileServiceInterface::class)->onlinePayments();
+            if ($settings->driver === 'tap' || $this->app->isProduction()) {
+                return new TapGateway($settings);
             }
 
             return new FakeGateway;

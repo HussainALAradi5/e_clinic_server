@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Interfaces\Reference;
 
+use App\Dtos\Payments\OnlinePaymentSettings;
 use App\Dtos\Reference\ClinicProfileData;
+use App\Dtos\Reference\OnlinePaymentSettingsData;
 use App\Enums\Reference\ClinicImage;
 use App\Models\Reference\ClinicProfile;
 use Illuminate\Http\UploadedFile;
@@ -28,4 +30,10 @@ interface ClinicProfileServiceInterface
      * @return array{bytes: string, mime: string}|null
      */
     public function image(ClinicImage $image): ?array;
+
+    /** Online payments as they apply now: the switch, Tap settings (saved first, then `.env`) and Tap's addresses. */
+    public function onlinePayments(): OnlinePaymentSettings;
+
+    /** Switches online payments on or off and saves the Tap settings; a null secret key keeps the saved one. */
+    public function updateOnlinePayments(OnlinePaymentSettingsData $data): OnlinePaymentSettings;
 }

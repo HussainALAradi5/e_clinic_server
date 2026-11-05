@@ -1,9 +1,11 @@
 <?php
 
+use App\Enums\Identity\PresenceStatus;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
 use App\Events\Communication\MessageReacted;
 use App\Events\Communication\MessageSent;
+use App\Events\Communication\PresenceChanged;
 use App\Models\Communication\Message;
 use App\Models\Identity\Notification;
 use App\Models\Identity\User;
@@ -18,7 +20,7 @@ use Laravel\Sanctum\Sanctum;
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     Storage::fake(config('filesystems.default'));
-    Event::fake([MessageSent::class, MessageReacted::class]);
+    Event::fake([MessageSent::class, MessageReacted::class, PresenceChanged::class]);
 });
 
 function extrasUser(RoleName $role = RoleName::Doctor, UserType $type = UserType::Doctor): User
@@ -307,6 +309,11 @@ it('makes me Online when I sign in and Offline when I sign out everywhere, and l
 
     Sanctum::actingAs($sara);
     $this->getJson("/chat/conversations/{$direct}")->assertOk()->assertJsonPath('data.partner_presence', 'offline');
+
+    // Every change went out live to the staff presence channel (sign-in, off, on, last sign-out).
+    Event::assertDispatchedTimes(PresenceChanged::class, 4);
+    Event::assertDispatched(PresenceChanged::class, fn (PresenceChanged $e): bool => $e->userId === $omar->id
+        && $e->presence === PresenceStatus::Offline && $e->broadcastOn()[0]->name === 'private-staff.presence');
 });
 
 it('still sends, reacts and reads when the real-time server is down', function () {

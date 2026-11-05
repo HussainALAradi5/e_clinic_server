@@ -21,6 +21,6 @@ final readonly class ClinicProfileData
      */
     public function attributes(): array
     {
-        return Arr::only($this->values, ['name', 'tagline', 'address', 'phone', 'email', 'website']);
+        return Arr::only($this->values, ['name', 'tagline', 'address', 'country_code', 'phone', 'email', 'website']);
     }
 }

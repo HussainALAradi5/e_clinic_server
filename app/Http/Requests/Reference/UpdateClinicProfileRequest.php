@@ -6,6 +6,7 @@ namespace App\Http\Requests\Reference;
 
 use App\Dtos\Reference\ClinicProfileData;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class UpdateClinicProfileRequest extends FormRequest
 {
@@ -18,6 +19,7 @@ final class UpdateClinicProfileRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:120'],
             'tagline' => ['nullable', 'string', 'max:160'],
             'address' => ['nullable', 'string', 'max:255'],
+            'country_code' => ['nullable', 'string', 'size:2', Rule::exists('countries', 'code')->where('is_active', true)],
             'phone' => ['nullable', 'string', 'max:40'],
             'email' => ['nullable', 'email', 'max:120'],
             'website' => ['nullable', 'string', 'max:120'],

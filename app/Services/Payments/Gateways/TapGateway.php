@@ -6,11 +6,11 @@ namespace App\Services\Payments\Gateways;
 
 use App\Dtos\Payments\GatewayCharge;
 use App\Dtos\Payments\GatewayChargeRequest;
+use App\Dtos\Payments\OnlinePaymentSettings;
 use App\Exceptions\Payments\OnlinePaymentUnavailableException;
 use App\Interfaces\Payments\PaymentGatewayInterface;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -22,6 +22,8 @@ use Throwable;
  */
 final class TapGateway implements PaymentGatewayInterface
 {
+    public function __construct(private readonly OnlinePaymentSettings $settings) {}
+
     public function createCharge(GatewayChargeRequest $request): GatewayCharge
     {
         return $this->call(fn (PendingRequest $http) => $http->post('/charges', [
@@ -39,7 +41,7 @@ final class TapGateway implements PaymentGatewayInterface
                 'email' => $request->email,
                 'phone' => $this->phone($request->phone),
             ]),
-            'source' => ['id' => Config::string('services.tap.source')],
+            'source' => ['id' => $this->settings->source],
             'post' => ['url' => $request->webhookUrl],
             'redirect' => ['url' => $request->redirectUrl],
         ]));
@@ -52,7 +54,7 @@ final class TapGateway implements PaymentGatewayInterface
 
     public function isValidWebhook(array $payload, string $signature): bool
     {
-        $secret = (string) Config::get('services.tap.secret_key');
+        $secret = (string) $this->settings->secretKey;
         if ($secret === '' || $signature === '') {
             return false;
         }
@@ -72,8 +74,8 @@ final class TapGateway implements PaymentGatewayInterface
     private function call(callable $send): GatewayCharge
     {
         try {
-            $response = $send(Http::baseUrl(Config::string('services.tap.base_url'))
-                ->withToken((string) Config::get('services.tap.secret_key'))
+            $response = $send(Http::baseUrl($this->settings->baseUrl)
+                ->withToken((string) $this->settings->secretKey)
                 ->acceptJson()
                 ->timeout(15)
                 ->retry(2, 300, throw: false));

@@ -12,6 +12,8 @@ use App\Dtos\Identity\TwoFactorSetupData;
 use App\Enums\Identity\LoginFailureReason;
 use App\Enums\Identity\PresenceStatus;
 use App\Enums\Identity\UserStatus;
+use App\Enums\Identity\UserType;
+use App\Events\Communication\PresenceChanged;
 use App\Events\Identity\LoginFailed;
 use App\Events\Identity\PasswordChanged;
 use App\Events\Identity\PasswordReset;
@@ -178,7 +180,12 @@ final class AuthService implements AuthServiceInterface
     public function setPresence(User $user, PresenceStatus $status): User
     {
         if ($user->presence !== $status) {
-            $user->forceFill(['presence' => $status, 'presence_at' => $this->clock->now()])->save();
+            $at = $this->clock->now();
+            $user->forceFill(['presence' => $status, 'presence_at' => $at])->save();
+            if ($user->user_type !== UserType::Patient) {
+                // Best effort, like the chat events: a socket problem never fails the sign-in or the switch.
+                rescue(fn () => event(new PresenceChanged($user->id, $status, $at)), report: true);
+            }
         }
 
         return $user;

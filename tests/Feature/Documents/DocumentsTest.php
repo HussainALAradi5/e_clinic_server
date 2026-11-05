@@ -91,7 +91,11 @@ it('keeps the clinic profile public to read and admin-only to change', function 
     $this->putJson('/reference/clinic-profile', ['name' => 'Seef Family Clinic'])->assertForbidden();
 
     Sanctum::actingAs(User::factory()->withRole(RoleName::Admin->value)->create());
-    $this->putJson('/reference/clinic-profile', ['name' => 'Seef Family Clinic'])->assertOk()->assertJsonPath('data.name', 'Seef Family Clinic');
+    $this->putJson('/reference/clinic-profile', ['name' => 'Seef Family Clinic'])->assertOk()->assertJsonPath('data.name', 'Seef Family Clinic')
+        ->assertJsonPath('data.country_code', 'BH');
+    // The country comes from the country list (ISO code).
+    $this->putJson('/reference/clinic-profile', ['country_code' => 'XX'])->assertUnprocessable()->assertJsonValidationErrors('country_code');
+    $this->putJson('/reference/clinic-profile', ['country_code' => 'SA'])->assertOk()->assertJsonPath('data.country_code', 'SA');
     $logo = $this->post('/reference/clinic-profile/logo', ['image' => png(200, 200)], ['Accept' => 'application/json'])->assertOk()->json('data.logo_path');
     expect($logo)->toStartWith('public/clinic-profile/logo?v=');
     $this->get('/public/clinic-profile/logo')->assertOk()->assertHeader('content-type', 'image/png');

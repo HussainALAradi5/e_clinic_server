@@ -51,7 +51,7 @@ php artisan migrate --seed          # demo clinic: staff of every role, patients
 php artisan webpush:keys            # optional: browser notifications (put the keys in .env)
 php artisan serve                   # API on http://127.0.0.1:8000
 php artisan queue:work              # notifications, reminders, exports
-php artisan reverb:start --port=8080   # live chat and tickets
+php artisan reverb:start --port=8085   # live chat, tickets and Online / Offline (8085: 8080 is often taken by Spring Boot)
 ```
 
 ### Local database (PostgreSQL)

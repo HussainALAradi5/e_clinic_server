@@ -26,6 +26,9 @@ Route::middleware('auth:sanctum')->prefix('reference')->name('reference.')->grou
     // Clinic profile (admins): name, contacts, logo and stamp printed on every PDF
     Route::prefix('clinic-profile')->name('clinic-profile.')->controller(ClinicProfileController::class)->middleware('access:clinic_profile.write')->group(function (): void {
         Route::put('/', 'update')->middleware('throttle:write')->name('update');
+        // Online payments: off until switched on here; the Tap key is saved encrypted and never sent back.
+        Route::get('online-payments', 'onlinePayments')->middleware('throttle:read')->name('online-payments.show');
+        Route::put('online-payments', 'updateOnlinePayments')->middleware('throttle:sensitive')->name('online-payments.update');
         Route::post('{image}', 'uploadImage')->whereIn('image', ['logo', 'stamp'])->middleware('throttle:write')->name('image.upload');
         Route::delete('{image}', 'removeImage')->whereIn('image', ['logo', 'stamp'])->middleware('throttle:write')->name('image.remove');
     });

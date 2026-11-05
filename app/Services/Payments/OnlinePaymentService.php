@@ -11,11 +11,13 @@ use App\Enums\Payments\OnlinePaymentStatus;
 use App\Enums\Shared\PaymentMethod;
 use App\Exceptions\Payments\InvoiceNotPayableException;
 use App\Exceptions\Payments\OnlinePaymentAmountException;
+use App\Exceptions\Payments\OnlinePaymentsDisabledException;
 use App\Exceptions\Payments\OnlinePaymentUnavailableException;
 use App\Interfaces\Payments\OnlinePaymentServiceInterface;
 use App\Interfaces\Payments\PaymentGatewayInterface;
 use App\Interfaces\Payments\PaymentServiceInterface;
 use App\Interfaces\Payments\WalletServiceInterface;
+use App\Interfaces\Reference\ClinicProfileServiceInterface;
 use App\Models\Payments\Invoice;
 use App\Models\Payments\OnlinePayment;
 use App\Utilities\Access\OwnershipScope;
@@ -42,6 +44,7 @@ final class OnlinePaymentService implements OnlinePaymentServiceInterface
         private readonly WalletServiceInterface $wallet,
         private readonly ApplyListQuery $listQuery,
         private readonly ClinicClock $clock,
+        private readonly ClinicProfileServiceInterface $clinic,
     ) {}
 
     public function list(ListQuery $query): LengthAwarePaginator|CursorPaginator
@@ -59,6 +62,10 @@ final class OnlinePaymentService implements OnlinePaymentServiceInterface
         $previous = OnlinePayment::query()->where('idempotency_key', $idempotencyKey)->first();
         if ($previous !== null) {
             return $this->find($previous->id);
+        }
+        $settings = $this->clinic->onlinePayments();
+        if (! $settings->enabled) {
+            throw new OnlinePaymentsDisabledException;
         }
         if (! $invoice->status->isPayable()) {
             throw new InvoiceNotPayableException;
@@ -79,7 +86,7 @@ final class OnlinePaymentService implements OnlinePaymentServiceInterface
             'amount' => $paid,
             'currency' => $invoice->currency,
             'status' => OnlinePaymentStatus::Initiated,
-            'provider' => Config::string('payments.online.driver'),
+            'provider' => $settings->driver,
             'started_by' => Auth::id(),
             'idempotency_key' => $idempotencyKey,
             'expires_at' => $this->clock->now()->addMinutes(Config::integer('payments.online.expiry_minutes')),

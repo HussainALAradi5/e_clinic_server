@@ -18,5 +18,8 @@ Broadcast::channel('user.{id}', fn (User $user, string $id): bool => $user->id =
 Broadcast::channel('conversation.{id}', fn (User $user, string $id): bool => ConversationParticipant::query()
     ->where('conversation_id', $id)->where('user_id', $user->id)->whereNull('left_at')->exists());
 
+// Online / Offline of staff members, for every staff member who uses chat (the dots in chat lists).
+Broadcast::channel('staff.presence', fn (User $user): bool => $user->user_type !== UserType::Patient && $user->can('chat.read_own'));
+
 // The support desk: every ticket change, for the admins who resolve tickets.
 Broadcast::channel('support', fn (User $user): bool => $user->user_type !== UserType::Patient && $user->can('tickets.resolve'));
