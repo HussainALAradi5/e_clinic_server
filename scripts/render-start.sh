@@ -31,13 +31,19 @@ as_web php artisan route:cache
 as_web php artisan event:cache
 as_web php artisan migrate --force
 
-# A database without users (new, or a free Render database that was replaced) gets the reference data and the demo
+# RESET_DEMO=<any word> wipes and rebuilds the demo database once for that word (clinic:reset-demo remembers it), so
+# the seeding below starts from scratch. Left set, it does nothing on later starts; a new word resets again.
+if [ -n "${RESET_DEMO:-}" ]; then
+  as_web php artisan clinic:reset-demo "$RESET_DEMO" || true
+fi
+
+# A database without users, or without the demo accounts while the demo is wanted, gets the reference data and the demo
 # data in the background — about an hour on the free instance. SEED_ON_EMPTY=never keeps it empty (to restore a
 # dump instead).
 # Start-up facts for the deploy log: whether PHP can check the Argon2id password hashes, and how many users exist.
 echo "argon2id passwords: $(php -r 'echo defined("PASSWORD_ARGON2ID") ? "supported" : "NOT supported";')"
-if [ "${SEED_ON_EMPTY:-true}" != "never" ] && as_web php artisan clinic:database-empty; then
-  echo "Empty database: seeding the reference and demo data in the background."
+if [ "${SEED_ON_EMPTY:-true}" != "never" ] && as_web php artisan clinic:needs-seed; then
+  echo "Seeding the reference and demo data in the background (what exists is kept)."
   (as_web php artisan db:seed --force > /proc/1/fd/1 2>&1 &)
 fi
 
