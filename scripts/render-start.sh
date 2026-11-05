@@ -31,9 +31,10 @@ as_web php artisan route:cache
 as_web php artisan event:cache
 as_web php artisan migrate --force
 
-# An empty database gets the reference data (and the demo data when SEED_DEMO=true) in the background, unless
-# SEED_ON_EMPTY=false (the database is restored from a dump instead).
-if [ "${SEED_ON_EMPTY:-true}" = "true" ] && [ "$(as_web php artisan tinker --execute 'echo \App\Modules\Identity\Users\Models\User::query()->count();' 2>/dev/null | tail -n1)" = "0" ]; then
+# A database without users (new, or a free Render database that was replaced) gets the reference data and the demo
+# data in the background — about an hour on the free instance. SEED_ON_EMPTY=never keeps it empty (to restore a
+# dump instead).
+if [ "${SEED_ON_EMPTY:-true}" != "never" ] && [ "$(as_web php artisan tinker --execute 'echo \App\Models\Identity\User::query()->count();' 2>/dev/null | tail -n1)" = "0" ]; then
   (as_web php artisan db:seed --force > /proc/1/fd/1 2>&1 &)
 fi
 
