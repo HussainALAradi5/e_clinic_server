@@ -1,5 +1,7 @@
 # e-Clinic — API (Laravel)
 
+[![tests](https://github.com/HussainALAradi5/e_clinic_server/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/HussainALAradi5/e_clinic_server/actions/workflows/tests.yml) [![licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
 The REST API of **e-Clinic**, a clinic management system: patients and appointments, treatments, lab / imaging
 orders and results, prescriptions and the pharmacy, billing with insurance claims, cash sessions, HR and payroll,
 double-entry accounting, staff chat and support tickets — for a staff app and a patient portal on the web
@@ -37,7 +39,7 @@ request.
 | Framework | Laravel 12 (PHP 8.2+), Sanctum tokens, spatie/laravel-permission, Laravel Reverb |
 | Database | PostgreSQL (SQLite works too for a quick try; the tests use in-memory SQLite) |
 | Structure | Layer first: `app/Models`, `Services`, `Http/Controllers`, `Http/Requests`, `Http/Resources`, `Enums`, `Dtos` …, each with module folders; `app/Modules/<Module>` holds the service provider and routes |
-| Quality | 250+ Pest tests, PHPStan level 8 (Larastan), Laravel Pint |
+| Quality | 300+ Pest tests, PHPStan level 8 (Larastan), Laravel Pint |
 
 ## Run it locally
 
@@ -72,7 +74,7 @@ with, so a copy of another server's database (for example the Render demo's) nee
 ## Tests
 
 ```bash
-vendor/bin/pest                     # 250+ feature and unit tests
+vendor/bin/pest                     # 300+ feature and unit tests
 vendor/bin/phpstan analyse          # static analysis
 vendor/bin/pint --test              # code style
 ```
@@ -82,3 +84,7 @@ vendor/bin/pint --test              # code style
 - Web client (Angular): [e_clinic_client](https://github.com/HussainALAradi5/e_clinic_client)
 - Phone app (Flutter): [e_clinic_mobile](https://github.com/HussainALAradi5/e_clinic_mobile)
 - Technical documentation (every endpoint, service, table and enum): available on request
+
+## Licence
+
+[MIT](LICENSE)
