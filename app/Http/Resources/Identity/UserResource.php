@@ -46,6 +46,7 @@ final class UserResource extends JsonResource
             'language' => $person->language,
             'user_type' => $this->user_type->value,
             'status' => $this->status->value,
+            'presence' => $this->presence->value,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'last_login_at' => $this->last_login_at?->toIso8601String(),
             'last_login_ip' => $this->last_login_ip,

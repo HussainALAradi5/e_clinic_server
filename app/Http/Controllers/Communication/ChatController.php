@@ -80,11 +80,19 @@ final class ChatController
         return $this->ok(new ConversationResource($this->chat->find($this->me($request), $conversation, orDeleted: true)));
     }
 
-    /** Soft delete: the chat leaves its members' lists; admins can still read and restore it. */
+    /** Deletes the chat from my list only (soft); a group must be left first. */
     public function destroy(Request $request, string $conversation): Response
     {
         $me = $this->me($request);
         $this->chat->delete($me, $this->chat->find($me, $conversation));
+
+        return $this->noContent();
+    }
+
+    /** Admins: soft-deletes the whole chat for every member; restorable. */
+    public function destroyForEveryone(Request $request, string $conversation): Response
+    {
+        $this->chat->deleteForEveryone($this->me($request), $conversation);
 
         return $this->noContent();
     }

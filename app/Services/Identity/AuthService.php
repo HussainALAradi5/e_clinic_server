@@ -10,6 +10,7 @@ use App\Dtos\Identity\LoginData;
 use App\Dtos\Identity\ResetPasswordData;
 use App\Dtos\Identity\TwoFactorSetupData;
 use App\Enums\Identity\LoginFailureReason;
+use App\Enums\Identity\PresenceStatus;
 use App\Enums\Identity\UserStatus;
 use App\Events\Identity\LoginFailed;
 use App\Events\Identity\PasswordChanged;
@@ -172,6 +173,15 @@ final class AuthService implements AuthServiceInterface
     public function me(User $user): User
     {
         return $user->loadMissing(['person', 'roles']);
+    }
+
+    public function setPresence(User $user, PresenceStatus $status): User
+    {
+        if ($user->presence !== $status) {
+            $user->forceFill(['presence' => $status, 'presence_at' => $this->clock->now()])->save();
+        }
+
+        return $user;
     }
 
     public function changePassword(User $user, ChangePasswordData $data): void

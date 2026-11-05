@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::prefix('auth')->name('auth.')->controller(AuthController::class)->group(function (): void {
         Route::get('me', 'me')->middleware('throttle:read')->name('me');
         Route::post('logout', 'logout')->middleware('throttle:write')->name('logout');
+        Route::put('presence', 'presence')->middleware('throttle:write')->name('presence');
         Route::middleware('throttle:sensitive')->group(function (): void {
             Route::post('logout-all', 'logoutAll')->name('logout-all');
             Route::put('password', 'changePassword')->name('password');

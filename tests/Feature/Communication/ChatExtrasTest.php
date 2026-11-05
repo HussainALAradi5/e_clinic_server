@@ -9,7 +9,9 @@ use App\Models\Identity\Notification;
 use App\Models\Identity\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
@@ -198,42 +200,113 @@ it('replies to a message of the same chat with a quote of it, which outlives the
         ->assertJsonPath('data.0.id', $reply)->assertJsonPath('data.0.reply_to', null);
 });
 
-it('soft-deletes chats: gone for members, never removed, listed, readable and restorable by admins only', function () {
+it('deletes a chat from my list only: a group after leaving it, the others keep it, nothing is erased', function () {
+    $omar = extrasUser();
+    $sara = extrasUser();
+    $group = extrasGroup($this, $omar, $sara);
+    $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'Handover at 7'])->assertCreated();
+
+    // Still in the group: leave first.
+    Sanctum::actingAs($sara);
+    $this->deleteJson("/api/v1/chat/conversations/{$group}")->assertStatus(409)->assertJsonPath('error_code', 'CHAT_LEAVE_FIRST');
+
+    // Left: the group stays on my list, read-only, showing what was said up to then.
+    $this->deleteJson("/api/v1/chat/conversations/{$group}/members/{$sara->id}")->assertNoContent();
+    $this->travel(1)->minutes();
+    Sanctum::actingAs($omar);
+    $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'After Sara left'])->assertCreated();
+    Sanctum::actingAs($sara);
+    $this->getJson('/api/v1/chat/conversations')->assertOk()->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.left', true)->assertJsonPath('data.0.unread_count', 1)
+        ->assertJsonPath('data.0.last_message', null);
+    $this->getJson("/api/v1/chat/conversations/{$group}/messages")->assertOk()->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.body', 'Handover at 7');
+    $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'Hello?'])->assertStatus(409)->assertJsonPath('error_code', 'CHAT_LEFT');
+
+    // Then delete it: gone from my list only.
+    $this->deleteJson("/api/v1/chat/conversations/{$group}")->assertNoContent();
+    $this->getJson('/api/v1/chat/conversations')->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson("/api/v1/chat/conversations/{$group}/messages")->assertForbidden();
+    Sanctum::actingAs($omar);
+    $this->getJson('/api/v1/chat/conversations')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.left', false);
+    expect(DB::table('messages')->where('conversation_id', $group)->count())->toBe(2)
+        ->and(DB::table('conversation_participants')->where(['conversation_id' => $group, 'user_id' => $sara->id])->value('hidden_at'))->not->toBeNull();
+
+    // One-to-one: off my list at once; when the other person writes it comes back, without the old messages.
+    $direct = $this->postJson('/api/v1/chat/conversations', ['type' => 'direct', 'user_id' => $sara->id])->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/chat/conversations/{$direct}/messages", ['body' => 'Old news'])->assertCreated();
+    Sanctum::actingAs($sara);
+    $this->deleteJson("/api/v1/chat/conversations/{$direct}")->assertNoContent();
+    $this->travel(1)->minutes();
+    $this->getJson('/api/v1/chat/conversations')->assertOk()->assertJsonCount(0, 'data');
+    Sanctum::actingAs($omar);
+    $this->getJson('/api/v1/chat/conversations?type=direct')->assertOk()->assertJsonCount(1, 'data');
+    $this->postJson("/api/v1/chat/conversations/{$direct}/messages", ['body' => 'Are you free?'])->assertCreated();
+    Sanctum::actingAs($sara);
+    $this->getJson('/api/v1/chat/conversations')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $direct);
+    $this->getJson("/api/v1/chat/conversations/{$direct}/messages")->assertOk()->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.body', 'Are you free?');
+});
+
+it('lets admins delete a chat for everyone, list, read and restore it; nobody else', function () {
     $omar = extrasUser();
     $sara = extrasUser();
     $admin = User::factory()->state(['user_type' => UserType::Admin])->withRole(RoleName::Admin->value)->withTwoFactor()->create();
     $group = extrasGroup($this, $omar, $sara);
     $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'Handover at 7'])->assertCreated();
+    $this->deleteJson("/api/v1/chat/conversations/{$group}/everyone")->assertForbidden();
 
-    // Only the leader deletes a group.
+    Sanctum::actingAs($admin);
+    $this->deleteJson("/api/v1/chat/conversations/{$group}/everyone")->assertNoContent();
     Sanctum::actingAs($sara);
-    $this->deleteJson("/api/v1/chat/conversations/{$group}")->assertForbidden();
-    $this->getJson('/api/v1/chat/conversations?deleted=1')->assertForbidden();
-    Sanctum::actingAs($omar);
-    $this->deleteJson("/api/v1/chat/conversations/{$group}")->assertNoContent();
     $this->getJson('/api/v1/chat/conversations')->assertOk()->assertJsonCount(0, 'data');
     $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'Still there?'])->assertStatus(409)->assertJsonPath('error_code', 'CHAT_DELETED');
-    $this->getJson("/api/v1/chat/conversations/{$group}/messages")->assertStatus(409);
-    expect(DB::table('conversations')->where('id', $group)->value('deleted_by'))->toBe($omar->id)
-        ->and(DB::table('messages')->where('conversation_id', $group)->count())->toBe(1);
+    $this->getJson('/api/v1/chat/conversations?deleted=1')->assertForbidden();
 
-    // The admin sees it with the switch, reads it, and restores it.
     Sanctum::actingAs($admin);
     $this->getJson('/api/v1/chat/conversations?deleted=1')->assertOk()->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.id', $group)->assertJsonPath('data.0.deleted_by', $omar->person->full_name);
+        ->assertJsonPath('data.0.id', $group)->assertJsonPath('data.0.deleted_by', $admin->person->full_name);
     $this->getJson("/api/v1/chat/conversations/{$group}/messages")->assertOk()->assertJsonPath('data.0.body', 'Handover at 7');
-    $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'x'])->assertStatus(409);
     $this->patchJson("/api/v1/chat/conversations/{$group}/restore")->assertOk()->assertJsonPath('data.deleted_at', null);
-
     Sanctum::actingAs($sara);
     $this->getJson('/api/v1/chat/conversations')->assertOk()->assertJsonCount(1, 'data');
     $this->patchJson("/api/v1/chat/conversations/{$group}/restore")->assertForbidden();
+});
 
-    // Either person deletes a one-to-one chat; starting it again brings it back.
-    $direct = $this->postJson('/api/v1/chat/conversations', ['type' => 'direct', 'user_id' => $omar->id])->assertCreated()->json('data.id');
-    $this->deleteJson("/api/v1/chat/conversations/{$direct}")->assertNoContent();
-    $this->postJson('/api/v1/chat/conversations', ['type' => 'direct', 'user_id' => $omar->id])->assertCreated()
-        ->assertJsonPath('data.id', $direct)->assertJsonPath('data.deleted_at', null);
+it('makes me Online when I sign in and Offline when I sign out everywhere, and lets me switch it by hand', function () {
+    $omar = extrasUser();
+    $omar->person->forceFill(['email' => 'omar.presence@demo.test'])->save();
+    $omar->forceFill(['password' => Hash::make('Presence-Pass-2026!')])->save();
+    $sara = extrasUser();
+    expect($omar->refresh()->presence->value)->toBe('offline');
+
+    $phone = $this->postJson('/api/v1/auth/login', ['email' => 'omar.presence@demo.test', 'password' => 'Presence-Pass-2026!', 'device_name' => 'phone'])
+        ->assertOk()->json('data.token');
+    $web = $this->postJson('/api/v1/auth/login', ['email' => 'omar.presence@demo.test', 'password' => 'Presence-Pass-2026!', 'device_name' => 'web'])
+        ->assertOk()->json('data.token');
+    expect($omar->refresh()->presence->value)->toBe('online');
+
+    // Others see it in a one-to-one chat and on the member.
+    Sanctum::actingAs($sara);
+    $direct = $this->postJson('/api/v1/chat/conversations', ['type' => 'direct', 'user_id' => $omar->id])->assertCreated()
+        ->assertJsonPath('data.partner_presence', 'online')->json('data.id');
+
+    // By hand.
+    $this->app['auth']->forgetGuards();
+    $this->withToken($web)->putJson('/api/v1/auth/presence', ['status' => 'offline'])->assertOk()->assertJsonPath('data.presence', 'offline');
+    $this->withToken($web)->putJson('/api/v1/auth/presence', ['status' => 'away'])->assertStatus(422);
+    $this->withToken($web)->getJson('/api/v1/auth/me')->assertOk()->assertJsonPath('data.user.presence', 'offline');
+    $this->withToken($web)->putJson('/api/v1/auth/presence', ['status' => 'online'])->assertOk();
+
+    // Signing out on one device keeps me online on the other; the last one takes me offline.
+    $this->withToken($web)->postJson('/api/v1/auth/logout')->assertNoContent();
+    expect($omar->refresh()->presence->value)->toBe('online');
+    $this->app['auth']->forgetGuards();
+    $this->withToken($phone)->postJson('/api/v1/auth/logout')->assertNoContent();
+    expect($omar->refresh()->presence->value)->toBe('offline');
+
+    Sanctum::actingAs($sara);
+    $this->getJson("/api/v1/chat/conversations/{$direct}")->assertOk()->assertJsonPath('data.partner_presence', 'offline');
 });
 
 it('still sends, reacts and reads when the real-time server is down', function () {

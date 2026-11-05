@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Identity;
 
+use App\Enums\Identity\PresenceStatus;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserStatus;
 use App\Enums\Identity\UserType;
@@ -35,6 +36,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property ?string $password
  * @property UserType $user_type
  * @property UserStatus $status
+ * @property PresenceStatus $presence Online / Offline in chat
+ * @property ?CarbonImmutable $presence_at
  * @property ?CarbonImmutable $email_verified_at
  * @property ?string $two_factor_secret
  * @property ?list<string> $two_factor_recovery_codes
@@ -70,7 +73,7 @@ class User extends Authenticatable implements Auditable, OwnedByUser, TwoFactorA
 
     protected $hidden = ['password', 'two_factor_secret', 'two_factor_recovery_codes'];
 
-    protected $attributes = ['status' => 'active'];
+    protected $attributes = ['status' => 'active', 'presence' => 'offline'];
 
     public static function listQueryConfig(): ListQueryConfig
     {
@@ -184,6 +187,8 @@ class User extends Authenticatable implements Auditable, OwnedByUser, TwoFactorA
             'password' => 'hashed',
             'user_type' => UserType::class,
             'status' => UserStatus::class,
+            'presence' => PresenceStatus::class,
+            'presence_at' => 'immutable_datetime',
             'email_verified_at' => 'immutable_datetime',
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',

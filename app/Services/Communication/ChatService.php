@@ -20,6 +20,8 @@ use App\Events\Communication\ConversationRead;
 use App\Events\Communication\MessageReacted;
 use App\Events\Communication\MessageSent;
 use App\Exceptions\Communication\ChatDeletedException;
+use App\Exceptions\Communication\ChatLeaveFirstException;
+use App\Exceptions\Communication\ChatLeftException;
 use App\Exceptions\Communication\GroupAdminRequiredException;
 use App\Exceptions\Communication\InvalidChatPartnerException;
 use App\Exceptions\Communication\NotAParticipantException;
@@ -106,9 +108,20 @@ final class ChatService implements ChatServiceInterface
 
     public function delete(User $me, Conversation $conversation): void
     {
-        if ($conversation->isGroup()) {
-            $this->assertAdmin($me, $conversation);
+        // A group is left first; then it comes off my list only (nothing is erased, the others keep it).
+        if ($conversation->isGroup() && $conversation->participantFor($me->id) !== null) {
+            throw new ChatLeaveFirstException;
         }
+        $now = $this->clock->now();
+        ConversationParticipant::query()->where(['conversation_id' => $conversation->id, 'user_id' => $me->id])
+            ->update(['hidden_at' => $now, 'cleared_at' => $now]);
+        $this->announce($conversation->id, [$me->id]);
+    }
+
+    public function deleteForEveryone(User $me, string $id): void
+    {
+        $this->assertCanSeeAll($me);
+        $conversation = Conversation::query()->whereNull('deleted_at')->findOrFail($id);
         $conversation->update(['deleted_at' => $this->clock->now(), 'deleted_by' => $me->id]);
         $this->announce($conversation->id, $this->memberIds($conversation));
     }
@@ -135,6 +148,7 @@ final class ChatService implements ChatServiceInterface
                 if ($existing->isDeleted()) {
                     $existing->update(['deleted_at' => null, 'deleted_by' => null]);
                 }
+                ConversationParticipant::query()->where(['conversation_id' => $existing->id, 'user_id' => $me->id])->update(['hidden_at' => null]);
 
                 return $existing->id;
             }
@@ -257,6 +271,10 @@ final class ChatService implements ChatServiceInterface
     public function messages(User $me, Conversation $conversation, ?string $before, int $limit): Collection
     {
         $query = $conversation->messages()->with(self::MESSAGE_RELATIONS)->orderByDesc('created_at')->orderByDesc('id');
+        $left = $conversation->getAttribute('my_left_at');
+        $cleared = $conversation->getAttribute('my_cleared_at');
+        $query->when($left !== null, fn (Builder $q) => $q->where('created_at', '<=', $left))
+            ->when($cleared !== null, fn (Builder $q) => $q->where('created_at', '>', $cleared));
         if ($before !== null) {
             $anchor = $conversation->messages()->find($before);
             if ($anchor instanceof Message) {
@@ -270,6 +288,7 @@ final class ChatService implements ChatServiceInterface
 
     public function send(User $me, Conversation $conversation, SendMessageData $data): Message
     {
+        $this->assertStillMember($me, $conversation);
         $members = $this->memberIds($conversation);
         // Only current members can be mentioned, and never yourself.
         $mentions = array_values(array_diff(array_intersect($data->mentions, $members), [$me->id]));
@@ -296,6 +315,9 @@ final class ChatService implements ChatServiceInterface
                 $this->attachments->uploadOne($file, new AttachToData('chat_message', $message->id, $category));
             }
             $conversation->update(['last_message_at' => $now]);
+            if (! $conversation->isGroup()) {
+                ConversationParticipant::query()->where('conversation_id', $conversation->id)->whereNotNull('hidden_at')->update(['hidden_at' => null]);
+            }
             // Writing in a chat means having read it.
             $conversation->participantFor($me->id)?->update(['last_read_at' => $now]);
 
@@ -314,6 +336,7 @@ final class ChatService implements ChatServiceInterface
 
     public function react(User $me, Conversation $conversation, string $messageId, ?string $emoji): Message
     {
+        $this->assertStillMember($me, $conversation);
         $message = $conversation->messages()->findOrFail($messageId);
         $current = MessageReaction::query()->where(['message_id' => $message->id, 'user_id' => $me->id])->first();
 
@@ -398,9 +421,11 @@ final class ChatService implements ChatServiceInterface
     {
         return Conversation::query()
             ->with(self::RELATIONS)
-            ->join('conversation_participants as mine', fn ($j) => $j->on('mine.conversation_id', '=', 'conversations.id')->where('mine.user_id', $me->id)->whereNull('mine.left_at'))
+            // Every chat I have not deleted for myself, groups I left included (read-only up to when I left).
+            ->join('conversation_participants as mine', fn ($j) => $j->on('mine.conversation_id', '=', 'conversations.id')->where('mine.user_id', $me->id)->whereNull('mine.hidden_at'))
             ->whereNull('conversations.deleted_at')
             ->select('conversations.*')
+            ->addSelect(['mine.left_at as my_left_at', 'mine.cleared_at as my_cleared_at'])
             ->selectSub($this->unreadMessages($me)->selectRaw('COUNT(*)'), 'unread_count');
     }
 
@@ -414,7 +439,9 @@ final class ChatService implements ChatServiceInterface
         return Message::query()
             ->whereColumn('messages.conversation_id', 'conversations.id')
             ->where('messages.sender_id', '!=', $me->id)
-            ->where(fn (Builder $q) => $q->whereNull('mine.last_read_at')->orWhereColumn('messages.created_at', '>', 'mine.last_read_at'));
+            ->where(fn (Builder $q) => $q->whereNull('mine.last_read_at')->orWhereColumn('messages.created_at', '>', 'mine.last_read_at'))
+            ->where(fn (Builder $q) => $q->whereNull('mine.left_at')->orWhereColumn('messages.created_at', '<=', 'mine.left_at'))
+            ->where(fn (Builder $q) => $q->whereNull('mine.cleared_at')->orWhereColumn('messages.created_at', '>', 'mine.cleared_at'));
     }
 
     /**
@@ -480,6 +507,14 @@ final class ChatService implements ChatServiceInterface
             ->whereNotNull('conversations.deleted_at')
             ->select('conversations.*')
             ->selectRaw('0 as unread_count');
+    }
+
+    /** Groups I left stay readable, never writable. */
+    private function assertStillMember(User $me, Conversation $conversation): void
+    {
+        if ($conversation->participantFor($me->id) === null) {
+            throw new ChatLeftException;
+        }
     }
 
     private function assertCanSeeAll(User $me): void

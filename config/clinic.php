@@ -140,6 +140,7 @@ return [
         Shared\ExportFormat::class,
         Identity\UserType::class,
         Identity\UserStatus::class,
+        Identity\PresenceStatus::class,
         Identity\RoleName::class,
         Identity\AuditAction::class,
         Identity\LoginFailureReason::class,

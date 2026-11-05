@@ -84,12 +84,13 @@ it('runs a group: admins rename, add, promote and remove; members leave; a group
     $this->patchJson("/api/v1/chat/conversations/{$group}/members/{$sara->id}", ['role' => 'admin'])->assertOk();
     $this->deleteJson("/api/v1/chat/conversations/{$group}/members/{$yusuf->id}")->assertNoContent();
 
-    // Maria leaves on her own; the removed pharmacist no longer reads it.
+    // Maria leaves on her own; she and the removed pharmacist keep it read-only on their lists.
     Sanctum::actingAs($maria);
     $this->deleteJson("/api/v1/chat/conversations/{$group}/members/{$maria->id}")->assertNoContent();
-    $this->getJson("/api/v1/chat/conversations/{$group}")->assertForbidden();
+    $this->getJson("/api/v1/chat/conversations/{$group}")->assertOk()->assertJsonPath('data.left', true);
+    $this->postJson("/api/v1/chat/conversations/{$group}/messages", ['body' => 'Bye'])->assertStatus(409)->assertJsonPath('error_code', 'CHAT_LEFT');
     Sanctum::actingAs($yusuf);
-    $this->getJson("/api/v1/chat/conversations/{$group}")->assertForbidden();
+    $this->getJson("/api/v1/chat/conversations/{$group}")->assertOk()->assertJsonPath('data.left', true);
 
     // When the last admins leave, the longest-standing member takes over.
     Sanctum::actingAs($omar);

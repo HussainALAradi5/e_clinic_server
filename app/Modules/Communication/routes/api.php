@@ -40,6 +40,7 @@ Route::middleware(['auth:sanctum', EnsureStaff::ALIAS])->group(function (): void
         });
         Route::middleware(['access:chat.read_all', 'throttle:write'])->group(function (): void {
             Route::patch('conversations/{conversation}/restore', 'restore')->whereUuid('conversation')->name('restore');
+            Route::delete('conversations/{conversation}/everyone', 'destroyForEveryone')->whereUuid('conversation')->name('destroy-everyone');
         });
     });
 

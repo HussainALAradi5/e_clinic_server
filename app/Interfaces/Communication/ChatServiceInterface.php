@@ -35,8 +35,11 @@ interface ChatServiceInterface
      */
     public function find(User $me, string $id, bool $orDeleted = false): Conversation;
 
-    /** Soft-deletes the chat (never removed): either person in a one-to-one chat, a leader in a group. */
+    /** Takes the chat off my list only (soft: nothing is erased); a group I am still in must be left first. */
     public function delete(User $me, Conversation $conversation): void;
+
+    /** Admins: the whole chat leaves every member's list (restorable). */
+    public function deleteForEveryone(User $me, string $id): void;
 
     /** An admin brings a deleted chat back to its members. */
     public function restore(User $me, string $id): Conversation;

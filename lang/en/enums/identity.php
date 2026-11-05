@@ -18,4 +18,5 @@ return [
     'DevicePlatform' => ['android' => 'Android', 'ios' => 'iOS'],
     'MobileApp' => ['patient' => 'Patient app', 'staff' => 'Staff app'],
     'NotificationStatus' => ['queued' => 'Queued', 'sent' => 'Sent', 'delivered' => 'Delivered', 'failed' => 'Failed', 'cancelled' => 'Cancelled'],
+    'PresenceStatus' => ['online' => 'Online', 'offline' => 'Offline'],
 ];

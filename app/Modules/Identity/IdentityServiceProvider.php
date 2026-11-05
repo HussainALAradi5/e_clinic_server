@@ -10,6 +10,7 @@ use App\Events\Identity\AttachmentUploaded;
 use App\Events\Identity\TaskCancelled;
 use App\Events\Identity\TaskCompleted;
 use App\Events\Identity\UserCreated;
+use App\Events\Identity\UserLoggedIn;
 use App\Events\Identity\UserLoggedOut;
 use App\Http\Resources\Identity\AttachmentResource;
 use App\Http\Resources\Identity\AuditLogResource;
@@ -41,6 +42,7 @@ use App\Listeners\Identity\NotifyTaskOwner;
 use App\Listeners\Identity\QueueAttachmentScan;
 use App\Listeners\Identity\RecordAuditableEvent;
 use App\Listeners\Identity\SendAccountInvitation;
+use App\Listeners\Identity\TrackPresence;
 use App\Models\Identity\Attachment;
 use App\Models\Identity\AuditLog;
 use App\Models\Identity\BackgroundTask;
@@ -129,6 +131,8 @@ final class IdentityServiceProvider extends ServiceProvider
         Event::listen(AuditableEvent::class, RecordAuditableEvent::class);
         Event::listen(UserCreated::class, SendAccountInvitation::class);
         Event::listen(UserLoggedOut::class, ForgetDevicesOnLogoutAll::class);
+        Event::listen(UserLoggedIn::class, [TrackPresence::class, 'signedIn']);
+        Event::listen(UserLoggedOut::class, [TrackPresence::class, 'signedOut']);
         Event::listen([TaskCompleted::class, TaskCancelled::class], NotifyTaskOwner::class);
         Event::listen(AttachmentUploaded::class, QueueAttachmentScan::class);
 

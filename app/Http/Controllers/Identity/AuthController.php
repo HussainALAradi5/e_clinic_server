@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Identity;
 
 use App\Dtos\Identity\AuthTokenData;
+use App\Enums\Identity\PresenceStatus;
 use App\Http\Concerns\ApiResponse;
 use App\Http\Requests\Identity\ChangePasswordRequest;
 use App\Http\Requests\Identity\ConfirmTwoFactorRequest;
@@ -21,6 +22,7 @@ use App\Models\Identity\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
 final class AuthController
 {
@@ -56,6 +58,15 @@ final class AuthController
     public function logoutAll(Request $request): JsonResponse
     {
         return $this->ok(['revoked' => $this->auth->logoutAllDevices($this->user($request))]);
+    }
+
+    /** Switches my Online / Offline status by hand: `status` online|offline. */
+    public function presence(Request $request): JsonResponse
+    {
+        $request->validate(['status' => ['required', Rule::enum(PresenceStatus::class)]]);
+        $user = $this->auth->setPresence($this->user($request), PresenceStatus::from($request->string('status')->toString()));
+
+        return $this->ok(['presence' => $user->presence->value]);
     }
 
     public function me(Request $request): JsonResponse

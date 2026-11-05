@@ -5,6 +5,8 @@
 return [
     'CHAT_NOT_A_MEMBER' => 'Only members of this chat can read or write in it.',
     'CHAT_DELETED' => 'This chat was deleted. An admin can restore it.',
+    'CHAT_LEAVE_FIRST' => 'Exit the group first; then you can delete it from your chats.',
+    'CHAT_LEFT' => 'You left this group, so you can no longer write in it.',
     'CHAT_GROUP_ADMIN_REQUIRED' => 'Only a leader of this group can change it.',
     'CHAT_LAST_ADMIN' => 'Make someone else a leader before stepping down — a group always keeps a leader.',
     'CHAT_INVALID_PARTNER' => 'Chats are between active staff members.',

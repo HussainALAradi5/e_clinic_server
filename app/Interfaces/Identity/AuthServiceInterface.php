@@ -9,6 +9,7 @@ use App\Dtos\Identity\ChangePasswordData;
 use App\Dtos\Identity\LoginData;
 use App\Dtos\Identity\ResetPasswordData;
 use App\Dtos\Identity\TwoFactorSetupData;
+use App\Enums\Identity\PresenceStatus;
 use App\Models\Identity\User;
 
 interface AuthServiceInterface
@@ -27,6 +28,9 @@ interface AuthServiceInterface
 
     /** The authenticated user with person and roles. */
     public function me(User $user): User;
+
+    /** My Online / Offline status (also set by signing in and out). */
+    public function setPresence(User $user, PresenceStatus $status): User;
 
     /** Changes the password of the signed-in user (other sessions are revoked). */
     public function changePassword(User $user, ChangePasswordData $data): void;

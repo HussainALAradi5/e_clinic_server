@@ -26,6 +26,7 @@ final class ContactResource extends JsonResource
             'full_name' => $this->person->full_name,
             'avatar_url' => Avatar::url($this->person),
             'user_type' => $this->user_type->value,
+            'presence' => $this->presence->value,
             'code' => $this->person->code,
         ];
     }

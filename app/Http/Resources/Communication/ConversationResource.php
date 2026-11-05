@@ -26,18 +26,25 @@ final class ConversationResource extends JsonResource
     {
         $me = (string) $request->user()?->getAuthIdentifier();
         $other = $this->isGroup() ? null : $this->participants->first(fn (ConversationParticipant $p): bool => $p->user_id !== $me);
+        $leftAt = $this->getAttribute('my_left_at');
+        $last = $this->latestMessage;
+        if ($last !== null && $leftAt !== null && $last->created_at > CarbonImmutable::parse($leftAt)) {
+            $last = null;
+        }
 
         return [
             'id' => $this->id,
             'type' => $this->type->value,
             'title' => $this->isGroup() ? $this->title : ($other?->user->person->full_name ?? (string) $this->title),
             'partner_id' => $other?->user_id,
+            'partner_presence' => $other?->user->presence->value,
             'avatar_url' => $other === null ? null : Avatar::url($other->user->person),
             'my_role' => $this->participantFor($me)?->role->value,
             'muted' => $this->participantFor($me)?->isMutedAt(CarbonImmutable::now()) ?? false,
             'muted_until' => $this->participantFor($me)?->muted_until?->toIso8601String(),
             'members' => ParticipantResource::collection($this->participants),
-            'last_message' => $this->latestMessage === null ? null : new MessageResource($this->latestMessage),
+            'last_message' => $last === null ? null : new MessageResource($last),
+            'left' => $leftAt !== null,
             'unread_count' => (int) ($this->getAttribute('unread_count') ?? 0),
             'messages_count' => $this->when($this->getAttribute('messages_count') !== null, fn (): int => (int) $this->getAttribute('messages_count')),
             'last_message_at' => $this->last_message_at?->toIso8601String(),

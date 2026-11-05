@@ -29,6 +29,7 @@ final class ParticipantResource extends JsonResource
             'phone' => $this->user->person->phone,
             'email' => $this->user->person->email,
             'user_type' => $this->user->user_type->value,
+            'presence' => $this->user->presence->value,
             'role' => $this->role->value,
             'is_me' => $this->user_id === $request->user()?->getAuthIdentifier(),
             'last_read_at' => $this->last_read_at?->toIso8601String(),
