@@ -28,8 +28,9 @@ final class DashboardRequest extends FormRequest
     {
         $isCreate = $this->isMethod('POST');
         $required = $isCreate ? 'required' : 'sometimes';
+        $rawSection = $this->input('section');
         $section = $isCreate
-            ? DashboardSection::tryFrom($this->string('section')->toString())
+            ? (is_string($rawSection) ? DashboardSection::tryFrom($rawSection) : null)
             : $dashboards->findDashboard((string) $this->route('dashboard'))->section;
 
         return [

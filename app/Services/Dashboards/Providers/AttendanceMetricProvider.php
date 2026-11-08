@@ -109,8 +109,8 @@ final class AttendanceMetricProvider implements DashboardMetricProvider
         $holidays = $this->calendar->holidays($date, $date);
         $leave = LeaveRequest::query()->where('status', ApprovalStatus::Approved->value)
             ->whereDate('start_date', '<=', $day)->whereDate('end_date', '>=', $day)->pluck('employee_id')->flip();
-        $employees = Employee::query()->where('status', EmployeeStatus::Active->value)
-            ->get(['id', 'hire_date', 'termination_date', 'work_start_time', 'weekly_off_days']);
+        $employees = Employee::query()->with('shift')->where('status', EmployeeStatus::Active->value)
+            ->get(['id', 'shift_id', 'hire_date', 'termination_date', 'work_start_time', 'weekly_off_days']);
         $now = $this->clock->now();
         $grace = Config::integer('hr.attendance.late_grace_minutes');
         $absent = 0;
@@ -122,7 +122,7 @@ final class AttendanceMetricProvider implements DashboardMetricProvider
             }
             if ($leave->has($employee->id)) {
                 $onLeave++;
-            } elseif ($now->greaterThan($this->clock->combine($date, substr($employee->work_start_time, 0, 5))->addMinutes($grace))) {
+            } elseif ($now->greaterThan($this->clock->combine($date, $employee->shift?->arriveBy() ?? substr($employee->work_start_time, 0, 5))->addMinutes($grace))) {
                 $absent++;
             }
         }

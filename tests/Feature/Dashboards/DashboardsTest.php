@@ -4,6 +4,7 @@ use App\Enums\Dashboards\AttendanceMetric;
 use App\Enums\Dashboards\DashboardSection;
 use App\Enums\HR\AttendanceSource;
 use App\Enums\HR\AttendanceStatus;
+use App\Enums\HR\ShiftType;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
 use App\Enums\Shared\ApprovalStatus;
@@ -12,6 +13,7 @@ use App\Models\HR\Attendance;
 use App\Models\HR\Employee;
 use App\Models\HR\LeaveRequest;
 use App\Models\HR\LeaveType;
+use App\Models\HR\Shift;
 use App\Models\Identity\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
@@ -251,4 +253,19 @@ it('seeds one default attendance dashboard and can run again', function () {
     expect($dashboards)->toHaveCount(1)
         ->and($dashboards[0]->is_default)->toBeTrue()
         ->and(array_column($dashboards[0]->widgets, 'metric'))->toContain(...array_column(AttendanceMetric::cases(), 'value'));
+});
+
+it('uses the shift start, like lateness does, before counting someone absent', function () {
+    actingWith('dashboards.read_all', 'attendance.read_all');
+    $shift = Shift::query()->create(['name' => 'Afternoon', 'type' => ShiftType::Fixed, 'start_time' => '14:00', 'end_time' => '22:00', 'required_minutes' => 480]);
+    FrontDesk::employee(UserType::MedicalStaff, RoleName::Nurse); // the default 08:00 start has passed: absent
+    tap(FrontDesk::employee(UserType::MedicalStaff, RoleName::Nurse))->update(['shift_id' => $shift->id]); // starts at 14:00: not due yet
+
+    expect(dashboardFigures('/dashboards/'.dashboardAllMetrics()->id.'/data')['absent'])->toBe(1);
+});
+
+it('answers 422, not a crash, when the section is not text', function () {
+    actingWith('dashboards.read_all', 'dashboards.write');
+
+    $this->postJson('/dashboards', ['name' => 'Attendance', 'section' => [], 'widgets' => dashboardWidgets()])->assertUnprocessable();
 });
