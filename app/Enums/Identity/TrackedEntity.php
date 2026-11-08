@@ -77,9 +77,9 @@ enum TrackedEntity: string implements HasLabel
     case Prescription = 'prescription';
     case Dispensation = 'dispensation';
 
-    /** The access-control resource whose `read_all` right opens this entity's event log. */
+    /** The access-control resource whose `read_all` right opens this entity's event log. Patient and person are the patient file, so they have none. */
     private const RESOURCES = [
-        'person' => 'people', 'chat_message' => 'chat', 'conversation' => 'chat', 'support_ticket' => 'tickets',
+        'chat_message' => 'chat', 'conversation' => 'chat', 'support_ticket' => 'tickets',
         'user' => 'users', 'role' => 'roles', 'background_task' => 'audit', 'attachment' => 'attachments',
         'generated_document' => 'templates', 'document_template' => 'templates', 'written_document' => 'written_documents',
         'notification' => 'notifications', 'country' => 'reference', 'address' => 'reference', 'company' => 'companies',
@@ -88,7 +88,7 @@ enum TrackedEntity: string implements HasLabel
         'department' => 'departments', 'employee' => 'employees', 'salary_component' => 'employees',
         'attendance' => 'attendance', 'leave_type' => 'leaves', 'leave_request' => 'leaves', 'payroll_run' => 'payroll',
         'staff_request' => 'staff_requests', 'setting' => 'settings', 'overtime_band' => 'settings', 'payslip' => 'payroll',
-        'shift' => 'shifts', 'dashboard' => 'dashboards', 'billable_service' => 'services', 'patient' => 'patients',
+        'shift' => 'shifts', 'dashboard' => 'dashboards', 'billable_service' => 'services',
         'specialty' => 'specialties', 'doctor' => 'doctors', 'room' => 'rooms', 'provider_schedule' => 'schedules',
         'schedule_exception' => 'schedules', 'appointment' => 'appointments', 'treatment' => 'treatments',
         'clinical_order' => 'orders', 'medical_record' => 'records', 'patient_consent' => 'consents',
@@ -109,7 +109,7 @@ enum TrackedEntity: string implements HasLabel
         return $this === self::PatientProfile ? [self::Person->value, self::Patient->value] : [$this->value];
     }
 
-    /** Null for the patient file, which has its own right. */
+    /** Null for the patient file (PatientProfile, Patient, Person), which has its own right. */
     public function resource(): ?string
     {
         return self::RESOURCES[$this->value] ?? null;

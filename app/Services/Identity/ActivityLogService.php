@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Identity;
 
 use App\Enums\Identity\TrackedEntity;
+use App\Enums\Identity\UserType;
 use App\Exceptions\Identity\ActivityEntityForbiddenException;
 use App\Interfaces\Identity\ActivityLogServiceInterface;
 use App\Models\Identity\AuditLog;
@@ -33,7 +34,9 @@ final class ActivityLogService implements ActivityLogServiceInterface
 
     private function assertCanRead(TrackedEntity $entity): void
     {
-        if (! PermissionExpression::parse($entity->readRight())->evaluate(Auth::user())) {
+        $user = Auth::user();
+
+        if ($user?->user_type === UserType::Patient || ! PermissionExpression::parse($entity->readRight())->evaluate($user)) {
             throw new ActivityEntityForbiddenException;
         }
     }

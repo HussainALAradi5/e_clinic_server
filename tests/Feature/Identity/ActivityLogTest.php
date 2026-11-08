@@ -102,13 +102,13 @@ it('has an entity for every audited record type, each tied to a real right', fun
     expect(array_diff($aliases, $values))->toBe([]);
 
     foreach (TrackedEntity::cases() as $entity) {
-        if ($entity !== TrackedEntity::PatientProfile) {
-            expect(Config::array('access.resources'))->toHaveKey((string) $entity->resource());
+        if ($entity->resource() !== null) {
+            expect(Config::array('access.resources'))->toHaveKey($entity->resource());
         }
     }
 });
 
-it('adds "opened the page" once per person, for real views only', function () {
+it('adds "opened the page" every time it is opened, for real views only', function () {
     activityActingAs(RoleName::Receptionist);
     $person = activityPatient();
     $patientUrl = "/patients/{$person->id}";
@@ -121,7 +121,7 @@ it('adds "opened the page" once per person, for real views only', function () {
     $entry = collect($this->getJson("/activity/patient_profile/{$person->id}")->assertOk()->json('data'))->firstWhere('action', 'viewed');
     expect($entry['action_label'])->toBe('Opened the page')->and($entry['changed_by'])->not->toBeNull();
 
-    $this->travel(6)->minutes();
+    $this->travel(4)->seconds();
     $this->getJson($patientUrl)->assertOk();
     expect($viewed())->toBe(2);
 
@@ -196,4 +196,32 @@ it('still loads the page when recording the view fails', function () {
     Cache::shouldReceive('add')->andThrow(new RuntimeException('cache down'));
 
     $this->getJson("/patients/{$person->id}")->assertOk();
+});
+
+it('keeps the patient file out of reach through its parts', function (string $entity) {
+    actingWith('patients.read_all', 'people.read_all', 'appointments.read_all');
+
+    $this->getJson("/activity/{$entity}/".Str::uuid())->assertForbidden();
+})->with(['patient', 'person', 'patient_profile']);
+
+it('never opens an event log to a patient, whatever rights the role holds', function () {
+    $user = FrontDesk::employee(UserType::Patient, RoleName::Patient);
+    Sanctum::actingAs(User::query()->findOrFail($user->id));
+
+    $this->getJson('/activity/doctor/'.Str::uuid())->assertForbidden();
+});
+
+it('hides salary terms without the right to see salaries', function () {
+    $id = (string) Str::uuid();
+    (new AuditLog)->forceFill([
+        'id' => (string) Str::uuid7(), 'action' => 'updated', 'auditable_type' => 'doctor', 'auditable_id' => $id, 'module' => 'appointments',
+        'old_values' => ['bio' => 'old', 'commission_value' => '5.00'], 'new_values' => ['bio' => 'new', 'commission_value' => '9.00'], 'created_at' => now(),
+    ])->save();
+    $fields = fn (): array => collect($this->getJson("/activity/doctor/{$id}")->assertOk()->json('data'))->pluck('changes')->flatten(1)->pluck('field')->all();
+
+    actingWith('doctors.read_all');
+    expect($fields())->toBe(['bio']);
+
+    actingWith('doctors.read_all', 'employees.view_salary');
+    expect($fields())->toContain('commission_value');
 });

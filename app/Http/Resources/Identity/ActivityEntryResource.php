@@ -64,7 +64,7 @@ final class ActivityEntryResource extends JsonResource
         );
     }
 
-    /** Internal identifiers, hashes, housekeeping flags and medical values without the right are never part of what happened. */
+    /** Internal identifiers, hashes, housekeeping flags, and medical or salary values without the right are never part of what happened. */
     private function isShown(string $field, mixed $old, mixed $new, Request $request): bool
     {
         if (in_array($field, Config::array('audit.activity_hidden_fields'), true) || Str::endsWith($field, ['_id', '_hash'])) {
@@ -75,8 +75,9 @@ final class ActivityEntryResource extends JsonResource
             return false;
         }
 
-        return ! in_array($field, Config::array('audit.activity_medical_fields'), true)
-            || (bool) $request->user()?->can('patients.view_medical');
+        $right = Config::array('audit.activity_restricted_fields')[$field] ?? null;
+
+        return $right === null || (bool) $request->user()?->can($right);
     }
 
     private function isUuid(mixed $value): bool
