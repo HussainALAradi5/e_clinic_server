@@ -30,7 +30,6 @@ interface SettingServiceInterface
     /** The amount of a setting that has one (overtime pay per hour), null when not set. */
     public function amount(SettingKey $key): ?Money;
 
-    /** Creates the key's row when missing, else updates it; the amount is kept only by keys that have one. */
     /**
      * Overtime time bands, earliest first.
      *
@@ -38,5 +37,6 @@ interface SettingServiceInterface
      */
     public function overtimeBands(): Collection;
 
+    /** Creates the key's row when missing, else updates it; the amount is kept only by keys that have one. */
     public function save(SettingKey $key, SettingData $data): Setting;
 }

@@ -28,6 +28,7 @@ use App\Models\HR\Employee;
 use App\Models\HR\EmployeeSalaryComponent;
 use App\Models\HR\LeaveRequest;
 use App\Models\HR\LeaveType;
+use App\Models\HR\OvertimeBand;
 use App\Models\HR\PayrollRun;
 use App\Models\HR\Payslip;
 use App\Models\HR\Setting;
@@ -111,6 +112,7 @@ return [
         'payroll_run' => PayrollRun::class,
         'staff_request' => StaffRequest::class,
         'setting' => Setting::class,
+        'overtime_band' => OvertimeBand::class,
         'payslip' => Payslip::class,
         'shift' => Shift::class,
         'billable_service' => BillableService::class,

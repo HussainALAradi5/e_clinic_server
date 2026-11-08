@@ -76,7 +76,7 @@ final class AttendancePay
         $bands = $this->settings->overtimeBands();
 
         if ($bands->isEmpty() || $day->check_out_at === null) {
-            return $baseRate->multipliedBy($this->hours($day->overtime_minutes));
+            return $this->priceOf($baseRate, $day->overtime_minutes);
         }
 
         $out = $this->clock->toClinic($day->check_out_at);
@@ -89,18 +89,24 @@ final class AttendancePay
             foreach ([0, -self::MINUTES_PER_DAY] as $shift) {
                 $inside = $this->overlap($start, $end, $band, $shift);
                 if ($inside > 0) {
-                    $total = $total->plus($band->rate->getAmount()->multipliedBy($this->hours($inside)));
+                    $total = $total->plus($this->priceOf($band->rate->getAmount(), $inside));
                     $covered += $inside;
                 }
             }
         }
 
-        return $total->plus($baseRate->multipliedBy($this->hours($day->overtime_minutes - $covered)));
+        return $total->plus($this->priceOf($baseRate, $day->overtime_minutes - $covered));
     }
 
     private function overlap(int $start, int $end, OvertimeBand $band, int $shift): int
     {
         return max(0, min($end, $band->end_minute + $shift) - max($start, $band->start_minute + $shift));
+    }
+
+    /** Multiplies before dividing, so rounding the hours cannot change the amount. */
+    private function priceOf(BigDecimal $ratePerHour, int $minutes): BigDecimal
+    {
+        return $ratePerHour->multipliedBy($minutes)->dividedBy(self::MINUTES_PER_HOUR, 6, RoundingMode::HALF_UP);
     }
 
     private function hours(int $minutes): BigDecimal

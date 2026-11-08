@@ -41,6 +41,11 @@ return new class extends Migration
 
     public function down(): void
     {
+        $allDay = OvertimeBand::query()->where('start_minute', 0)->where('end_minute', self::LAST_MINUTE_OF_DAY)->first();
+        if ($allDay !== null) {
+            Setting::query()->where('key', SettingKey::Overtime->value)->first()?->forceFill(['amount' => $allDay->rate])->save();
+        }
+
         Schema::dropIfExists('overtime_bands');
     }
 };
