@@ -146,8 +146,8 @@ final class RefundService extends BaseEntityService implements RefundServiceInte
             ])->save();
 
             $payment->forceFill(['refunded_amount' => $payment->refunded_amount->plus($refund->amount)])->save();
-            $this->invoices->applyRefund($refund->invoice, $refund->amount);
             $this->wallet->returnRefund($refund);
+            $this->invoices->applyRefund($refund->invoice, $refund->amount);
 
             return $refund;
         });
