@@ -99,6 +99,9 @@ return [
         'roles.show' => 'role', 'dashboards.show' => 'dashboard',
     ],
 
+    /* Never listed in a record's event log, along with every field ending in _id or _hash. */
+    'activity_hidden_fields' => ['id', 'code', 'version', 'is_archived', 'is_deleted', 'notification_opt_out'],
+
     /* The same person opening the same record again within this time counts once. */
     'view_dedupe_seconds' => 300,
     /* Public morph aliases (Relation::morphMap) and `GET /audit-logs/{type}/{id}` types. Never a raw class name from the client. Modules add theirs. */

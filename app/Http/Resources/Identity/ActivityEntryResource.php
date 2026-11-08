@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Identity;
 
+use App\Enums\Identity\AuditAction;
 use App\Models\Identity\AuditLog;
+use App\Services\Identity\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 
 /**
@@ -16,6 +19,9 @@ use Illuminate\Support\Str;
  */
 final class ActivityEntryResource extends JsonResource
 {
+    /** How Laravel's encrypted values begin (base64 of `{"iv":`). */
+    private const ENCRYPTED_PREFIX = 'eyJpdiI6';
+
     /**
      * @return array<string, mixed>
      */
@@ -37,6 +43,10 @@ final class ActivityEntryResource extends JsonResource
      */
     private function changes(): array
     {
+        if (! in_array($this->action, [AuditAction::Updated, AuditAction::StatusChanged], true)) {
+            return [];
+        }
+
         $old = $this->old_values ?? [];
         $new = $this->new_values ?? [];
 
@@ -47,13 +57,24 @@ final class ActivityEntryResource extends JsonResource
                 'old' => $this->display($old[$field] ?? null),
                 'new' => $this->display($new[$field] ?? null),
             ],
-            array_values(array_unique([...array_keys($old), ...array_keys($new)])),
+            array_values(array_filter(array_unique([...array_keys($old), ...array_keys($new)]), $this->isShown(...))),
         );
     }
 
-    /** A stored date (2026-01-02 00:00:00) reads as the date alone. */
+    /** Internal identifiers, hashes and housekeeping flags are never part of what happened. */
+    private function isShown(string $field): bool
+    {
+        return ! in_array($field, Config::array('audit.activity_hidden_fields'), true)
+            && ! Str::endsWith($field, ['_id', '_hash']);
+    }
+
+    /** Encrypted values stay hidden; a stored date (2026-01-02 00:00:00) reads as the date alone. */
     private function display(mixed $value): mixed
     {
-        return is_string($value) ? preg_replace('/^(\d{4}-\d{2}-\d{2}) 00:00:00$/', '$1', $value) : $value;
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        return str_starts_with($value, self::ENCRYPTED_PREFIX) ? AuditLogService::MASK : preg_replace('/^(\d{4}-\d{2}-\d{2}) 00:00:00$/', '$1', $value);
     }
 }

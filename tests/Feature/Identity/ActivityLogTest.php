@@ -148,3 +148,18 @@ it('shows a stored date without its empty time', function () {
 
     expect($change['new'])->toBe('1980-02-03');
 });
+
+it('describes only what happened: no field dump on create, no ids or encrypted values', function () {
+    activityActingAs(RoleName::Receptionist);
+    $person = Person::factory()->create(['email' => 'first@example.com']);
+    Patient::query()->forceCreate(['id' => $person->id, 'emergency_contacts' => [['name' => 'Secret Name', 'relation' => 'Friend', 'phone' => '+97336550000']]]);
+    $patient = Patient::query()->findOrFail($person->id);
+    $patient->update(['emergency_contacts' => [['name' => 'Other Name', 'relation' => 'Friend', 'phone' => '+97336550001']]]);
+
+    $response = $this->getJson("/activity/patient_profile/{$person->id}")->assertOk();
+    $entries = collect($response->json('data'));
+
+    expect($entries->where('action', 'created')->pluck('changes')->flatten(1)->all())->toBe([])
+        ->and($response->getContent())->not->toContain('eyJpdiI6')->not->toContain('Secret Name')
+        ->and($entries->pluck('changes')->flatten(1)->pluck('field')->all())->not->toContain('id');
+});
