@@ -14,11 +14,13 @@ final readonly class CreateUserData
 {
     /**
      * @param  list<string>  $roles  role names
+     * @param  bool  $isRoleFixedBySystem  the system picks the roles, not the caller (a patient's own portal account)
      */
     public function __construct(
         public UserType $userType,
         public array $roles = [],
         public ?string $password = null,
         public UserStatus $status = UserStatus::Active,
+        public bool $isRoleFixedBySystem = false,
     ) {}
 }

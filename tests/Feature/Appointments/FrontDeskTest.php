@@ -248,3 +248,14 @@ it('tells coming, today, past and missed visits apart, and filters by them', fun
     $this->getJson('/appointments')->assertOk()->assertJsonCount(4, 'data');
     $this->getJson('/appointments?timing=later')->assertStatus(422);
 });
+
+it('lets the front desk open a patient portal account, once, with the patient role only', function () {
+    receptionist();
+    $id = $this->postJson('/patients', ['person' => ['first_name' => 'Noor', 'last_name' => 'Hasan', 'gender' => 'female', 'date_of_birth' => '1990-02-03', 'phone' => '+97336551111', 'national_id' => '900203111', 'email' => 'noor.hasan@example.com']])
+        ->assertCreated()->json('data.id');
+
+    $this->postJson("/patients/{$id}/portal-account")->assertCreated();
+
+    expect(User::query()->findOrFail($id)->getRoleNames()->all())->toBe([RoleName::Patient->value]);
+    $this->postJson("/patients/{$id}/portal-account")->assertStatus(409)->assertJsonPath('error_code', 'PATIENT_HAS_ACCOUNT');
+});
