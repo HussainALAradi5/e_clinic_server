@@ -20,6 +20,7 @@ use App\Models\Appointments\Treatment;
 use App\Models\Communication\Conversation;
 use App\Models\Communication\Message;
 use App\Models\Communication\SupportTicket;
+use App\Models\Dashboards\Dashboard;
 use App\Models\Documents\DocumentTemplate;
 use App\Models\Documents\WrittenDocument;
 use App\Models\HR\Attendance;
@@ -113,6 +114,7 @@ return [
         'setting' => Setting::class,
         'payslip' => Payslip::class,
         'shift' => Shift::class,
+        'dashboard' => Dashboard::class,
         'billable_service' => BillableService::class,
         'patient' => Patient::class,
         'specialty' => Specialty::class,

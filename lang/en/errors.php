@@ -14,6 +14,7 @@ return [
     ...require __DIR__.'/errors/accounting.php',
     ...require __DIR__.'/errors/pharmacy.php',
     ...require __DIR__.'/errors/hr.php',
+    ...require __DIR__.'/errors/dashboards.php',
     ...require __DIR__.'/errors/communication.php',
     ...require __DIR__.'/errors/reference.php',
     ...require __DIR__.'/errors/documents.php',

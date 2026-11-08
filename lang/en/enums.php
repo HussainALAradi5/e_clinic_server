@@ -15,6 +15,7 @@ return [
     ...require __DIR__.'/enums/accounting.php',
     ...require __DIR__.'/enums/pharmacy.php',
     ...require __DIR__.'/enums/hr.php',
+    ...require __DIR__.'/enums/dashboards.php',
     ...require __DIR__.'/enums/communication.php',
     ...require __DIR__.'/enums/reference.php',
     ...require __DIR__.'/enums/documents.php',
