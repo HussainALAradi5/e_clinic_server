@@ -1,12 +1,16 @@
 <?php
 
+use App\Enums\HR\SettingKey;
 use App\Enums\Identity\RoleName;
 use App\Enums\Identity\UserType;
 use App\Models\Accounting\JournalEntry;
 use App\Models\HR\Attendance;
 use App\Models\HR\Employee;
+use App\Models\HR\OvertimeBand;
+use App\Models\HR\Setting;
 use App\Models\Identity\Notification as AppNotification;
 use App\Models\Identity\User;
+use App\Utilities\Shared\MoneyHelper;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
 use Database\Seeders\CountrySeeder;
@@ -200,4 +204,80 @@ it('lets HR reject requests in bulk and export them at /hr/requests; staff canno
     $this->postJson('/hr/requests/bulk', ['action' => 'reject', 'reason' => 'No proof', 'ids' => [$id]])->assertOk()->assertJsonPath('data.succeeded', 1);
     $this->getJson("/hr/requests/{$id}")->assertOk()->assertJsonPath('data.status', 'rejected')->assertJsonPath('data.review_reason', 'No proof');
     $this->postJson('/hr/requests/export', ['format' => 'csv'])->assertOk();
+});
+
+it('prices overtime by the time bands it falls in, and the rest at the plain rate', function () {
+    $nurse = requestStaff();
+    $hr = requestStaff(RoleName::HrManager, UserType::Hr);
+    requestAs($hr);
+    $this->putJson('/hr/settings/overtime', [
+        'is_enabled' => true,
+        'amount' => '1',
+        'bands' => [['start' => '16:00', 'end' => '17:00', 'rate' => '2'], ['start' => '17:00', 'end' => '18:00', 'rate' => '3']],
+    ])->assertOk()
+        ->assertJsonPath('data.bands.0.start', '16:00')->assertJsonPath('data.bands.1.end', '18:00')
+        ->assertJsonPath('data.bands.1.rate.amount', '3.000');
+
+    requestAs($nurse);
+    requestAt('08:00');
+    $this->postJson('/hr/attendance/check-in')->assertOk();
+    requestAt('19:30');
+    $dayId = $this->postJson('/hr/attendance/check-out')->assertOk()->assertJsonPath('data.overtime_minutes', 210)->json('data.id');
+
+    // 16-17 at 2 + 17-18 at 3 + 18-19:30 at the plain 1 = 6.500 for 3.5 hours.
+    $request = $this->postJson('/hr/requests', ['type' => 'overtime', 'attendance_id' => $dayId])->assertCreated()
+        ->assertJsonPath('data.details.amount.amount', '6.500')->assertJsonPath('data.details.rate', '1.857')->json('data.id');
+
+    requestAs($hr);
+    $this->patchJson("/hr/requests/{$request}/approve")->assertOk();
+    expect((string) Attendance::query()->findOrFail($dayId)->overtime_amount?->getAmount())->toBe('6.500');
+
+    // Changing the bands later never changes an approved day; an empty list removes them.
+    $this->putJson('/hr/settings/overtime', ['is_enabled' => true, 'amount' => '1', 'bands' => []])->assertOk()->assertJsonCount(0, 'data.bands');
+    expect((string) Attendance::query()->findOrFail($dayId)->overtime_amount?->getAmount())->toBe('6.500');
+});
+
+it('keeps the time bands when they are left out, and refuses bad ones', function () {
+    requestAs(requestStaff(RoleName::HrManager, UserType::Hr));
+    $save = fn (array $bands) => $this->putJson('/hr/settings/overtime', ['is_enabled' => true, 'bands' => $bands]);
+
+    $save([['start' => '17:00', 'end' => '19:00', 'rate' => '2.5']])->assertOk();
+    $this->putJson('/hr/settings/overtime', ['is_enabled' => false])->assertOk()->assertJsonCount(1, 'data.bands');
+
+    $save([['start' => '19:00', 'end' => '17:00', 'rate' => '2']])->assertUnprocessable();
+    $save([['start' => '17:00', 'end' => '19:00', 'rate' => '2'], ['start' => '18:00', 'end' => '20:00', 'rate' => '3']])->assertUnprocessable();
+    $save([['start' => '17:00', 'end' => '19:00', 'rate' => '-1']])->assertUnprocessable();
+    $this->putJson('/hr/settings/late_excuse', ['is_enabled' => true, 'bands' => [['start' => '17:00', 'end' => '19:00', 'rate' => '2']]])->assertUnprocessable();
+});
+
+it('rounds overtime pay only once, after pricing the minutes', function () {
+    $nurse = requestStaff();
+    $hr = requestStaff(RoleName::HrManager, UserType::Hr);
+    requestAs($hr);
+    $this->putJson('/hr/settings/overtime', ['is_enabled' => true, 'bands' => [['start' => '16:00', 'end' => '17:00', 'rate' => '2.505']]])->assertOk();
+
+    requestAs($nurse);
+    requestAt('08:00');
+    $this->postJson('/hr/attendance/check-in')->assertOk();
+    requestAt('16:50');
+    $dayId = $this->postJson('/hr/attendance/check-out')->assertOk()->assertJsonPath('data.overtime_minutes', 50)->json('data.id');
+
+    // 50 minutes at 2.505 is 2.0875, which rounds to 2.088.
+    $this->postJson('/hr/requests', ['type' => 'overtime', 'attendance_id' => $dayId])->assertCreated()
+        ->assertJsonPath('data.details.amount.amount', '2.088');
+});
+
+it('moves a saved overtime rate into an all-day band and back on rollback', function () {
+    $migration = require database_path('migrations/2026_11_08_000001_create_overtime_bands_table.php');
+    $migration->down();
+    Setting::query()->where('key', SettingKey::Overtime->value)->firstOrFail()->forceFill(['is_enabled' => true, 'amount' => MoneyHelper::of('2.500')])->save();
+
+    $migration->up();
+    $setting = Setting::query()->where('key', SettingKey::Overtime->value)->firstOrFail();
+    expect($setting->amount)->toBeNull()
+        ->and((string) OvertimeBand::query()->sole()->rate->getAmount())->toBe('2.500');
+
+    $migration->down();
+    expect((string) $setting->refresh()->amount?->getAmount())->toBe('2.500');
+    $migration->up();
 });

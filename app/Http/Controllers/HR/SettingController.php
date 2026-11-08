@@ -6,6 +6,7 @@ namespace App\Http\Controllers\HR;
 
 use App\Enums\HR\SettingKey;
 use App\Http\Concerns\ApiResponse;
+use App\Http\Requests\HR\UpdateSettingRequest;
 use App\Http\Resources\HR\SettingResource;
 use App\Interfaces\HR\SettingServiceInterface;
 use App\Models\HR\Setting;
@@ -31,15 +32,9 @@ final class SettingController
         return $this->ok(new SettingResource($this->settings->find($key)));
     }
 
-    /** Switches a setting on / off (and sets the overtime pay per hour); creates the row when missing. */
-    public function update(Request $request, SettingKey $key): JsonResponse
+    /** Switches a setting on / off and, for overtime, sets the pay per hour and its time bands; creates the row when missing. */
+    public function update(UpdateSettingRequest $request, SettingKey $key): JsonResponse
     {
-        $request->validate([
-            'is_enabled' => ['required', 'boolean'],
-            'amount' => $key->hasAmount() ? ['nullable', 'numeric', 'min:0', 'max:1000', 'decimal:0,3'] : ['prohibited'],
-        ]);
-        $amount = $request->filled('amount') ? (string) $request->input('amount') : null;
-
-        return $this->ok(new SettingResource($this->settings->save($key, $request->boolean('is_enabled'), $amount)));
+        return $this->ok(new SettingResource($this->settings->save($key, $request->toData())));
     }
 }
