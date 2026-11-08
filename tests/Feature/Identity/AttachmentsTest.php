@@ -154,3 +154,13 @@ it('does not let the attachments right reach a file on a record the person may n
     actingWith('attachments.read_all', 'people.read_all');
     $this->getJson("/attachments/{$id}")->assertOk();
 });
+
+it('applies the owner rule to bulk actions too', function () {
+    actingWith(...ATTACH_RIGHTS);
+    $id = uploadTo(Person::factory()->create(), [pdf()])->json('data.saved.0.id');
+
+    actingWith('attachments.read_own', 'attachments.write');
+    $this->postJson('/attachments/bulk', ['action' => 'archive', 'ids' => [$id]]);
+
+    expect(Attachment::query()->findOrFail($id)->isArchived())->toBeFalse();
+});
