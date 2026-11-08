@@ -163,7 +163,7 @@ final class AttendanceService implements AttendanceServiceInterface
             if (! $row->hasPendingOvertime()) {
                 throw new InvalidStateTransitionException(context: ['from' => $row->overtime_approved ? 'approved' : 'none', 'to' => 'approved']);
             }
-            $row->forceFill(['overtime_approved' => true, 'overtime_amount' => $this->pay->overtime($row->loadMissing('employee')->employee, $row->overtime_minutes)])->save();
+            $row->forceFill(['overtime_approved' => true, 'overtime_amount' => $this->pay->overtime($row->loadMissing('employee')->employee, $row)])->save();
 
             return $row->load(['employee.person', 'employee.shift']);
         });
@@ -214,7 +214,7 @@ final class AttendanceService implements AttendanceServiceInterface
             pendingOvertimeMinutes: (int) $rows->where('overtime_approved', false)->sum('overtime_minutes'),
             unexcusedLateMinutes: (int) $rows->where('late_excused', false)->sum('late_minutes'),
             // Priced when approved; days approved before amounts were kept are priced now.
-            approvedOvertimeAmount: MoneyHelper::sum(MoneyHelper::zero(), ...$approved->map(fn (Attendance $a) => $a->overtime_amount ?? $this->pay->overtime($employee, $a->overtime_minutes))->all()),
+            approvedOvertimeAmount: MoneyHelper::sum(MoneyHelper::zero(), ...$approved->map(fn (Attendance $a) => $a->overtime_amount ?? $this->pay->overtime($employee, $a))->all()),
         );
     }
 
