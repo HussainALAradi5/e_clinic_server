@@ -32,7 +32,7 @@ final class ActivityEntryResource extends JsonResource
             'action' => $this->action->value,
             'action_label' => $this->action->label(),
             'entity' => $this->auditableAlias() ?? $this->auditable_type,
-            'changes' => $this->changes(),
+            'changes' => $this->changes($request),
             'changed_by' => $this->user?->person->full_name,
             'created_at' => $this->created_at->toIso8601String(),
         ];
@@ -41,7 +41,7 @@ final class ActivityEntryResource extends JsonResource
     /**
      * @return list<array{field: string, label: string, old: mixed, new: mixed}>
      */
-    private function changes(): array
+    private function changes(Request $request): array
     {
         if (! in_array($this->action, [AuditAction::Updated, AuditAction::StatusChanged], true)) {
             return [];
@@ -57,15 +57,31 @@ final class ActivityEntryResource extends JsonResource
                 'old' => $this->display($old[$field] ?? null),
                 'new' => $this->display($new[$field] ?? null),
             ],
-            array_values(array_filter(array_unique([...array_keys($old), ...array_keys($new)]), $this->isShown(...))),
+            array_values(array_filter(
+                array_unique([...array_keys($old), ...array_keys($new)]),
+                fn (string $field): bool => $this->isShown($field, $old[$field] ?? null, $new[$field] ?? null, $request),
+            )),
         );
     }
 
-    /** Internal identifiers, hashes and housekeeping flags are never part of what happened. */
-    private function isShown(string $field): bool
+    /** Internal identifiers, hashes, housekeeping flags and medical values without the right are never part of what happened. */
+    private function isShown(string $field, mixed $old, mixed $new, Request $request): bool
     {
-        return ! in_array($field, Config::array('audit.activity_hidden_fields'), true)
-            && ! Str::endsWith($field, ['_id', '_hash']);
+        if (in_array($field, Config::array('audit.activity_hidden_fields'), true) || Str::endsWith($field, ['_id', '_hash'])) {
+            return false;
+        }
+
+        if ($this->isUuid($old) || $this->isUuid($new)) {
+            return false;
+        }
+
+        return ! in_array($field, Config::array('audit.activity_medical_fields'), true)
+            || (bool) $request->user()?->can('patients.view_medical');
+    }
+
+    private function isUuid(mixed $value): bool
+    {
+        return is_string($value) && Str::isUuid($value);
     }
 
     /** Encrypted values stay hidden; a stored date (2026-01-02 00:00:00) reads as the date alone. */

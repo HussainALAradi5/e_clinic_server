@@ -100,7 +100,10 @@ return [
     ],
 
     /* Never listed in a record's event log, along with every field ending in _id or _hash. */
-    'activity_hidden_fields' => ['id', 'code', 'version', 'is_archived', 'is_deleted', 'notification_opt_out'],
+    'activity_hidden_fields' => ['id', 'code', 'version', 'is_archived', 'is_deleted', 'notification_opt_out', 'photo_path'],
+
+    /* Listed in a record's event log only for people with patients.view_medical. */
+    'activity_medical_fields' => ['blood_group', 'allergies', 'chronic_conditions', 'family_history', 'surgical_history'],
 
     /* The same person opening the same record again within this time counts once. */
     'view_dedupe_seconds' => 300,

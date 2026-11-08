@@ -10,6 +10,7 @@ use App\Models\Identity\User;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -162,4 +163,31 @@ it('describes only what happened: no field dump on create, no ids or encrypted v
     expect($entries->where('action', 'created')->pluck('changes')->flatten(1)->all())->toBe([])
         ->and($response->getContent())->not->toContain('eyJpdiI6')->not->toContain('Secret Name')
         ->and($entries->pluck('changes')->flatten(1)->pluck('field')->all())->not->toContain('id');
+});
+
+it('never lists a staff id or a medical value without the right', function () {
+    activityActingAs(RoleName::Receptionist);
+    $person = Person::factory()->create();
+    Patient::query()->forceCreate(['id' => $person->id]);
+    $staffId = (string) Str::uuid();
+    (new AuditLog)->forceFill([
+        'id' => (string) Str::uuid7(), 'action' => 'updated', 'auditable_type' => 'patient', 'auditable_id' => $person->id, 'module' => 'appointments',
+        'old_values' => ['blood_group' => 'A+', 'issued_by' => null, 'notes' => 'old'],
+        'new_values' => ['blood_group' => 'B+', 'issued_by' => $staffId, 'notes' => 'new'],
+        'created_at' => now(),
+    ])->save();
+
+    $response = $this->getJson("/activity/patient_profile/{$person->id}")->assertOk();
+    $fields = collect($response->json('data'))->pluck('changes')->flatten(1)->pluck('field')->all();
+
+    expect($fields)->toContain('notes')->not->toContain('blood_group')->not->toContain('issued_by')
+        ->and($response->getContent())->not->toContain($staffId);
+});
+
+it('still loads the page when recording the view fails', function () {
+    activityActingAs(RoleName::Receptionist);
+    $person = activityPatient();
+    Cache::shouldReceive('add')->andThrow(new RuntimeException('cache down'));
+
+    $this->getJson("/patients/{$person->id}")->assertOk();
 });

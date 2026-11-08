@@ -11,8 +11,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 /**
  * Adds "opened the page" to a record's event log when someone other than the record's owner opens it. Works from the
@@ -31,10 +33,20 @@ final class RecordView
         $user = $request->user();
 
         if (is_string($alias) && $user !== null && $request->isMethod('GET') && $response->getStatusCode() === Response::HTTP_OK) {
-            $this->record($alias, $this->recordId($request), (string) $user->getAuthIdentifier());
+            $this->recordSafely($alias, $this->recordId($request), (string) $user->getAuthIdentifier());
         }
 
         return $response;
+    }
+
+    /** Logging must never turn a page that loaded into an error. */
+    private function recordSafely(string $alias, string $id, string $userId): void
+    {
+        try {
+            $this->record($alias, $id, $userId);
+        } catch (Throwable $e) {
+            Log::warning('Could not record a page view.', ['exception' => $e->getMessage()]);
+        }
     }
 
     private function recordId(Request $request): string
