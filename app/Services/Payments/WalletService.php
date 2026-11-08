@@ -22,6 +22,7 @@ use App\Models\Appointments\Patient;
 use App\Models\Payments\Invoice;
 use App\Models\Payments\PatientWalletEntry;
 use App\Models\Payments\Payment;
+use App\Models\Payments\Refund;
 use App\Utilities\Access\OwnershipScope;
 use App\Utilities\Payments\InsuranceCoverage;
 use App\Utilities\Query\ApplyListQuery;
@@ -187,6 +188,20 @@ final class WalletService implements WalletServiceInterface
             // The payment's own journal entry was reversed by the void, which already credits Patient deposits back.
             $this->record($locked, WalletEntryType::PaymentReversal, $payment->amount, $balance->plus($payment->amount), [
                 'payment_id' => $payment->id, 'invoice_id' => $payment->invoice_id, 'reason' => $payment->void_reason,
+            ]);
+        });
+    }
+
+    public function returnRefund(Refund $refund): void
+    {
+        if ($refund->method !== PaymentMethod::PatientBalance) {
+            return;
+        }
+        DB::transaction(function () use ($refund): void {
+            [$locked, $balance] = $this->lock($refund->invoice->patient()->firstOrFail());
+            // The refund's own journal entry already credits Patient deposits.
+            $this->record($locked, WalletEntryType::PaymentReversal, $refund->amount, $balance->plus($refund->amount), [
+                'payment_id' => $refund->payment_id, 'invoice_id' => $refund->invoice_id, 'journal_entry_id' => $refund->journal_entry_id, 'reason' => $refund->reason,
             ]);
         });
     }

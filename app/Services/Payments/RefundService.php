@@ -20,6 +20,7 @@ use App\Exceptions\Shared\SelfApprovalException;
 use App\Interfaces\Accounting\JournalEntryServiceInterface;
 use App\Interfaces\Payments\InvoiceServiceInterface;
 use App\Interfaces\Payments\RefundServiceInterface;
+use App\Interfaces\Payments\WalletServiceInterface;
 use App\Interfaces\Transactions\CashSessionServiceInterface;
 use App\Models\Payments\Payment;
 use App\Models\Payments\Refund;
@@ -50,6 +51,7 @@ final class RefundService extends BaseEntityService implements RefundServiceInte
         private readonly CashSessionServiceInterface $cashSessions,
         private readonly JournalEntryServiceInterface $journal,
         private readonly ClinicClock $clock,
+        private readonly WalletServiceInterface $wallet,
     ) {
         parent::__construct($listQuery);
     }
@@ -116,6 +118,10 @@ final class RefundService extends BaseEntityService implements RefundServiceInte
             if ($refund->status !== ApprovalStatus::Approved || $refund->isProcessed()) {
                 throw new InvalidStateTransitionException(context: ['from' => $refund->status->value, 'to' => 'processed']);
             }
+            $payment = Payment::query()->lockForUpdate()->findOrFail($refund->payment_id);
+            if (! $payment->isCompleted()) {
+                throw new InvalidStateTransitionException(context: ['from' => $payment->status->value, 'to' => 'processed']);
+            }
             $actor = Auth::user();
             $session = $refund->method === PaymentMethod::Cash && $actor !== null ? $this->cashSessions->requireOpen($actor) : null;
 
@@ -139,8 +145,8 @@ final class RefundService extends BaseEntityService implements RefundServiceInte
                 'journal_entry_id' => $entry->id,
             ])->save();
 
-            $payment = Payment::query()->lockForUpdate()->findOrFail($refund->payment_id);
             $payment->forceFill(['refunded_amount' => $payment->refunded_amount->plus($refund->amount)])->save();
+            $this->wallet->returnRefund($refund);
             $this->invoices->applyRefund($refund->invoice, $refund->amount);
 
             return $refund;

@@ -11,6 +11,9 @@ use App\Models\Appointments\MedicalRecord;
 use App\Models\Appointments\Patient;
 use App\Models\Appointments\RecordDiagnosis;
 use App\Models\Identity\User;
+use App\Models\Payments\PatientWalletEntry;
+use App\Models\Payments\Payment;
+use App\Models\Payments\Refund;
 use App\Models\Reference\Company;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ChartOfAccountsSeeder;
@@ -322,4 +325,40 @@ it('shows how an invoice stands with its payments and filters by state and by ho
     expect($states('payment_state=overdue'))->toContain($second['id']);
     $this->getJson('/billing/invoices?payment_state=later')->assertStatus(422);
     $this->getJson('/billing/invoices?method=coins')->assertStatus(422);
+});
+
+it('never returns the same money twice: no void with a refund on its way, no pay-out on a voided payment', function () {
+    $invoice = issuedInvoice();
+    $cashier = actAs(staff(RoleName::Cashier));
+    $this->postJson('/finance/cash-sessions', ['opening_float' => '0'])->assertCreated();
+    $payment = keyed('/billing/payments', ['invoice_id' => $invoice['id'], 'amount' => '15.000', 'method' => 'cash'])->json('data');
+    $refund = $this->postJson('/billing/refunds', ['payment_id' => $payment['id'], 'amount' => '5.000', 'reason' => 'Dressing not used'])->assertCreated()->json('data');
+
+    $accountant = actAs(staff(RoleName::Accountant));
+    $this->postJson("/billing/payments/{$payment['id']}/void", ['reason' => 'Mistake'])->assertJsonPath('error_code', 'PAYMENT_NOT_VOIDABLE');
+    $this->postJson("/billing/refunds/{$refund['id']}/approve")->assertOk();
+    $this->postJson("/billing/payments/{$payment['id']}/void", ['reason' => 'Mistake'])->assertJsonPath('error_code', 'PAYMENT_NOT_VOIDABLE');
+
+    Payment::query()->whereKey($payment['id'])->update(['status' => 'voided']);
+    actAs($cashier);
+    keyed("/billing/refunds/{$refund['id']}/process")->assertConflict();
+    expect(Refund::query()->findOrFail($refund['id'])->isProcessed())->toBeFalse();
+});
+
+it('adds a refund paid to the patient balance to that balance', function () {
+    $invoice = issuedInvoice();
+    $cashier = actAs(staff(RoleName::Cashier));
+    $this->postJson('/finance/cash-sessions', ['opening_float' => '0'])->assertCreated();
+    $payment = keyed('/billing/payments', ['invoice_id' => $invoice['id'], 'amount' => '15.000', 'method' => 'cash'])->json('data');
+    $refund = $this->postJson('/billing/refunds', ['payment_id' => $payment['id'], 'amount' => '5.000', 'reason' => 'Overcharged', 'method' => 'patient_balance'])->assertCreated()->json('data');
+
+    actAs(staff(RoleName::Accountant));
+    $this->postJson("/billing/refunds/{$refund['id']}/approve")->assertOk();
+    actAs($cashier);
+    keyed("/billing/refunds/{$refund['id']}/process")->assertOk();
+
+    $patientId = Refund::query()->findOrFail($refund['id'])->invoice->patient_id;
+    $entry = PatientWalletEntry::query()->where('patient_id', $patientId)->sole();
+    expect((string) $entry->amount->getAmount())->toBe('5.000')
+        ->and((string) Patient::query()->whereKey($patientId)->toBase()->value('wallet_balance'))->toStartWith('5');
 });
