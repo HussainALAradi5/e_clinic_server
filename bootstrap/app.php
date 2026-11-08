@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureIdempotency;
 use App\Http\Middleware\EnsurePatient;
 use App\Http\Middleware\EnsureStaff;
 use App\Http\Middleware\EnsureTwoFactor;
+use App\Http\Middleware\RecordView;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -28,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(AssignRequestId::class);
         // An API without a login page: signed-out calls get 401 JSON, never a redirect (even without Accept: json).
         $middleware->redirectGuestsTo(fn (): ?string => null);
-        $middleware->api(append: [SecurityHeaders::class]);
+        $middleware->api(append: [SecurityHeaders::class, RecordView::class]);
         $middleware->alias([
             CheckAccess::ALIAS => CheckAccess::class,
             EnsureIdempotency::ALIAS => EnsureIdempotency::class,

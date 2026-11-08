@@ -22,6 +22,7 @@ use App\Imports\Identity\PersonImport;
 use App\Imports\Identity\RoleImport;
 use App\Imports\Identity\UserImport;
 use App\Interfaces\Documents\DocumentServiceInterface;
+use App\Interfaces\Identity\ActivityLogServiceInterface;
 use App\Interfaces\Identity\AttachmentServiceInterface;
 use App\Interfaces\Identity\AuditableEvent;
 use App\Interfaces\Identity\AuditLogServiceInterface;
@@ -56,6 +57,7 @@ use App\Scanners\Identity\ClamAvScanner;
 use App\Scanners\Identity\NullScanner;
 use App\Services\Bulk\BulkActionRegistry;
 use App\Services\Documents\DocumentService;
+use App\Services\Identity\ActivityLogService;
 use App\Services\Identity\AttachmentService;
 use App\Services\Identity\AuditLogService;
 use App\Services\Identity\AuthService;
@@ -96,6 +98,7 @@ final class IdentityServiceProvider extends ServiceProvider
         UserServiceInterface::class => UserService::class,
         RoleServiceInterface::class => RoleService::class,
         AuditLogServiceInterface::class => AuditLogService::class,
+        ActivityLogServiceInterface::class => ActivityLogService::class,
         BackgroundTaskServiceInterface::class => BackgroundTaskService::class,
         AttachmentServiceInterface::class => AttachmentService::class,
         CodeServiceInterface::class => CodeService::class,
