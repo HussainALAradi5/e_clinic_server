@@ -14,6 +14,7 @@ enum AuditAction: string implements HasLabel
 {
     use EnumHelpers;
 
+    case Viewed = 'viewed';
     case Created = 'created';
     case Updated = 'updated';
     case Deleted = 'deleted';

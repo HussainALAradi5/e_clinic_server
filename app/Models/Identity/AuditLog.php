@@ -65,6 +65,12 @@ class AuditLog extends Model implements OwnedByUser
             ->defaultSort('-id');
     }
 
+    /** One record's event log: newest first, cursor paged, no date window. */
+    public static function activityQueryConfig(): ListQueryConfig
+    {
+        return ListQueryConfig::make()->resource('activity')->sortable('created_at')->cursorPagination()->defaultSort('-id');
+    }
+
     /**
      * @return BelongsTo<User, $this>
      */

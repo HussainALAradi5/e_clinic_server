@@ -23,6 +23,7 @@ return [
     'USER_LAST_SUPER_ADMIN' => 'At least one active super admin must remain.',
     'ROLE_SYSTEM_PROTECTED' => 'System roles cannot be renamed, deleted or have this change.',
     'ROLE_IN_USE' => 'This role is still assigned to users.',
+    'ACTIVITY_ENTITY_FORBIDDEN' => 'You cannot view the history of this kind of record.',
     'ROLE_PRIVILEGE_ESCALATION' => 'You cannot grant permissions or roles you do not hold yourself.',
     'PERSON_DUPLICATE' => 'This person already exists. Use the existing record.',
     'TASK_NOT_CANCELLABLE' => 'This task has already finished.',

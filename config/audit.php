@@ -81,6 +81,26 @@ return [
     /* Largest date range of one list query (days). */
     'max_range_days' => 93,
 
+    /* Show routes that add "opened the page" to the record's event log: route name => alias from `models` below. */
+    'viewed_routes' => [
+        'patients.show' => 'patient', 'appointments.show' => 'appointment', 'treatments.show' => 'treatment',
+        'clinical-orders.show' => 'clinical_order', 'consents.show' => 'patient_consent', 'sick-leaves.show' => 'sick_leave',
+        'written-documents.show' => 'written_document', 'attachments.show' => 'attachment', 'doctors.show' => 'doctor',
+        'specialties.show' => 'specialty', 'rooms.show' => 'room', 'billing.invoices.show' => 'invoice',
+        'billing.payments.show' => 'payment', 'billing.refunds.show' => 'refund', 'billing.claims.show' => 'insurance_claim',
+        'billing.appointment-fees.show' => 'appointment_fee', 'billing.packages.show' => 'service_package',
+        'billing.services.show' => 'billable_service', 'finance.cash-sessions.show' => 'cash_session',
+        'finance.expenses.show' => 'expense', 'accounting.accounts.show' => 'account', 'accounting.journal.show' => 'journal_entry',
+        'hr.employees.show' => 'employee', 'hr.departments.show' => 'department', 'hr.leaves.show' => 'leave_request',
+        'hr.payroll-runs.show' => 'payroll_run', 'hr.payslips.show' => 'payslip', 'hr.requests.show' => 'staff_request',
+        'hr.shifts.show' => 'shift', 'pharmacy.prescriptions.show' => 'prescription', 'pharmacy.dispensations.show' => 'dispensation',
+        'pharmacy.medications.show' => 'medication', 'pharmacy.inventory.batches.show' => 'medication_batch',
+        'reference.companies.show' => 'company', 'support.tickets.show' => 'support_ticket', 'users.show' => 'user',
+        'roles.show' => 'role', 'dashboards.show' => 'dashboard',
+    ],
+
+    /* The same person opening the same record again within this time counts once. */
+    'view_dedupe_seconds' => 300,
     /* Public morph aliases (Relation::morphMap) and `GET /audit-logs/{type}/{id}` types. Never a raw class name from the client. Modules add theirs. */
     'models' => [
         'person' => Person::class,

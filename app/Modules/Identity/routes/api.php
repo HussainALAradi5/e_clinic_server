@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Documents\DocumentController;
+use App\Http\Controllers\Identity\ActivityLogController;
 use App\Http\Controllers\Identity\AttachmentController;
 use App\Http\Controllers\Identity\AuditLogController;
 use App\Http\Controllers\Identity\AuthController;
@@ -114,6 +115,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/', 'index')->name('index');
         Route::get('{type}/{id}', 'forModel')->where('type', '[a-z_]+')->whereUuid('id')->name('for-model');
     });
+
+    // Event log of one record: read-only
+    Route::get('activity/{entity}/{id}', [ActivityLogController::class, 'index'])->whereUuid('id')->middleware(['access:activity.read_all', 'throttle:read'])->name('activity.index');
 
     // Background tasks (own tasks; administrators see all)
     Route::prefix('tasks')->name('tasks.')->controller(BackgroundTaskController::class)->group(function (): void {
