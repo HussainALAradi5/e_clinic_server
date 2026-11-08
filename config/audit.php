@@ -100,7 +100,7 @@ return [
     ],
 
     /* Never listed in a record's event log, along with every field ending in _id or _hash. */
-    'activity_hidden_fields' => ['id', 'code', 'version', 'is_archived', 'is_deleted', 'notification_opt_out', 'photo_path'],
+    'activity_hidden_fields' => ['id', 'code', 'version', 'is_archived', 'is_deleted', 'notification_opt_out', 'photo_path', 'time_format'],
 
     /* Listed in a record's event log only for people holding the right beside them. */
     'activity_restricted_fields' => [

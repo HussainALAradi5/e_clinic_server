@@ -44,6 +44,7 @@ final class UserResource extends JsonResource
             'email' => $person->email,
             'phone' => $person->phone,
             'language' => $person->language,
+            'time_format' => $person->time_format->value,
             'user_type' => $this->user_type->value,
             'status' => $this->status->value,
             'presence' => $this->presence->value,
