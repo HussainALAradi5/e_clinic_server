@@ -36,7 +36,7 @@ function activityPatient(): Person
     return $person;
 }
 
-it('shows who changed what on the patient file to reception, HR and admins', function (RoleName $role, UserType $type) {
+it('shows who changed what on the patient file to reception and admins', function (RoleName $role, UserType $type) {
     activityActingAs($role, $type);
     $person = activityPatient();
 
@@ -48,7 +48,6 @@ it('shows who changed what on the patient file to reception, HR and admins', fun
         ->and($update)->not->toHaveKeys(['ip_address', 'user_agent']);
 })->with([
     'reception' => [RoleName::Receptionist, UserType::MedicalStaff],
-    'hr' => [RoleName::HrManager, UserType::Hr],
     'admin' => [RoleName::Admin, UserType::Admin],
 ]);
 
@@ -56,16 +55,23 @@ it('hides the patient event log from everyone else', function (RoleName $role) {
     activityActingAs($role);
 
     $this->getJson('/activity/patient_profile/'.activityPatient()->id)->assertForbidden();
-})->with([RoleName::Doctor, RoleName::Nurse, RoleName::Pharmacist, RoleName::Cashier, RoleName::Accountant, RoleName::Support]);
+})->with([RoleName::Doctor, RoleName::Nurse, RoleName::Pharmacist, RoleName::Cashier, RoleName::Accountant, RoleName::Support, RoleName::HrManager]);
 
-it('also needs the right to read that kind of record', function () {
+it('follows each page: its own read right opens the log, the patient file right does not', function () {
     $id = (string) Str::uuid();
 
     actingWith('activity.read_all');
     $this->getJson("/activity/invoice/{$id}")->assertForbidden()->assertJsonPath('error_code', 'ACTIVITY_ENTITY_FORBIDDEN');
 
-    actingWith('activity.read_all', 'invoices.read_all');
+    actingWith('invoices.read_all');
     $this->getJson("/activity/invoice/{$id}")->assertOk()->assertJsonCount(0, 'data');
+
+    actingWith('appointments.read_all');
+    $this->getJson("/activity/appointment/{$id}")->assertOk();
+    $this->getJson("/activity/patient_profile/{$id}")->assertForbidden();
+
+    actingWith('appointments.read_own');
+    $this->getJson("/activity/appointment/{$id}")->assertForbidden();
 });
 
 it('refuses an unknown record type and a signed-out caller', function () {

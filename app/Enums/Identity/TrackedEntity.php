@@ -77,7 +77,7 @@ enum TrackedEntity: string implements HasLabel
     case Prescription = 'prescription';
     case Dispensation = 'dispensation';
 
-    /** The access-control resource whose `read_all` right also opens this entity's event log. */
+    /** The access-control resource whose `read_all` right opens this entity's event log. */
     private const RESOURCES = [
         'person' => 'people', 'chat_message' => 'chat', 'conversation' => 'chat', 'support_ticket' => 'tickets',
         'user' => 'users', 'role' => 'roles', 'background_task' => 'audit', 'attachment' => 'attachments',
@@ -109,9 +109,17 @@ enum TrackedEntity: string implements HasLabel
         return $this === self::PatientProfile ? [self::Person->value, self::Patient->value] : [$this->value];
     }
 
-    /** Null when the event-log right alone opens it (the patient file). */
+    /** Null for the patient file, which has its own right. */
     public function resource(): ?string
     {
         return self::RESOURCES[$this->value] ?? null;
+    }
+
+    /** Who may read this record's event log: it depends on the page, not on one right for the whole system. */
+    public function readRight(): string
+    {
+        $resource = $this->resource();
+
+        return $resource === null ? 'activity.read_all' : "{$resource}.read_all";
     }
 }

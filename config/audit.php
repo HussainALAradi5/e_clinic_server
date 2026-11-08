@@ -96,7 +96,7 @@ return [
         'hr.shifts.show' => 'shift', 'pharmacy.prescriptions.show' => 'prescription', 'pharmacy.dispensations.show' => 'dispensation',
         'pharmacy.medications.show' => 'medication', 'pharmacy.inventory.batches.show' => 'medication_batch',
         'reference.companies.show' => 'company', 'support.tickets.show' => 'support_ticket', 'users.show' => 'user',
-        'roles.show' => 'role', 'dashboards.show' => 'dashboard',
+        'roles.show' => 'role', 'dashboards.show' => 'dashboard', 'tasks.show' => 'background_task',
     ],
 
     /* Never listed in a record's event log, along with every field ending in _id or _hash. */

@@ -117,7 +117,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     });
 
     // Event log of one record: read-only
-    Route::get('activity/{entity}/{id}', [ActivityLogController::class, 'index'])->whereUuid('id')->middleware(['access:activity.read_all', 'throttle:read'])->name('activity.index');
+    Route::get('activity/{entity}/{id}', [ActivityLogController::class, 'index'])->whereUuid('id')->middleware('throttle:read')->name('activity.index');
 
     // Background tasks (own tasks; administrators see all)
     Route::prefix('tasks')->name('tasks.')->controller(BackgroundTaskController::class)->group(function (): void {

@@ -20,7 +20,7 @@ return [
 
     /* resource => module (UI grouping), special actions, what "own" means. */
     'resources' => [
-        'activity' => ['module' => 'identity', 'actions' => [], 'ownership' => 'None: everyone with the right reads the event log of records they may read'],
+        'activity' => ['module' => 'identity', 'actions' => [], 'ownership' => 'None: reads the patient file event log; every other page uses its own read_all right'],
         'accounts' => ['module' => 'accounting', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
         'appointments' => ['module' => 'appointments', 'actions' => ['cancel', 'check_in', 'export', 'treat'], 'ownership' => '`patient_id` = the user\'s id (patients share the person id) or `provider_id` = the user\'s id — covers treatment sessions too'],
         'attachments' => ['module' => 'identity', 'actions' => ['export'], 'ownership' => 'Follows the owner record: readable/writable when the owner record is'],
@@ -234,7 +234,6 @@ return [
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'people' => ['read_own', 'write'],
-                'activity' => ['read_all'],
                 'departments' => ['read_all', 'create', 'write', 'delete'],
                 'shifts' => ['read_all', 'create', 'write', 'delete'],
                 'employees' => ['read_all', 'create', 'write'],

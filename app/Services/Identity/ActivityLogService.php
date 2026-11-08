@@ -31,12 +31,9 @@ final class ActivityLogService implements ActivityLogServiceInterface
         return $this->listQuery->paginate($builder, $query);
     }
 
-    /** A log shows the record's changes, so opening one also needs the right to read that kind of record. */
     private function assertCanRead(TrackedEntity $entity): void
     {
-        $resource = $entity->resource();
-
-        if ($resource !== null && ! PermissionExpression::parse("{$resource}.read_all")->evaluate(Auth::user())) {
+        if (! PermissionExpression::parse($entity->readRight())->evaluate(Auth::user())) {
             throw new ActivityEntityForbiddenException;
         }
     }

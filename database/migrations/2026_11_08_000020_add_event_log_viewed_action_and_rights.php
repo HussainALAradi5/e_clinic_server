@@ -10,8 +10,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Config;
 
 /**
- * Allows the `viewed` audit action. Existing databases only (a fresh install gets this from its seeder): the event log
- * right for admins, HR and reception.
+ * Allows the `viewed` audit action. Existing databases only (a fresh install gets this from its seeder): the patient file
+ * event log right for admins and reception.
  */
 return new class extends Migration
 {
