@@ -9,6 +9,7 @@ use App\Dtos\Accounting\JournalLineData;
 use App\Dtos\Payments\RecordPaymentData;
 use App\Enums\Accounting\AccountMappingKey;
 use App\Enums\Payments\PaymentStatus;
+use App\Enums\Shared\ApprovalStatus;
 use App\Enums\Shared\PaymentMethod;
 use App\Events\Payments\PaymentReceived;
 use App\Events\Payments\PaymentVoided;
@@ -24,6 +25,7 @@ use App\Interfaces\Transactions\CashSessionServiceInterface;
 use App\Models\Accounting\JournalEntry;
 use App\Models\Payments\Invoice;
 use App\Models\Payments\Payment;
+use App\Models\Payments\Refund;
 use App\Models\Transactions\CashSession;
 use App\Services\Base\BaseEntityService;
 use App\Utilities\Access\OwnershipScope;
@@ -136,7 +138,7 @@ final class PaymentService extends BaseEntityService implements PaymentServiceIn
             $sameDay = $this->clock->toClinic($payment->paid_at)->isSameDay($this->clock->toClinic($this->clock->now()));
             $drawerOpen = $payment->cash_session_id === null || ($payment->cashSession?->isOpen() ?? false);
             $voidable = $payment->isCompleted() && $sameDay && $payment->refunded_amount->isZero() && $drawerOpen
-                && $payment->method !== PaymentMethod::Insurance;
+                && $payment->method !== PaymentMethod::Insurance && ! $this->hasOpenRefund($payment);
             if (! $voidable) {
                 throw new PaymentNotVoidableException;
             }
@@ -152,6 +154,14 @@ final class PaymentService extends BaseEntityService implements PaymentServiceIn
         PaymentVoided::dispatch($payment);
 
         return $this->find($payment->id);
+    }
+
+    /** A refund on its way would return the same money a second time. */
+    private function hasOpenRefund(Payment $payment): bool
+    {
+        return Refund::query()->where('payment_id', $payment->id)
+            ->whereIn('status', [ApprovalStatus::Pending->value, ApprovalStatus::Approved->value])
+            ->exists();
     }
 
     public function dailySummary(CarbonImmutable $date, ?string $cashierId = null): array

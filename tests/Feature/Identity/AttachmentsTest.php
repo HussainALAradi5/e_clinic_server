@@ -142,3 +142,15 @@ it('archives, deletes and restores attachments (also in bulk)', function () {
     $this->getJson("/attachments/{$id}")->assertNotFound();
     $this->patchJson("/attachments/{$id}/restore")->assertOk()->assertJsonPath('data.is_deleted', false);
 });
+
+it('does not let the attachments right reach a file on a record the person may not read', function () {
+    actingWith(...ATTACH_RIGHTS);
+    $id = uploadTo(Person::factory()->create(), [pdf()])->json('data.saved.0.id');
+
+    actingWith('attachments.read_all');
+    $this->getJson("/attachments/{$id}")->assertNotFound();
+    $this->getJson('/attachments')->assertOk()->assertJsonCount(0, 'data');
+
+    actingWith('attachments.read_all', 'people.read_all');
+    $this->getJson("/attachments/{$id}")->assertOk();
+});
