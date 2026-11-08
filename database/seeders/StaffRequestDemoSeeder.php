@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Dtos\HR\OvertimeBandData;
+use App\Dtos\HR\SettingData;
 use App\Enums\HR\SettingKey;
 use App\Enums\HR\StaffRequestType;
 use App\Interfaces\HR\SettingServiceInterface;
@@ -48,8 +50,8 @@ final class StaffRequestDemoSeeder extends Seeder
         if ($hr === null) {
             return;
         }
-        $settings->save(SettingKey::LateExcuse, true);
-        $settings->save(SettingKey::Overtime, true, '2.500');
+        $settings->save(SettingKey::LateExcuse, new SettingData(true));
+        $settings->save(SettingKey::Overtime, new SettingData(true, null, [new OvertimeBandData(0, 1439, '2.500')]));
 
         $recent = fn (string $column): Builder => Attendance::query()->with('employee.person')->where('employee_id', '!=', $hr->id)
             ->where('is_locked', false)->where($column, '>', 0)

@@ -20,6 +20,7 @@ use App\Models\Appointments\Treatment;
 use App\Models\Communication\Conversation;
 use App\Models\Communication\Message;
 use App\Models\Communication\SupportTicket;
+use App\Models\Dashboards\Dashboard;
 use App\Models\Documents\DocumentTemplate;
 use App\Models\Documents\WrittenDocument;
 use App\Models\HR\Attendance;
@@ -28,6 +29,7 @@ use App\Models\HR\Employee;
 use App\Models\HR\EmployeeSalaryComponent;
 use App\Models\HR\LeaveRequest;
 use App\Models\HR\LeaveType;
+use App\Models\HR\OvertimeBand;
 use App\Models\HR\PayrollRun;
 use App\Models\HR\Payslip;
 use App\Models\HR\Setting;
@@ -111,8 +113,10 @@ return [
         'payroll_run' => PayrollRun::class,
         'staff_request' => StaffRequest::class,
         'setting' => Setting::class,
+        'overtime_band' => OvertimeBand::class,
         'payslip' => Payslip::class,
         'shift' => Shift::class,
+        'dashboard' => Dashboard::class,
         'billable_service' => BillableService::class,
         'patient' => Patient::class,
         'specialty' => Specialty::class,

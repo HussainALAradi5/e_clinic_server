@@ -37,11 +37,11 @@ final class OvertimeHandler implements StaffRequestHandler
 
     public function details(Attendance $day): array
     {
-        $amount = $day->overtime_approved && $day->overtime_amount !== null ? $day->overtime_amount : $this->pay->overtime($day->employee, $day->overtime_minutes);
+        $amount = $day->overtime_approved && $day->overtime_amount !== null ? $day->overtime_amount : $this->pay->overtime($day->employee, $day);
 
         return [
             'minutes' => $day->overtime_minutes,
-            'rate' => (string) $this->pay->overtimeRate($day->employee)->toScale(3, RoundingMode::HALF_UP),
+            'rate' => (string) $this->pay->overtimeRateForDay($day->employee, $day)->toScale(3, RoundingMode::HALF_UP),
             'amount' => MoneyHelper::toApi($amount),
         ];
     }

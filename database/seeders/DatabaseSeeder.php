@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             LeaveTypeSeeder::class,
             Icd10Seeder::class,
             DocumentTemplateSeeder::class,
+            DashboardSeeder::class,
         ]);
 
         // Demo accounts and fake data for testing (see e_clinic_documentation/DEMO_USERS.md); never in production.
