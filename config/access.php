@@ -40,6 +40,7 @@ return [
         'wallet' => ['module' => 'payments', 'actions' => ['deposit', 'withdraw', 'adjust'], 'ownership' => '`patient_id` = the user\'s id (portal)'],
         'written_documents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id (portal) or `author_id` = the user\'s id (the writer)'],
         'consents' => ['module' => 'appointments', 'actions' => [], 'ownership' => '`patient_id` = the user\'s id or `explained_by` = the user\'s id or the patient has an appointment / treatment with the user as provider'],
+        'dashboards' => ['module' => 'dashboards', 'actions' => [], 'ownership' => '`created_by` = user (dashboards belong to the clinic; each metric has its own permission)'],
         'departments' => ['module' => 'hr', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
         'shifts' => ['module' => 'hr', 'actions' => ['export'], 'ownership' => '`created_by` = user'],
         'dispensing' => ['module' => 'pharmacy', 'actions' => ['administer', 'dispense', 'export'], 'ownership' => '`dispensed_by` = the user\'s id or `patient_id` = the user\'s id or its appointment\'s `provider_id` = the user\'s id'],
@@ -87,6 +88,7 @@ return [
         'admin' => ['access' => '*', 'actions' => '*', 'except_actions' => ['fiscal.reopen']],
         'receptionist' => [
             'access' => [
+                'dashboards' => ['read_all'],
                 'wallet' => ['read_all'],
                 'appointment_fees' => ['read_all'],
                 'online_payments' => ['read_all', 'create'],
@@ -125,6 +127,7 @@ return [
         ],
         'doctor' => [
             'access' => [
+                'dashboards' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'consents' => ['read_own', 'create', 'write'],
@@ -160,6 +163,7 @@ return [
         // safely — not their health, surgical or family history, nor past visit notes (doctors only).
         'nurse' => [
             'access' => [
+                'dashboards' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'templates' => ['read_all', 'create', 'write', 'delete'],
                 'written_documents' => ['read_own', 'create'],
@@ -188,6 +192,7 @@ return [
         ],
         'pharmacist' => [
             'access' => [
+                'dashboards' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'companies' => ['read_all', 'create', 'write'],
@@ -210,6 +215,7 @@ return [
         // The support team: every ticket (take, answer, solve), and the usual personal pages.
         'support' => [
             'access' => [
+                'dashboards' => ['read_all'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_all', 'create', 'write'],
                 'attachments' => ['read_own', 'create'],
@@ -222,6 +228,7 @@ return [
         ],
         'hr_manager' => [
             'access' => [
+                'dashboards' => ['read_all', 'write', 'delete'],
                 'chat' => ['read_own', 'create', 'write'],
                 'tickets' => ['read_own', 'create', 'write'],
                 'people' => ['read_own', 'write'],
@@ -245,6 +252,7 @@ return [
         ],
         'accountant' => [
             'access' => [
+                'dashboards' => ['read_all'],
                 'wallet' => ['read_all', 'write'],
                 'appointment_fees' => ['read_all', 'write'],
                 'online_payments' => ['read_all'],
@@ -281,6 +289,7 @@ return [
         ],
         'cashier' => [
             'access' => [
+                'dashboards' => ['read_all'],
                 'wallet' => ['read_all'],
                 'appointment_fees' => ['read_all'],
                 'online_payments' => ['read_all', 'create'],
