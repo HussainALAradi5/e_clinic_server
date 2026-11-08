@@ -177,7 +177,9 @@ final class UserService implements UserServiceInterface
         }
         $this->assertPhoneAvailable($person->phone, $person->id);
 
-        $this->privileges->assertCanGrantRoles($this->actor(), $data->roles);
+        if (! $data->isRoleFixedBySystem) {
+            $this->privileges->assertCanGrantRoles($this->actor(), $data->roles);
+        }
 
         $user = DB::transaction(function () use ($person, $data): User {
             $user = User::query()->create([

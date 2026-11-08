@@ -125,7 +125,7 @@ final class PatientService implements PatientServiceInterface
             throw new PatientAlreadyHasAccountException;
         }
 
-        return $this->users->create($patient->person, new CreateUserData(UserType::Patient, [RoleName::Patient->value]));
+        return $this->users->create($patient->person, new CreateUserData(UserType::Patient, [RoleName::Patient->value], isRoleFixedBySystem: true));
     }
 
     public function timeline(Patient $patient): Collection

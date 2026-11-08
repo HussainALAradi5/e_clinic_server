@@ -8,6 +8,8 @@ use App\Interfaces\Appointments\AppointmentServiceInterface;
 use App\Listeners\Appointments\SendAppointmentNotifications;
 use App\Models\Appointments\Appointment;
 use App\Models\Appointments\Doctor;
+use App\Models\Identity\AuditLog;
+use App\Models\Identity\Person;
 use App\Models\Identity\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\CountrySeeder;
@@ -247,4 +249,34 @@ it('tells coming, today, past and missed visits apart, and filters by them', fun
         ->and($ids('missed'))->toBe([$missed]);
     $this->getJson('/appointments')->assertOk()->assertJsonCount(4, 'data');
     $this->getJson('/appointments?timing=later')->assertStatus(422);
+});
+
+it('lets the front desk open a patient portal account, once, with the patient role only', function () {
+    receptionist();
+    $id = $this->postJson('/patients', ['person' => ['first_name' => 'Noor', 'last_name' => 'Hasan', 'gender' => 'female', 'date_of_birth' => '1990-02-03', 'phone' => '+97336551111', 'national_id' => '900203111', 'email' => 'noor.hasan@example.com']])
+        ->assertCreated()->json('data.id');
+
+    $this->postJson("/patients/{$id}/portal-account")->assertCreated();
+
+    expect(User::query()->findOrFail($id)->getRoleNames()->all())->toBe([RoleName::Patient->value]);
+    $this->postJson("/patients/{$id}/portal-account")->assertStatus(409)->assertJsonPath('error_code', 'PATIENT_HAS_ACCOUNT');
+});
+
+it('lets the front desk correct name, email, birth date and mobile, and records who changed what', function () {
+    $receptionist = receptionist();
+    $person = Person::factory()->create(['email' => 'old.address@example.com']);
+
+    $this->putJson("/people/{$person->id}", [
+        'version' => $person->version,
+        'first_name' => 'Corrected',
+        'email' => 'new.address@example.com',
+        'date_of_birth' => '1990-02-03',
+        'phone' => '+97336552222',
+    ])->assertOk()->assertJsonPath('data.first_name', 'Corrected')->assertJsonPath('data.email', 'new.address@example.com');
+
+    $entry = AuditLog::query()->where('auditable_id', $person->id)->where('action', 'updated')->latest('id')->firstOrFail();
+    expect($entry->user_id)->toBe($receptionist->id)
+        ->and($entry->old_values)->toMatchArray(['email' => 'old.address@example.com'])
+        ->and($entry->new_values)->toMatchArray(['email' => 'new.address@example.com', 'first_name' => 'Corrected'])
+        ->and($entry->new_values)->toHaveKeys(['date_of_birth', 'phone']);
 });
