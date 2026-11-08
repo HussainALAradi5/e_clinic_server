@@ -137,3 +137,14 @@ it('maps every tracked page to a real route and record type', function () {
         expect($names)->toContain($route)->and(Config::array('audit.models'))->toHaveKey($alias);
     }
 });
+
+it('shows a stored date without its empty time', function () {
+    activityActingAs(RoleName::Receptionist);
+    $person = Person::factory()->create(['date_of_birth' => '1980-01-02']);
+    Patient::query()->forceCreate(['id' => $person->id]);
+    $person->refresh()->update(['date_of_birth' => '1980-02-03']);
+
+    $change = collect(collect($this->getJson("/activity/patient_profile/{$person->id}")->assertOk()->json('data'))->firstWhere('action', 'updated')['changes'])->firstWhere('field', 'date_of_birth');
+
+    expect($change['new'])->toBe('1980-02-03');
+});

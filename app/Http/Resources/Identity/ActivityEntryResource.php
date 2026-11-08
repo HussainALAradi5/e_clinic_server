@@ -44,10 +44,16 @@ final class ActivityEntryResource extends JsonResource
             fn (string $field): array => [
                 'field' => $field,
                 'label' => Str::ucfirst(str_replace('_', ' ', $field)),
-                'old' => $old[$field] ?? null,
-                'new' => $new[$field] ?? null,
+                'old' => $this->display($old[$field] ?? null),
+                'new' => $this->display($new[$field] ?? null),
             ],
             array_values(array_unique([...array_keys($old), ...array_keys($new)])),
         );
+    }
+
+    /** A stored date (2026-01-02 00:00:00) reads as the date alone. */
+    private function display(mixed $value): mixed
+    {
+        return is_string($value) ? preg_replace('/^(\d{4}-\d{2}-\d{2}) 00:00:00$/', '$1', $value) : $value;
     }
 }
