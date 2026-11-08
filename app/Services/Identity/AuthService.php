@@ -11,6 +11,7 @@ use App\Dtos\Identity\ResetPasswordData;
 use App\Dtos\Identity\TwoFactorSetupData;
 use App\Enums\Identity\LoginFailureReason;
 use App\Enums\Identity\PresenceStatus;
+use App\Enums\Identity\TimeFormat;
 use App\Enums\Identity\UserStatus;
 use App\Enums\Identity\UserType;
 use App\Events\Communication\PresenceChanged;
@@ -175,6 +176,13 @@ final class AuthService implements AuthServiceInterface
     public function me(User $user): User
     {
         return $user->loadMissing(['person', 'roles']);
+    }
+
+    public function setTimeFormat(User $user, TimeFormat $format): User
+    {
+        $user->person->forceFill(['time_format' => $format])->save();
+
+        return $user;
     }
 
     public function setPresence(User $user, PresenceStatus $status): User

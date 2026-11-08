@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Identity;
 
 use App\Dtos\Identity\AuthTokenData;
 use App\Enums\Identity\PresenceStatus;
+use App\Enums\Identity\TimeFormat;
 use App\Http\Concerns\ApiResponse;
 use App\Http\Requests\Identity\ChangePasswordRequest;
 use App\Http\Requests\Identity\ConfirmTwoFactorRequest;
@@ -67,6 +68,14 @@ final class AuthController
         $user = $this->auth->setPresence($this->user($request), PresenceStatus::from($request->string('status')->toString()));
 
         return $this->ok(['presence' => $user->presence->value]);
+    }
+
+    public function timeFormat(Request $request): JsonResponse
+    {
+        $request->validate(['time_format' => ['required', Rule::enum(TimeFormat::class)]]);
+        $user = $this->auth->setTimeFormat($this->user($request), TimeFormat::from($request->string('time_format')->toString()));
+
+        return $this->ok(['time_format' => $user->person->time_format->value]);
     }
 
     public function me(Request $request): JsonResponse

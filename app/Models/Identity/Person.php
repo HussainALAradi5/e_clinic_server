@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Identity;
 
+use App\Enums\Identity\TimeFormat;
 use App\Enums\Identity\UserType;
 use App\Enums\Shared\Gender;
 use App\Interfaces\Shared\OwnedByUser;
@@ -50,6 +51,7 @@ use Illuminate\Support\Str;
  * @property ?string $address_id
  * @property string $language
  * @property list<string> $notification_opt_out
+ * @property TimeFormat $time_format
  * @property int $version
  * @property bool $is_archived
  * @property bool $is_deleted
@@ -75,7 +77,7 @@ class Person extends BaseModel implements OwnedByUser
 
     protected $hidden = ['national_id_hash'];
 
-    protected $attributes = ['language' => 'en', 'notification_opt_out' => '[]'];
+    protected $attributes = ['language' => 'en', 'notification_opt_out' => '[]', 'time_format' => '12h'];
 
     public static function codePrefix(): string
     {
@@ -225,6 +227,7 @@ class Person extends BaseModel implements OwnedByUser
             'date_of_birth' => 'immutable_date',
             'national_id' => 'encrypted',
             'notification_opt_out' => 'array',
+            'time_format' => TimeFormat::class,
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

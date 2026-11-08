@@ -9,6 +9,7 @@ use App\Models\Appointments\Patient;
 use App\Models\Payments\Invoice;
 use App\Models\Payments\PatientWalletEntry;
 use App\Models\Payments\Payment;
+use App\Models\Payments\Refund;
 use App\Utilities\Query\ListQuery;
 use Brick\Money\Money;
 use Illuminate\Contracts\Pagination\CursorPaginator;
@@ -39,6 +40,9 @@ interface WalletServiceInterface
 
     /** A balance payment was voided: its amount goes back to the balance. */
     public function returnVoided(Payment $payment): void;
+
+    /** A processed refund paid to the patient's balance: the amount is added to it. */
+    public function returnRefund(Refund $refund): void;
 
     /** Puts what an online payment brought beyond the invoice's balance on the patient's balance (no deposit limits). */
     public function creditOnlineSurplus(Patient $patient, Money $amount, string $reference, string $idempotencyKey): PatientWalletEntry;

@@ -10,6 +10,7 @@ use App\Dtos\Identity\LoginData;
 use App\Dtos\Identity\ResetPasswordData;
 use App\Dtos\Identity\TwoFactorSetupData;
 use App\Enums\Identity\PresenceStatus;
+use App\Enums\Identity\TimeFormat;
 use App\Models\Identity\User;
 
 interface AuthServiceInterface
@@ -31,6 +32,9 @@ interface AuthServiceInterface
 
     /** My Online / Offline status (also set by signing in and out). */
     public function setPresence(User $user, PresenceStatus $status): User;
+
+    /** Saves how the signed-in person reads times. */
+    public function setTimeFormat(User $user, TimeFormat $format): User;
 
     /** Changes the password of the signed-in user (other sessions are revoked). */
     public function changePassword(User $user, ChangePasswordData $data): void;

@@ -27,7 +27,6 @@ use App\Models\Identity\UploadSession;
 use App\Models\Identity\User;
 use App\Services\Base\BaseEntityService;
 use App\Services\Shared\FileStorage;
-use App\Utilities\Access\OwnershipScope;
 use App\Utilities\Access\PermissionExpression;
 use App\Utilities\Query\ApplyListQuery;
 use App\Utilities\Query\ListQuery;
@@ -287,11 +286,13 @@ final class AttachmentService extends BaseEntityService implements AttachmentSer
     }
 
     /**
+     * Files follow their owner record: the uploader, or anyone who may read that record. An `attachments.*` right never widens this.
+     *
      * @return Builder<Attachment>
      */
     protected function query(): Builder
     {
-        return OwnershipScope::apply(Attachment::query(), 'attachments', Auth::user());
+        return (new Attachment)->scopeOwnedBy(Attachment::query(), $this->user());
     }
 
     /** Sensitive file of a record released to the signed-in patient it is about (e.g. their completed result). */
